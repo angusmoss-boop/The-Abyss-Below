@@ -1,94 +1,94 @@
 # The Abyss Below
 
-## v0.15.0: Wild Waters
+## v0.16.0: Arsenal & Archives
 
-A dependency-free Canvas/JavaScript submarine expedition game for desktop and mobile browsers/PWAs. This release adds persistent abandoned contact mines, four harmless schooling fish designs, pulsing vent fields, reactive seabed organisms and richer procedural audio.
+A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. Three independent local campaigns, two upgradeable forward weapons, free dock gun reloads, paid mines, original interface music and visible hull-damage feedback.
 
-## Install the update
+## Install or update
 
-Bank cargo and quit the current dive first. Extract the update ZIP into the existing v0.14.0 repository root, replacing the matching files. Publish `index.html`, `styles.css`, `audio.js`, `game.js`, `version-sync.js`, `service-worker.js`, `manifest.webmanifest` and `version.json` together; keep the icons. Do not upload the ZIP itself or nest the files inside another directory.
+For an existing v0.15.0 site, bank cargo and quit the old dive as a precaution, extract the update ZIP, and replace the matching files at the repository root. Publish these files together:
 
-Reopen online after deployment and look for **v0.15.0 / Wild Waters**. CHECK AGAIN verifies published hashes, loaded code/styles/audio and the controlling worker. This package does not push to GitHub or deploy automatically. Keep the same host/path and browser profile; do not clear site data, uninstall or start New Game to update.
+`index.html`, `styles.css`, **`campaign-slots.js`**, `audio.js`, `game.js`, `version-sync.js`, `service-worker.js`, `manifest.webmanifest`, `version.json`.
 
-## Wild Waters
+Keep the existing icons. Do not upload the ZIP itself or create an extra nested directory. Use the complete ZIP for a new installation. The package does not deploy automatically. Reopen the same site online and check for **v0.16.0 / Arsenal & Archives**. CHECK AGAIN compares the deployed checksums, runtime build markers and controlling service worker. Local/offline/unverified status must not be interpreted as a successful hosted upgrade.
 
-* Rusted contact mines sway on tethers, damage predators and the submarine, and remain destroyed permanently. Sonar and the survey chart reveal discovered hazards. Harbour, resource and recorder approaches are protected.
-* Silver Darts, Sunstripe Reeflets, Ribbonfins and Violet Glassfish swim in groups of 6–14. Fish separate around the vessel, scatter from predators/boost/sonar and regroup. They do not collide, offer loot or fill the chart with icons.
-* Vent chimneys warn before pulsing. Early bubble seeps are harmless; deeper plumes cause damage and push the submarine and predators upward.
-* Anemones, fan corals, crabs and tube colonies respond to light, movement and currents.
-* Environmental sound adds local chains, vents, kelp, school movement, wrecks and harbour machinery. Explosions, docking and water transitions have richer effects.
+Keep the same origin and browser profile. Do not clear site data, uninstall or start a new campaign to update. Existing single-campaign progress is migrated into Slot 1, with the old migration source preserved.
 
-Read **WILD-WATERS-v0.15.0.md** for rules, migration and caveats. The compact HUD, maps, currents, active-dive resume, mobile zoom and existing controls remain. No new currencies, upgrade costs or automatic ammo refills were introduced.
+## Campaigns
+
+SAVE / LOAD CAMPAIGNS is in both main and pause menus. Up to three independent, named campaigns retain their own world resources, upgrades, currencies, achievements, magazines and saved dive. NEW CAMPAIGN chooses an empty slot, never silently overwrites. Deletion requires a separate confirmation. Loading saves the departing slot and reloads into the selected campaign's menu; CONTINUE restores an expedition paused.
+
+All storage is local, not cloud-synchronised. SAVE NOW, automatic checkpoints and action saves write the current slot. A previous-checkpoint backup, storage failure warnings and stale-window checks help protect saves but are not external backups. Close duplicate game windows before playing. Native Android storage and portable export/import are not part of this build.
+
+## Weapons and ammunition
+
+| Mark | Pulse Railgun: damage / rounds | Shock Torpedoes: damage / rounds |
+|---|---|---|
+| I | 35 / 12 | 95 / 3 |
+| II | 50 / 18 | 140 / 4 |
+| III | 70 / 24 | 200 / 6 |
+| IV | 95 / 32 | 280 / 8 |
+
+Hold **Z / RAIL** for rapid direct shots; tap **X / TORP** for a forward explosive round. Both start unfitted and are purchased in the dock. Gun magazines refill FREE at the physical dock, not over time or on reload. Rocks block shots. Friendly torpedo blasts spare your ship, but detonated abandoned mines remain dangerous. Weapons lock inside the protected harbour and above water.
+
+Mines are unchanged: use **F / MINE**, capacity 2 / 4 / 6 / 8, ammunition purchased separately at 12 credits per round. No automatic mine refills.
+
+Mobile has a larger RAIL / TORP / MINE row above smaller utilities, followed by USE and BOOST. Drag open water to anchor the invisible-until-used joystick. Desktop shows a keybind strip; mouse-held piloting and WASD/arrows remain.
+
+## Full controls
+
+| Action | Desktop | Mobile |
+|---|---|---|
+| Pilot | Hold left mouse; or WASD/arrows | Drag open water |
+| Use / collect / dock | E, hold for repeated salvage | USE |
+| Boost | Hold Space, requires magnetic thrusters | Hold BOOST |
+| Railgun | Hold Z | Hold RAIL |
+| Torpedo | X, one round per press | Tap TORP |
+| Mine | F | MINE |
+| Sonar | Q | SONAR |
+| Repair | R | REPAIR |
+| Lights | L | LIGHTS |
+| Quiet running | Shift | SILENT |
+| Map | M | Map icon |
+| Pause | Escape | Pause icon |
 
 ## Five-level campaign
 
-| Level | Destination | Seabed | Recorders |
-|---|---|---:|---:|
-| 1 | Sunbreak Shelf | 300 m | 2 |
-| 2 | Glassbone Rift | 600 m | 3 |
-| 3 | Drowned Gardens | 1,000 m | 4 |
-| 4 | Midnight Cathedral | 1,400 m | 5 |
-| 5 | Calypso Abyss | 1,800 m | 6 |
+| Destination | Seabed | Recorders |
+|---|---:|---:|
+| Sunbreak Shelf | 300 m | 2 |
+| Glassbone Rift | 600 m | 3 |
+| Drowned Gardens | 1,000 m | 4 |
+| Midnight Cathedral | 1,400 m | 5 |
+| Calypso Abyss | 1,800 m | 6 |
 
-Bank every recorder in a level to unlock the next. Merely carrying the recorders does not unlock it. At the dock, choose **EXPEDITIONS** to select any unlocked destination at no cost. A main-menu EXPEDITION HUB button also opens the hub when no dive is active; it cannot teleport a submerged vessel.
+Bank all recorders in a level to unlock the next. Switch freely between unlocked levels at the hub. Fixed scrap/crystals never respawn; predators and caches refresh after a genuine dive and return to that level's dock. Defeat or explicit Quit leaves recoverable resource cargo. Ordinary closing/reloading restores the saved expedition paused instead.
 
-Each level has a solid, collision-tested seabed, persistent deposits, its own predator population and saved recorder progress. Threat density, rock-field density, predator durability and damage increase through the campaign. Reapers remain below 800 m and still match Mk IV normal-thruster speed. The wider trench and mobile zoom are unchanged.
+Scrap becomes 18 credits per unit on docking; crystals bank separately. All paid upgrades require both. Fixed resources total 15,192 credits and 496 crystals per fresh campaign. All 59 increments across 14 systems cost 15,173 credits and 464 crystals. Use renewable predator salvage for mine rounds and repair expenses. These are arithmetic budgets, not a fully playtested balance guarantee.
 
-## Two currencies, finite resources
+The compact HUD, survey map, beam upgrades, pressure limits, 20 achievements, three predator tiers, floating controls, breach physics, harbour safety, wildlife, contact mines and thermal vents remain. Damaged hulls now pulse red, including when exceeding safe pressure depth; darkness does not hide this warning.
 
-Scrap deposits and crystal clusters each contain two units. On docking, each scrap unit becomes **18 credits**; each crystal unit becomes **one banked crystal**, never credits. Every paid ship-upgrade increment needs both currencies. Standard fitted Mk I flashlight/rack equipment remains free. Ammunition is still bought separately for **12 credits per round**, without a crystal charge or automatic refill.
+## Sound
 
-The shop keeps a three-column catalogue with fitted-tier badges and gold maximum outlines. Tap a system to see the current/next statistics and both prices. For example, fitting **Hull Mk III costs 297 CR + 10 crystals**. Hull pressure limits are now 130 m standard, then 330 / 630 / 830 / 1,030 / 1,330 / 1,530 / 1,830 m.
-
-A fresh campaign contains **15,192 credits' worth of fixed scrap and 496 crystals**. All 51 paid upgrade steps cost **12,223 credits and 432 crystals**, leaving 64 spare crystals. These are arithmetic totals, not a completed balance playthrough. Ammo, repairs and lost expendables have additional costs. Predator salvage supplies renewable credits.
-
-Fixed scrap/crystal deposits never regenerate on docking, level switching, quitting or reloading. The hub shows remaining stocks for each level. Predators and supply caches refresh only after a genuine dive and return to that level's dock. Switching maps is not a population reset. Secured recorders stay secured.
-
-## Recovery pods and crystal safeguards
-
-Collected resources are journaled together with deposit depletion. Defeat or intentionally quitting a dive leaves unbanked scrap/crystals in a persistent recovery pod instead of deleting finite resources. Recover the pod and dock to bank it. Pods are placed no deeper than the current safe hull range and are visible to sonar and the objective indicator. Undelivered recorders return to their wrecks. Spent ammunition and repair scrap are not refunded.
-
-Ordinary reloads now restore a valid active-dive snapshot, paused. Ship position, resources, cargo, ammunition, mines and enemies are resumed without advancing time while closed. A recovery pod is still used for intentional abandonment/defeat or a recoverable invalid snapshot. Sudden termination can lose time since the last checkpoint, and browser storage failure or clearing site data can still lose progress. A visible warning reports failed writes.
-
-The shop checks the crystal budget at every remaining hull pressure gate. Optional purchases are refused only when they would leave too few crystals obtainable before a required hull step. Crystals below that pressure limit do not count as available funds. Fit the indicated hull upgrade first.
-
-## Achievements
-
-Open **ACHIEVEMENTS** from the main menu or pause menu. Twenty objectives cover recorder completion, all seabeds, resource surveys, predator hunting, sonar, magnet use, shielding, a damage-free return and fully upgrading the ship. Each has a progress indicator and an unlock notification. Counters and unlocks persist through reloads and level changes, and reset only with a confirmed New Game. They are in-game, campaign-specific achievements, not Google Play Games integration.
-
-See **CAMPAIGN-v0.12.0.md** for the full achievement list, level stocks, all upgrade costs and migration details.
-
-## Existing campaigns
-
-**Updating from v0.13 or v0.12:** all campaign progress, unlocked levels, selected destination, layouts/depletion, banked currencies/recorders, stats/achievements, upgrades, ammo and stored predator health carry over. No New Game is required. The campaign schema and key remain version 3, with an optional versioned active-dive snapshot and per-level charts. Existing maps start partially unsurveyed; their resources are not regenerated.
-
-**Updating from v0.11 or earlier:** Existing credits, XP, best depth, fitted upgrades and purchased ammunition are retained. The old trench is preserved as **Level 5, Calypso Abyss**, including its original resource locations/depletion and secured recorders. You start the expanded campaign at Level 1 and must clear the four new levels to revisit that old trench. Old secured recorders remain stored while access is locked.
-
-Imported Level 5 receives a one-time addition of missing crystal deposits to reach the new generated-stock target. Previously sold/collected crystals are not refunded or respawned. Existing purchased upgrades do not incur a retrospective crystal bill. New crystal balances begin at zero because old crystals were sold for credits. Fresh-campaign stock totals do not describe every migrated save.
-
-## Controls
-
-| Action | PC | Mobile |
-|---|---|---|
-| Pilot | Hold left mouse button and move pointer; WASD/arrows | Touch and drag open water anywhere |
-| Boost | Hold Space while piloting, after fitting thrusters | Hold BOOST while steering/cruising |
-| Collect / dock | E; hold E for repeated collection | USE; hold for repeated collection |
-| Mine | F | MINE |
-| Sonar / disruptor | Q | SONAR |
-| Repair | R | REPAIR |
-| Flashlight | L | LIGHTS |
-| Quiet running | Hold Shift | SILENT toggle |
-| Pause | Esc | Top pause control |
-| Survey map | M; Esc to close | Top map icon / pause menu |
-| Detailed telemetry | Top sliders icon | Top sliders icon |
-| Sound | Main/pause menu or telemetry | Main/pause menu or telemetry |
-
-All existing flashlight, boost, shield, magnet, disruption and paid ammunition systems remain. Eight circular mobile actions stay bottom left; the floating steering pad appears where you touch open water. PC retains its keybind reference strip.
+Original menu and dock music loops have a separate MUSIC slider. Music starts after interaction, stops for diving/pause, and all sound suspends when hidden. EFFECTS, AMBIENCE and mute remain independent. Audio is generated locally; no external music files or permissions are required.
 
 ## Development and verification
 
-Serve the folder over HTTP for local development, for example `python -m http.server 8000`. Normal local-preview version status is not a verified hosted release.
+No npm build step. Host the files on HTTPS or use a local development server where the browser permits it. After EVERY runtime edit run:
 
-After editing any runtime asset, run `python tests/build_release.py` before publishing. Run the current suite with `python tests/run_v0150.py --jobs 1`; see **tests/README-v0.15.0.md** for dependencies and limitations. Historical tests/reports describe earlier rules and are not current acceptance evidence.
+```sh
+python tests/build_release.py
+```
 
-**VERIFICATION-v0.15.0.md** records the actual test outcomes. Physical Android hardware, real hosted/offline updating and a full human campaign playthrough are not verified. This remains a browser/PWA source release, not a signed Android app bundle.
+The version manifest includes the exact runtime checksums. Inconsistent deployed assets intentionally do not get a green sync status.
+
+Current test runner:
+
+```sh
+python tests/run_v0160.py --jobs 3
+python tests/v0160_live_pwa_test.py
+```
+
+Tests require Python, Playwright, Node and Chromium. Current evidence is in `verification/v0.16.0/`, not historical reports. Some UI tests use synthetic credits/gear or deterministic scene fixtures, never real user saves. The live PWA test is separate and must not be described as passing because mocked worker tests passed.
+
+Read **ARSENAL-ARCHIVES-v0.16.0.md** for full rules and prices, **VERIFICATION-v0.16.0.md** for tested/untested boundaries. Historical guides remain for earlier versions. This is a web/PWA source package, not a signed Android app bundle or Play Store-ready release.

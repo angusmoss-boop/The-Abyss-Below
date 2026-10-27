@@ -1,0 +1,187 @@
+{
+  "version": "0.16.0",
+  "name": "Arsenal & Archives",
+  "build_id": "0.16.0-arsenal-archives-1",
+  "base_version": "0.15.0",
+  "date": "2026-10-27",
+  "runtime_manifest": "version.json",
+  "campaign_schema": 3,
+  "levels": [
+    {
+      "id": "sunbreak-shelf",
+      "floor_m": 300,
+      "recorders": 2,
+      "scrap_units": 84,
+      "crystal_units": 36
+    },
+    {
+      "id": "glassbone-rift",
+      "floor_m": 600,
+      "recorders": 3,
+      "scrap_units": 130,
+      "crystal_units": 70
+    },
+    {
+      "id": "drowned-gardens",
+      "floor_m": 1000,
+      "recorders": 4,
+      "scrap_units": 170,
+      "crystal_units": 100
+    },
+    {
+      "id": "midnight-cathedral",
+      "floor_m": 1400,
+      "recorders": 5,
+      "scrap_units": 210,
+      "crystal_units": 130
+    },
+    {
+      "id": "calypso-abyss",
+      "floor_m": 1800,
+      "recorders": 6,
+      "scrap_units": 250,
+      "crystal_units": 160
+    }
+  ],
+  "economy": {
+    "fixed_scrap_credit_value": 15192,
+    "fixed_crystals": 496,
+    "upgrade_tree_credits": 15173,
+    "upgrade_tree_crystals": 464,
+    "paid_steps": 59,
+    "ammo_round_credits": 12,
+    "hull_iii": {
+      "credits": 297,
+      "crystals": 10
+    },
+    "crystal_guard": "Every required hull gate counts only stocks reachable before that pressure upgrade",
+    "weapon_refill_credits": 0
+  },
+  "achievements": {
+    "count": 20,
+    "entry_points": [
+      "main menu",
+      "pause menu"
+    ],
+    "scope": "campaign",
+    "currency_rewards": false
+  },
+  "encounters": {
+    "mines": [
+      8,
+      16,
+      28,
+      42,
+      58
+    ],
+    "vent_fields": [
+      5,
+      9,
+      15,
+      21,
+      28
+    ],
+    "schools": [
+      12,
+      22,
+      36,
+      48,
+      62
+    ],
+    "fish_per_school": [
+      6,
+      14
+    ],
+    "species": [
+      "Silver Dart",
+      "Sunstripe Reeflet",
+      "Ribbonfin",
+      "Violet Glassfish"
+    ],
+    "cleared_mines_persist": true,
+    "new_currency": false
+  },
+  "verification": "VERIFICATION-v0.16.0.md",
+  "guide": "ARSENAL-ARCHIVES-v0.16.0.md",
+  "runtime_hashes": {
+    "index.html": "029f8dab48d9f64d3c8708216ce481514daac4f3c03b33f662c320c5d0c1d151",
+    "styles.css": "1f0060e55bd12ac0497d6137df576121eeb94dbae65a21e68b2daa700616dc71",
+    "campaign-slots.js": "318c14d3ddffde03d60fd122481ef6699029bfadf1a30f45748e4e9a662f902b",
+    "audio.js": "997d4c72295abada8d28e5194ae2af20fd26634d18a813c3afea822374f72df0",
+    "game.js": "a790ef3bd3e8ab9bab8dcf14cd7443da9b76b53f994d50fa6fe1d4d637f78085",
+    "version-sync.js": "2d0894e079a40d3894228ab9f6a86eec721b12bacfe233eee6105b73383f54e9",
+    "service-worker.js": "ca4fe0659d2e07f59e4753dbadf2331ad4ac2437ace246c382572870b4553b33",
+    "manifest.webmanifest": "02ae4faeec5656f3d0067f32396e1fb87058c75ad7cfe4fc5982964d236083e4",
+    "icon-192.png": "eb31e497f47e2fb14048f1a26f16f41c15de0d786b0be4a35afcbdfc4cc0c216",
+    "icon-512.png": "48b550a89b9352f43df53d834abaf802ba51b37ffd6289dda0ac4870f26bf822",
+    "icon-maskable-512.png": "48b550a89b9352f43df53d834abaf802ba51b37ffd6289dda0ac4870f26bf822"
+  },
+  "campaign_slots": 3,
+  "slot_index_key": "abyss-campaign-slots-v1",
+  "canonical_save_keys": [
+    "the-abyss-below-slot-1-v1",
+    "the-abyss-below-slot-2-v1",
+    "the-abyss-below-slot-3-v1"
+  ],
+  "legacy_migration_key": "the-abyss-below-campaign-v3",
+  "upgrade_steps": 59,
+  "ship_systems": 14,
+  "upgrade_cost_credits": 15173,
+  "upgrade_cost_crystals": 464,
+  "new_weapons": {
+    "railgun": {
+      "damage": [
+        35,
+        50,
+        70,
+        95
+      ],
+      "capacity": [
+        12,
+        18,
+        24,
+        32
+      ],
+      "refill": "free at dock",
+      "key": "Z"
+    },
+    "torpedo": {
+      "damage": [
+        95,
+        140,
+        200,
+        280
+      ],
+      "capacity": [
+        3,
+        4,
+        6,
+        8
+      ],
+      "refill": "free at dock",
+      "key": "X"
+    }
+  },
+  "package_checks": {
+    "build_id": "0.16.0-arsenal-archives-1",
+    "timestamp_utc": "2026-10-27T21:24:30.823502+00:00",
+    "runtime_assets": [
+      "index.html",
+      "styles.css",
+      "campaign-slots.js",
+      "audio.js",
+      "game.js",
+      "version-sync.js",
+      "service-worker.js",
+      "manifest.webmanifest",
+      "icon-192.png",
+      "icon-512.png",
+      "icon-maskable-512.png"
+    ],
+    "complete": "PASS",
+    "overlay": "PASS",
+    "base_archive": "the-abyss-below-v0.15.0-complete.zip",
+    "suites_passed": 21,
+    "live_offline": "BLOCKED"
+  }
+}

@@ -1,12 +1,12 @@
-/* Wild Waters: original procedural audio, no downloads or permissions.
+/* Arsenal & Archives: original procedural audio, no downloads or permissions.
    Start/resume only after user input. Settings persist independently of campaigns. */
 (() => {
   'use strict';
-  const KEY='abyss-audio-v1', BUILD='0.15.0-wild-waters-1';
+  const KEY='abyss-audio-v1', BUILD='0.16.0-arsenal-archives-1';
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  let settings={effects:.5,ambience:.35,muted:false};
+  let settings={effects:.5,ambience:.35,music:.3,muted:false};
   try { const v=JSON.parse(localStorage.getItem(KEY)||'null'); if(v){
-    for(const k of ['effects','ambience'])if(Number.isFinite(v[k]))settings[k]=clamp(v[k],0,1);
+    for(const k of ['effects','ambience','music'])if(Number.isFinite(v[k]))settings[k]=clamp(v[k],0,1);
     settings.muted=v.muted===true;
   }} catch(_){}
   let context=null, master=null, fx=null, bed=null, engineGain=null, engine=null, motor=null, motorGain=null, waterGain=null, waterFilter=null;
@@ -14,13 +14,13 @@
   const voices=new Set(),eventTimes=new Map();
   let noiseBuffer=null;const counts={};
   function ramp(param,value,seconds=.12){if(!param||!context)return;param.setTargetAtTime(value,context.currentTime,seconds);}
-  function apply(){if(!context)return;ramp(master.gain,settings.muted?0:.65,.04);ramp(fx.gain,settings.effects,.04);ramp(bed.gain,settings.ambience,.08);}
+  function apply(){if(!context)return;ramp(master.gain,settings.muted?0:.65,.04);ramp(fx.gain,settings.effects,.04);ramp(bed.gain,settings.ambience,.08);ramp(musicBus?.gain,settings.music,.08);}
   function init(){
     if(context)return true;
     const AudioContext=window.AudioContext||window.webkitAudioContext;
     if(!AudioContext){blocked=true;return false;}
     try{
-      context=new AudioContext();master=context.createGain();fx=context.createGain();bed=context.createGain();
+      context=new AudioContext();master=context.createGain();fx=context.createGain();bed=context.createGain();musicBus=context.createGain();musicBus.gain.value=settings.music;musicBus.connect(master);
       master.gain.value=0;fx.gain.value=settings.effects;bed.gain.value=settings.ambience;
       const limiter=context.createDynamicsCompressor();limiter.threshold.value=-18;limiter.knee.value=20;limiter.ratio.value=5;
       fx.connect(master);bed.connect(master);master.connect(limiter);limiter.connect(context.destination);
@@ -44,10 +44,10 @@
     blocked=false;return Promise.resolve();
   }
   function configure(values){
-    for(const k of ['effects','ambience'])if(Number.isFinite(values[k]))settings[k]=clamp(values[k],0,1);
+    for(const k of ['effects','ambience','music'])if(Number.isFinite(values[k]))settings[k]=clamp(values[k],0,1);
     if(typeof values.muted==='boolean')settings.muted=values.muted;
     try{localStorage.setItem(KEY,JSON.stringify(settings));}catch(_){}
-    apply();return {...settings};
+    apply();if(settings.muted||settings.music<=0)stopMusic();else setScene(musicMode);return {...settings};
   }
   function tone(freq,endFreq,duration=.3,gain=.12,pan=0,type='sine',delay=0,bus='effects'){
     if(!context||context.state!=='running'||settings.muted||voices.size>=28)return;
@@ -79,6 +79,10 @@
     const play=(f,e,d,g,p=pan,type='sine',delay=0,bus='effects')=>tone(f*variation,e*variation,d,g*strength,p,type,delay,bus);
     const hiss=(d,g,f=600,type='lowpass',delay=0,bus='effects')=>noise(d,g*strength,pan,f,type,delay,bus);
     switch(kind){
+      case 'railgun':play(740,170,.16,.095,pan,'triangle');hiss(.09,.045,2400,'bandpass');break;
+      case 'railHit':play(360,100,.12,.10,pan,'triangle');break;
+      case 'torpedo':play(130,52,.35,.14,pan,'triangle');hiss(.3,.08,650);break;
+      case 'torpedoHit':play(90,23,.75,.19,pan,'triangle');hiss(.65,.17,420);break;
       case 'sonar':play(780,620,.52,.14);play(620,500,.48,.045,-pan,'sine',.22);break;
       case 'echo':play(1100,950,.13,.035);break;
       case 'pickup':play(410,620,.15,.10);play(640,850,.18,.07,pan,'sine',.08);break;
@@ -103,9 +107,64 @@
     }
   }
 
+  // Original eight-bar interface themes, rendered once into seamless stereo loops.
+  // Rounded sine/triangle keys, a soft bass, and a restrained three-note pad.
+  // All voices wrap into the loop buffer, including their release tails.
+  const musicBuffers=new Map();let musicMode='none',musicSource=null,musicVoiceGain=null,musicBus=null,musicNotes=0;
+  function composeMusic(mode){
+    if(musicBuffers.has(mode))return musicBuffers.get(mode);
+    const rate=22050,beat=mode==='dock'?60/88:60/80,bars=8,length=bars*4*beat,n=Math.round(length*rate);
+    const buffer=context.createBuffer(2,n,rate),L=buffer.getChannelData(0),R=buffer.getChannelData(1);
+    const chords=mode==='dock'?[[60,64,67,71],[57,60,64,67],[53,57,60,64],[55,59,62,69]]:[[57,60,64,67],[53,57,60,64],[60,64,67,71],[55,59,62,69]];
+    function note(midi,start,duration,amplitude,pan=0,pad=false){
+      const frequency=440*Math.pow(2,(midi-69)/12),samples=Math.ceil(duration*rate),offset=Math.round(start*rate);
+      const left=Math.sqrt((1-pan)/2),right=Math.sqrt((1+pan)/2);
+      for(let i=0;i<samples;i++){
+        const t=i/rate,phase=2*Math.PI*frequency*t;
+        const envelope=pad?Math.min(1,t/.35)*Math.max(0,Math.min(1,(duration-t)/.65)):Math.min(1,t/.012)*Math.exp(-t*4/duration)*Math.min(1,(duration-t)/.12);
+        const wave=Math.sin(phase)+(pad?.08:.22)*Math.sin(phase*2)+.035*Math.sin(phase*3);
+        const v=wave*envelope*amplitude,k=(offset+i)%n;
+        L[k]+=v*left;R[k]+=v*right;
+        if(!pad){const echo=(k+Math.round(beat*.75*rate))%n;L[echo]+=v*right*.15;R[echo]+=v*left*.15;}
+      }
+      musicNotes++;
+    }
+    for(let bar=0;bar<bars;bar++){
+      const chord=chords[bar%4],start=bar*4*beat;
+      for(let j=0;j<3;j++)note(chord[j],start,4.4*beat,.022,(j-1)*.5,true);
+      note(chord[0]-24,start,2.8*beat,.105,0);note(chord[0]-12,start+2*beat,1.7*beat,.045,-.1);
+      const pattern=mode==='dock'?[0,2,1,3,2,1,3,2]:[0,2,3,1,2,0,3,2];
+      for(let j=0;j<8;j++)note(chord[pattern[j]]+12,start+j*.5*beat,.95*beat,mode==='dock'?.074:.058,(j%3-1)*.24);
+      if(bar%2===1){note(chord[2]+12,start+beat,1.8*beat,.042,.3);note(chord[1]+12,start+2.5*beat,1.4*beat,.038,-.3);}
+    }
+    musicBuffers.set(mode,buffer);return buffer;
+  }
+  function stopMusic(immediate=false){
+    if(!context||!musicSource)return;
+    const source=musicSource,gain=musicVoiceGain;musicSource=null;musicVoiceGain=null;
+    try{gain.gain.cancelScheduledValues(context.currentTime);gain.gain.setValueAtTime(gain.gain.value,context.currentTime);gain.gain.linearRampToValueAtTime(0,context.currentTime+(immediate?.01:.3));source.stop(context.currentTime+(immediate?.02:.32));}catch(_){}
+  }
+  function setScene(mode){
+    mode=['menu','dock'].includes(mode)?mode:'none';
+    const changed=mode!==musicMode;musicMode=mode;
+    if(!context||!unlocked)return;
+    if(mode==='none'){if(musicSource)stopMusic();return;}
+    // An interface is deliberately quiet underwater, but the menu/dock may resume
+    // its own music after a user action without resuming the game simulation.
+    ramp(engineGain.gain,0,.06);ramp(motorGain.gain,0,.06);ramp(waterGain.gain,0,.08);active=false;
+    if(changed&&musicSource)stopMusic();
+    if(settings.muted||settings.music<=0||context.state!=='running'||document.hidden)return;
+    if(!musicSource){
+      const source=context.createBufferSource(),g=context.createGain();source.buffer=composeMusic(mode);source.loop=true;
+      g.gain.value=0;source.connect(g);g.connect(musicBus);source.onended=()=>{source.disconnect();g.disconnect();};
+      source.start();g.gain.linearRampToValueAtTime(1,context.currentTime+.6);musicSource=source;musicVoiceGain=g;
+    }
+  }
+
   function suspend(){
     active=false;
     if(!context)return;
+    stopMusic(true);
     ramp(engineGain.gain,0,.025);ramp(motorGain.gain,0,.025);ramp(waterGain.gain,0,.025);
     // Cancel queued notes as well as continuous sounds. No surprise echo on resume.
     for(const voice of voices){try{voice.stop();}catch(_){}}
@@ -125,6 +184,6 @@
     if(data.threat&&now-lastThreat>4.6){lastThreat=now;tone(95,70,.6,.09,data.pan||0,'triangle');tone(120,80,.5,.045,data.pan||0,'sine',.25);}
     if(data.pressure>.86&&!data.harbour&&now-lastCreak>9){lastCreak=now;tone(75,48,.9,.08,Math.sin(now),'triangle');}
   }
-  const status=()=>({buildId:BUILD,...settings,available:Boolean(window.AudioContext||window.webkitAudioContext),unlocked,state:context?.state||'not-started',blocked,voices:voices.size,active,eventCounts:{...counts},maxVoices:28});
-  window.AbyssAudio={unlock,event,tick,suspend,configure,settings:()=>({...settings}),status};
+  const status=()=>({buildId:BUILD,...settings,available:Boolean(window.AudioContext||window.webkitAudioContext),unlocked,state:context?.state||'not-started',blocked,voices:voices.size,active,eventCounts:{...counts},maxVoices:28,musicMode,musicPlaying:Boolean(musicSource),musicNotes,musicDuration:musicSource?.buffer?.duration||0});
+  window.AbyssAudio={unlock,event,tick,suspend,setScene,configure,settings:()=>({...settings}),status};
 })();

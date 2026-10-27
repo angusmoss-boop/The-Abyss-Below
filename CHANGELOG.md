@@ -1,3 +1,14 @@
+# v0.16.0 / Arsenal & Archives
+
+- Three independent local campaign slots, one-time migration into Slot 1, explicit named creation and confirmed deletion; active expeditions resume paused.
+- Guarded per-slot saves, previous-checkpoint recovery, storage failure and stale-window protection. Original legacy data retained.
+- Pulse Railgun and Shock Torpedoes, four paid marks each, damage/capacity increases, physical-dock free magazines. Paid mine supply unchanged.
+- Swept projectile collisions, terrain obstruction, torpedo area damage, abandoned-mine interaction, saved ammunition/cooldowns/in-flight shots.
+- RAIL / TORP / MINE combat row, circular left utility controls, Z/X desktop binds and magazine references.
+- Original menu/dock stereo loops with independent music volume and scene/visibility lifecycle handling.
+- Bounded red submarine damage pulse including pressure and oxygen loss, visible through deep darkness without revealing scenery.
+- Upgrade catalogue now 14 systems / 59 paid steps: 15,173 credits + 464 crystals. Existing fixed stocks and earned achievements retained.
+
 # v0.15.0 / Wild Waters
 
 - Added deterministic persistent contact-mine layouts and swept hull/predator triggers. Mine clears survive dock cycles, level switching and reload. Protected approaches and old-save arrival safeguards.
