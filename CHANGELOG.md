@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.0 · Into the Deep (27 October 2026)
+
+- Six recorders at depths 75, 260, 470, 725, 1,100 and 1,500 m; victory requires delivering all six.
+- Procedural ocean expanded to 1,800 m with seven named depth sectors and replenished world content.
+- Rare purple abyss stalkers spawn deeper than 400 m, move 134 vs 80 speed, detect better and inflict 27 vs 13 damage. Both predator tiers disengage when the submarine escapes pursuit range.
+- Hull tree increased from 5 to 7 tiers: +200 m rated depth and +28 maximum hull HP per level (base 130 m, max 1,530 m). Exceeding the rating now causes increasingly dangerous pressure damage.
+- More deep salvage and wreck-adjacent resources to support the longer progression loop.
+- Six-pip mission HUD, apex radar colours and warning text; updated mission briefing, story, help and milestone objective labels.
+- Preserved historical v0.1 local save key and migrated previously secured IDs 0-2 into new six-recorder mission.
+- Version-tagged game/CSS/manifest references and new offline cache v0.3.0 for Github Pages PWA updates.
+- Added deep-trench and save compatibility regression test.
+
+
 ## v0.2.2 · Predator disengagement, smoother collisions, multitouch USE
 
 - Predators abandon pursuit beyond a hard leash, forget sonar alerts, and resume patrol; temporary recovery prevents instant reacquisition.

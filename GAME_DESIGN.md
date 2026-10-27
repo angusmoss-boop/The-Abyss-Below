@@ -12,26 +12,44 @@
 6. **Bank and improve:** dock to convert salvage to credits and XP, refill systems and purchase upgrades.
 7. **Push deeper:** reach the next wreck using better equipment and smarter tactics.
 
-## Current play areas
+## Current play areas · v0.3.0
 
-| Zone | Approximate depth | Main purpose |
+| Zone | Depth range (approx) | Milestone |
 |---|---:|---|
-| The Shallows | 0–95 m | Learn the controls, gather resources, find recorder 1. |
-| Midnight Rift | 95–190 m | Predator avoidance and operating-depth decisions. |
-| Glassbone Trench | 190–310 m | Increase the pressure on upgraded systems. |
-| The Hollow | 310+ m | Recover the final recorder, then escape. |
+| The Shallows | 0–179 m | Recorder 1 at 75 m, base hull rating 130 m |
+| Midnight Rift | 180–399 m | Recorder 2 at 260 m (hull MK-I, 330 m rating) |
+| Glassbone Trench | 400–649 m | Purple abyss stalkers appear; recorder 3 at 470 m (MK-II, 530 m) |
+| The Hollow | 650–924 m | Recorder 4 at 725 m (MK-III, 730 m) |
+| Drowned Cathedral | 925–1,209 m | Recorder 5 at 1,100 m (MK-V, 1,130 m) |
+| The Pale Descent | 1,210–1,509 m | Recorder 6 at 1,500 m (MK-VII, 1,530 m) |
+| The Last Dark | 1,510–1,800 m | Optional uncharted trench below the final recorder |
 
-The rock and salvage layout changes with every new dive. The key story targets retain a predictable depth, which makes them feasible to find and test.
+The trench extends to ~1,800 m, while the maximum permanently safe depth is 1,530 m. The lowest region is intentionally high risk. World layout changes on each dive; wreck depths are fixed, salvage positions vary. A lane is preserved by rock placement.
 
-## Current success / failure
+### Predator tiers
 
-**Success:** return to the surface station with all three recorders delivered.
+| Characteristic | Drifter (common) | Abyss stalker (rare) |
+|---|---|---|
+| Colour | Slate blue, red eye | Purple/pink glow and fins |
+| Chase speed | 80 | 134 |
+| Attack damage | 13 | 27 |
+| Chase disengagement distance | 345 world units | 505 world units |
+| Detection | Normal | 1.52× normal sensitivity; longer detection radius |
+| Spawn region | Throughout trench | Strictly below 400 m |
 
-**Failure:** reach zero hull integrity or suffocate. The next submarine inherits the player's banked credits, upgrades, XP and secured recorders, but not the lost cargo.
+Neither creature is meant to be able to pursue the submarine forever. Noise, lights and sonar still matter in both cases.
+
+### Reinforced hull depth ladder
+
+Each reinforced-hull upgrade adds 200 m to the rating and 28 maximum hull HP. Seven upgrades produce a 1,530 m rating and 296 maximum HP. Pressure damage grows sharply if depth exceeds this rating, preventing an unupgraded run from trivially skipping to the final recorder. Recover salvage, bank credits and return to the surface for upgrades. Existing saved hull levels are preserved and use the new progression formula automatically.
+
+**Success:** recover all six recorders and deliver them to the surface station.
+
+**Failure:** reach zero hull integrity or suffocate. Permanent credits, upgrades, XP and already delivered recorders remain saved; unbanked cargo is lost.
 
 ## Intended next milestones
 
-### v0.2: Discovery
+### Future: Discovery
 - Signal triangulation, discovered map and fog of war.
 - Wreck interiors as short scripted interactions.
 - Additional salvage types, journal entries and four distinct creatures.
@@ -39,7 +57,7 @@ The rock and salvage layout changes with every new dive. The key story targets r
 
 **Acceptance:** maps and signals track discoveries, at least 3 unique wreck event outcomes, no game-stopping softlocks.
 
-### v0.3: Consequences
+### v0.4: Consequences
 - Modular damage to power, sonar, lights and propulsion.
 - Compartment repair tasks and resource-driven emergency decisions.
 - Thermal vents, currents, magnetic anomalies and a pressure-zone system.
@@ -47,7 +65,7 @@ The rock and salvage layout changes with every new dive. The key story targets r
 
 **Acceptance:** at least three distinct ways to survive a hostile encounter; upgrades alter survivability in verified tests.
 
-### v0.4: Living abyss
+### v0.5: Living abyss
 - Region-specific world generation and environmental storytelling.
 - Side objectives, signal anomalies, abandoned installations and meaningful missions.
 - Unlockable ship hulls with different operating profiles.

@@ -7,14 +7,25 @@
   const rctx = radar.getContext('2d');
   const TAU = Math.PI * 2;
   const SAVE_KEY = 'the-abyss-below-v01'; // Keep unchanged so v0.1 progress survives updates.
+  // World coordinates are scaled at 10 units per metre; the new trench extends to 1,800 m.
+  const MAX_WORLD_Y = 18120;
+  const RECORDER_DEPTHS = [75,260,470,725,1100,1500];
+  const RECORDERS_TOTAL = RECORDER_DEPTHS.length;
   const ZONES = [
     {start:0, name:'THE SHALLOWS', code:'01', color:'#5ca1b2'},
-    {start:95, name:'MIDNIGHT RIFT', code:'02', color:'#639dbf'},
-    {start:190, name:'GLASSBONE TRENCH', code:'03', color:'#9b86cc'},
-    {start:310, name:'THE HOLLOW', code:'04', color:'#b9799a'}
+    {start:180, name:'MIDNIGHT RIFT', code:'02', color:'#639dbf'},
+    {start:400, name:'GLASSBONE TRENCH', code:'03', color:'#9b86cc'},
+    {start:650, name:'THE HOLLOW', code:'04', color:'#b9799a'},
+    {start:925, name:'DROWNED CATHEDRAL', code:'05', color:'#b78eec'},
+    {start:1210, name:'THE PALE DESCENT', code:'06', color:'#77bad5'},
+    {start:1510, name:'THE LAST DARK', code:'07', color:'#d16aab'}
   ];
+  const PREDATOR_TIERS = {
+    common:{name:'DRIFTER',speed:80,patrolSpeed:21,detectionCap:245,leash:345,awareness:1,damage:13,cooldown:1.7},
+    apex:{name:'ABYSS STALKER',speed:134,patrolSpeed:31,detectionCap:370,leash:505,awareness:1.52,damage:27,cooldown:1.35}
+  };
   const UPGRADES = [
-    {id:'hull', name:'REINFORCED HULL', desc:'Increase hull strength and safe operating depth by 80 m.', base:80, limit:5},
+    {id:'hull', name:'REINFORCED HULL', desc:'Adds 28 max hull HP and 200 m to safe depth (maximum 1,530 m).', base:80, limit:7},
     {id:'oxygen', name:'AIR RECYCLER', desc:'Expand oxygen capacity and slow oxygen consumption.', base:70, limit:5},
     {id:'battery', name:'DEEP-CELL BATTERY', desc:'Expand energy storage and reduce engine drain.', base:65, limit:5},
     {id:'engine', name:'MAGNETIC THRUSTERS', desc:'Increase speed and improve handling.', base:75, limit:4},
@@ -27,7 +38,7 @@
     const data = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
     if (data && typeof data === 'object') {
       saved = {...defaults(),...data,upgrades:{...defaults().upgrades,...data.upgrades}};
-      saved.secured = Array.isArray(saved.secured) ? saved.secured.filter(x => Number.isInteger(x) && x>=0 && x<3) : [];
+      saved.secured = Array.isArray(saved.secured) ? saved.secured.filter(x => Number.isInteger(x) && x>=0 && x<RECORDERS_TOTAL) : [];
     }
   } catch (_) { /* local storage is optional */ }
   const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(saved)); } catch (_) {} };
@@ -44,16 +55,14 @@
   const zoneFor = depth => {let z=ZONES[0];for(const v of ZONES)if(depth>=v.start)z=v;return z;};
   const levelOf = xp => 1 + Math.floor(Math.sqrt(xp/90));
   const rankName = level => level < 3?'DECKHAND':level<5?'PATHFINDER':level<8?'TRENCH DIVER':'ABYSS VETERAN';
-  const maxHull = () => 100 + saved.upgrades.hull*20;
+  const maxHull = () => 100 + saved.upgrades.hull*28;
   const maxOxygen = () => 100 + saved.upgrades.oxygen*30;
   const maxBattery = () => 100 + saved.upgrades.battery*30;
-  const safeDepth = () => 130 + saved.upgrades.hull*80;
+  const safeDepth = () => 130 + saved.upgrades.hull*200;
   const sonarRange = () => 230 + saved.upgrades.sonar*55;
   const sonarCost = () => Math.max(4,12-saved.upgrades.sonar*2);
   const SHIP_RADIUS = 10.5; // Three small circles form a narrow capsule that matches the submarine silhouette.
   const SHIP_OFFSETS = [-15,0,15];
-  const PREDATOR_DETECTION_CAP = 245;
-  const PREDATOR_LEASH = 345;
   let scene = {rocks:[],items:[],predators:[],vents:[],dust:[],wrecks:[]};
   let player = null;
   const keys = new Set();
@@ -139,60 +148,71 @@
           moved=true;
         }
       }
-      player.y=clamp(player.y,58,4820);
+      player.y=clamp(player.y,58,MAX_WORLD_Y);
       if(!moved)break;
     }
     return impactSpeed;
   }
   function createWorld() {
-    idCounter = 0;
-    const r = randGen((Math.random()*0xffffffff)>>>0);
-    scene = {rocks:[],items:[],predators:[],vents:[],dust:[],wrecks:[]};
-    const recorderDepths = [850,2000,3430];
-    recorderDepths.forEach((y,i)=>{
-      const x=centerAt(y)+(i===1?110:-110);
+    idCounter=0;
+    const r=randGen((Math.random()*0xffffffff)>>>0);
+    scene={rocks:[],items:[],predators:[],vents:[],dust:[],wrecks:[]};
+    RECORDER_DEPTHS.forEach((depth,i)=>{
+      const y=120+depth*10;
+      // Wrecks occupy open central lanes so a tight boulder cluster can't seal a mission.
+      const x=centerAt(y)+(i%2?105:-105);
       scene.wrecks.push({x,y,index:i});
       if(!saved.secured.includes(i))scene.items.push(makeItem(x,y,'recorder',{index:i}));
+      // Wreck-adjacent salvage helps fund the next hull tier; recoverable even on a short dive.
+      for(let j=0;j<4;j++) {
+        const a=j*Math.PI/2+.35,rx=x+Math.cos(a)*78,ry=y+Math.sin(a)*78;
+        if(rx>leftAt(ry)+38&&rx<rightAt(ry)-38)
+          scene.items.push(makeItem(rx,ry,j%2===0?'crystal':'scrap'));
+      }
     });
-    for(let i=0;i<155;i++) {
-      const y=370+r()*4360;
+    for(let i=0;i<480;i++) {
+      const y=370+r()*(MAX_WORLD_Y-530);
       const x=lerp(leftAt(y)+25,rightAt(y)-25,r());
       const radius=20+r()*52;
-      if (scene.wrecks.some(w=>Math.hypot(x-w.x,y-w.y)<150))continue;
-      // Keep a winding lane with enough space for the entire sub to traverse.
-      // Other routes remain more dangerous, but the level is never sealed by boulders.
-      const laneX=centerAt(y)+Math.sin(y*.004)*90;
-      if(Math.abs(x-laneX)<radius+46)continue;
+      if(scene.wrecks.some(w=>Math.hypot(x-w.x,y-w.y)<155))continue;
+      // Continuous winding passage; leave enough clearance for the submarine capsule.
+      const laneX=centerAt(y)+Math.sin(y*.004)*85;
+      if(Math.abs(x-laneX)<radius+51)continue;
       const rock={x,y,radius,rot:r()*TAU,seed:r(),spikes:6+Math.floor(r()*4)};
       rock.vertices=rockPolygon(rock);
       scene.rocks.push(rock);
     }
-    for(let i=0;i<104;i++) {
-      const y=245+r()*4300;
-      const x=lerp(leftAt(y)+45,rightAt(y)-45,r());
-      if(scene.rocks.some(k=>Math.hypot(x-k.x,y-k.y)<k.radius+26))continue;
-      const t = i%13===0?'air':i%4===0?'crystal':'scrap';
-      scene.items.push(makeItem(x,y,t));
+    for(let i=0;i<390;i++) {
+      const y=245+r()*(MAX_WORLD_Y-465);
+      const x=lerp(leftAt(y)+42,rightAt(y)-42,r());
+      if(scene.rocks.some(k=>Math.hypot(x-k.x,y-k.y)<k.radius+27))continue;
+      const depth=depthOf(y);
+      // Increased crystal frequency in deeper zones raises salvage rewards.
+      const type=i%15===0?'air':r()<(depth<400?.24:.43)?'crystal':'scrap';
+      scene.items.push(makeItem(x,y,type));
     }
-    for(let i=0;i<12;i++) {
-      const y=490+i*335+r()*90;
-      scene.predators.push({x:centerAt(y)+(r()-.5)*370,y,homeX:centerAt(y)+(r()-.5)*300,homeY:y,vx:0,vy:0,phase:r()*TAU,aggression:0,lastHit:-10,alertUntil:0,forgetUntil:0});
-    }
-    for(let i=0;i<22;i++) {
-      const y=150+r()*4600;
+    const addPredator=(y,tier)=>{
+      const x=centerAt(y)+(r()-.5)*340;
+      scene.predators.push({tier,x,y,homeX:x+(r()-.5)*90,homeY:y,vx:0,vy:0,phase:r()*TAU,aggression:0,lastHit:-10,alertUntil:0,forgetUntil:0});
+    };
+    for(let i=0;i<46;i++)addPredator(510+i*370+r()*110,'common');
+    // Elite tier is rare, and NEVER spawned shallower than 400 m.
+    for(let i=0;i<11;i++)addPredator(4490+i*1190+r()*220,'apex');
+    for(let i=0;i<69;i++) {
+      const y=150+r()*(MAX_WORLD_Y-270);
       scene.vents.push({x:lerp(leftAt(y)+30,rightAt(y)-30,r()),y,phase:r()*TAU});
     }
-    for(let i=0;i<270;i++) {
-      const y=r()*5000;
+    for(let i=0;i<790;i++){
+      const y=r()*MAX_WORLD_Y;
       scene.dust.push({x:r()*1400-100,y,phase:r()*TAU,size:.5+r()*1.7});
     }
   }
   function newDive() {
     createWorld();
     player={x:600,y:160,vx:0,vy:0,facing:-Math.PI/2,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,quiet:false,damageCooldown:0,scanCooldown:0,cargo:{scrap:0,crystal:0,recorders:[]},lastRepair:-100};
-    sonarWaves=[];clock=0;lastZone='';eventLines=[];useHeld=false;useHoldTimer=0;usePointerId=null;victoryShown=saved.secured.length===3;pointerSilent=false;resetJoystick(true);keys.clear();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
+    sonarWaves=[];clock=0;lastZone='';eventLines=[];useHeld=false;useHoldTimer=0;usePointerId=null;victoryShown=saved.secured.length===RECORDERS_TOTAL;pointerSilent=false;resetJoystick(true);keys.clear();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
     addEvent('Dive systems initialised.');
-    addEvent('Three recorders lost below.');
+    addEvent('Six recorders lost as deep as 1,500 m.');
     running=true;paused=false;showingDock=false;
     $('menuOverlay').classList.add('hidden');$('modalOverlay').classList.add('hidden');
     $('pauseBtn').textContent='Ⅱ PAUSE';
@@ -256,7 +276,7 @@
     persist();
     addEvent('Docking completed · vessel refilled');
     if(gained||delivered)announce('SALVAGE BANKED: +'+gained+' CREDITS · +'+earnedXP+' XP',4);
-    if(saved.secured.length===3&&!victoryShown){openVictory();return;}
+    if(saved.secured.length===RECORDERS_TOTAL&&!victoryShown){openVictory();return;}
     showDock();
   }
   function openDialog(kicker,title,body,footer='') {
@@ -270,7 +290,7 @@
   }
   function showDock() {
     showingDock=true;
-    const intro=`<p class="dialog-info">Welcome back to NEREID station. Salvage has been banked, and your vessel has been repaired, refuelled and resupplied.</p><p class="dialog-info"><strong>AVAILABLE CREDITS: ${saved.credits}</strong> · RECORDERS DELIVERED: ${saved.secured.length}/3</p>`;
+    const intro=`<p class="dialog-info">Welcome back to NEREID station. Salvage has been banked, and your vessel has been repaired, refuelled and resupplied.</p><p class="dialog-info"><strong>AVAILABLE CREDITS: ${saved.credits}</strong> · RECORDERS DELIVERED: ${saved.secured.length}/${RECORDERS_TOTAL}</p>`;
     openDialog('SURFACE OPERATIONS // DOCKED','SUBMARINE UPGRADES',intro+'<div class="upgrade-list" id="upgradeList"></div>', '<div class="dialog-actions"><button class="alt-btn" id="launchAgain">RETURN TO THE WATER</button></div>');
     drawUpgrades();
     $('launchAgain').addEventListener('click',()=>{closeDialog();addEvent('Station departure authorised');});
@@ -288,18 +308,18 @@
       if(lv>=upgrade.limit||saved.credits<cost)return;
       saved.credits-=cost;saved.upgrades[upgrade.id]++;persist();
       player.hull=maxHull();player.oxygen=maxOxygen();player.battery=maxBattery();
-      $('modalBody').querySelectorAll('.dialog-info')[1].innerHTML=`<strong>AVAILABLE CREDITS: ${saved.credits}</strong> · RECORDERS DELIVERED: ${saved.secured.length}/3`;
+      $('modalBody').querySelectorAll('.dialog-info')[1].innerHTML=`<strong>AVAILABLE CREDITS: ${saved.credits}</strong> · RECORDERS DELIVERED: ${saved.secured.length}/${RECORDERS_TOTAL}`;
       drawUpgrades();updateUI();addEvent(upgrade.name+' upgraded');
     }));
   }
   function openVictory() {
     victoryShown=true;
-    openDialog('TRANSMISSION // RESTORED','THE SIGNAL RETURNS',`<div class="briefing"><p>All three flight recorders are secured. The <em>Calypso</em> went silent because it found something beneath the final trench, something that appeared to be listening.</p><p><strong>MISSION COMPLETE.</strong> Your expedition rank is now ${levelOf(saved.xp)}. You may keep exploring, collect salvage and upgrade the NEREID, or begin a fresh game using your existing progress.</p><p>The story continues in future builds of The Abyss Below.</p></div>`, '<div class="dialog-actions"><button class="alt-btn" id="victoryClose">CONTINUE EXPLORING</button></div>');
+    openDialog('TRANSMISSION // RESTORED','THE SIGNAL RETURNS',`<div class="briefing"><p>All six flight recorders are secured. The <em>Calypso</em> went silent because it found something beneath the final trench, something that appeared to be listening.</p><p><strong>MISSION COMPLETE.</strong> Your expedition rank is now ${levelOf(saved.xp)}. You may keep exploring, collect salvage and upgrade the NEREID, or begin a fresh game using your existing progress.</p><p>The story continues in future builds of The Abyss Below.</p></div>`, '<div class="dialog-actions"><button class="alt-btn" id="victoryClose">CONTINUE EXPLORING</button></div>');
     $('victoryClose').addEventListener('click',closeDialog);
   }
   function defeat(reason) {
     running=false;paused=true;player.hull=Math.max(0,player.hull);persist();
-    openDialog('SIGNAL LOST // EMERGENCY','VESSEL LOST',`<div class="briefing"><p>${reason}</p><p>Unbanked cargo and undelivered recorders were lost. Your secured recorders, credits, upgrades and expedition rank remain saved.</p><p><strong>Best depth:</strong> ${saved.bestDepth} m · <strong>Secured recorders:</strong> ${saved.secured.length}/3</p></div>`, '<div class="dialog-actions"><button class="primary-btn" id="retryBtn">LAUNCH RESCUE VESSEL <span>→</span></button></div>');
+    openDialog('SIGNAL LOST // EMERGENCY','VESSEL LOST',`<div class="briefing"><p>${reason}</p><p>Unbanked cargo and undelivered recorders were lost. Your secured recorders, credits, upgrades and expedition rank remain saved.</p><p><strong>Best depth:</strong> ${saved.bestDepth} m · <strong>Secured recorders:</strong> ${saved.secured.length}/${RECORDERS_TOTAL}</p></div>`, '<div class="dialog-actions"><button class="primary-btn" id="retryBtn">LAUNCH RESCUE VESSEL <span>→</span></button></div>');
     $('retryBtn').addEventListener('click',newDive);
   }
   function takeDamage(amount,reason='Hull breach') {
@@ -348,26 +368,26 @@
     if(player.oxygen<=0){player.hull-=dt*7;if(player.hull<=0){defeat('The oxygen supply ran dry.');return;}}
     const depth=depthOf(player.y),over=Math.max(0,depth-safeDepth());
     if(over>0) {
-      player.hull-=dt*(.045+Math.pow(over/55,1.32)*.6);
+      player.hull-=dt*(.26+Math.pow(over/30,1.7)*1.5); // Overshooting a tier is risky; deep skips are lethal.
       if(player.hull<=0){defeat('Crushing pressure breached the hull.');return;}
     }
     if(depth>saved.bestDepth) {saved.bestDepth=depth;if(depth%10===0)persist();}
     const zone=zoneFor(depth);
     if(zone.name!==lastZone){if(lastZone)addEvent('Entered '+zone.name);lastZone=zone.name;}
     for(const enemy of scene.predators){
+      const tier=PREDATOR_TIERS[enemy.tier]||PREDATOR_TIERS.common;
       const d=distance(player,enemy);
-      // A genuine pursuit leash: loud engines or an earlier sonar ping cannot
-      // make a predator follow the player across the whole trench.
-      if(d>PREDATOR_LEASH){
-        if(enemy.aggression>.15)addEvent('Predator contact lost');
+      // Both tiers give up once sufficiently far away, but apex hunters track farther.
+      if(d>tier.leash){
+        if(enemy.aggression>.15&&d<tier.leash+80)addEvent(tier.name+' contact lost');
         enemy.aggression=0;
         enemy.alertUntil=0;
         enemy.forgetUntil=clock+2.5;
       }else{
-        const detectable=Math.min(PREDATOR_DETECTION_CAP,75+player.noise*2.8+(player.lights?40:0));
-        const hearsSonar=enemy.alertUntil>clock&&d<sonarRange()+50;
+        const detectable=Math.min(tier.detectionCap,(75+player.noise*2.8+(player.lights?40:0))*tier.awareness);
+        const hearsSonar=enemy.alertUntil>clock&&d<Math.max(sonarRange()+50,tier.detectionCap);
         if(clock>=enemy.forgetUntil&&(d<detectable||hearsSonar)){
-          enemy.aggression=clamp(enemy.aggression+dt*.85,0,1);
+          enemy.aggression=clamp(enemy.aggression+dt*.85*tier.awareness,0,1);
           enemy.alertUntil=Math.max(enemy.alertUntil,clock+1.4);
         }else if(enemy.alertUntil<=clock||clock<enemy.forgetUntil){
           enemy.aggression=clamp(enemy.aggression-dt*.7,0,1);
@@ -377,12 +397,16 @@
       const tx=chase?player.x:enemy.homeX+Math.sin(clock*.33+enemy.phase)*85;
       const ty=chase?player.y:enemy.homeY+Math.cos(clock*.27+enemy.phase)*65;
       const ed=Math.hypot(tx-enemy.x,ty-enemy.y)||1;
-      const es=chase?80:21;
+      const es=chase?tier.speed:tier.patrolSpeed;
       enemy.vx=lerp(enemy.vx,(tx-enemy.x)/ed*es,1-Math.exp(-dt*2));
       enemy.vy=lerp(enemy.vy,(ty-enemy.y)/ed*es,1-Math.exp(-dt*2));
       enemy.x=clamp(enemy.x+enemy.vx*dt,leftAt(enemy.y)+34,rightAt(enemy.y)-34);
       enemy.y+=enemy.vy*dt;
-      if(chase&&distance(player,enemy)<35&&clock-enemy.lastHit>1.7){enemy.lastHit=clock;takeDamage(13,'Predator attack');player.vx+=(player.x-enemy.x)*2;player.vy+=(player.y-enemy.y)*2;}
+      if(chase&&distance(player,enemy)<(enemy.tier==='apex'?43:35)&&clock-enemy.lastHit>tier.cooldown){
+        enemy.lastHit=clock;
+        takeDamage(tier.damage,tier.name+' attack');
+        player.vx+=(player.x-enemy.x)*2;player.vy+=(player.y-enemy.y)*2;
+      }
     }
     sonarWaves=sonarWaves.filter(w=>clock-w.birth<1.2);
     camera.x=lerp(camera.x,player.x-viewport.w/2,Math.min(1,dt*3.4));
@@ -397,7 +421,7 @@
     const W=viewport.w,H=viewport.h;if(!W||!H)return;
     ctx.clearRect(0,0,W,H);
     const dep=player?depthOf(player.y):0;
-    const baseColor=dep>300?'#020b1b':dep>170?'#041426':'#092a39';
+    const baseColor=dep>1200?'#090a1a':dep>650?'#030b1b':dep>300?'#020b1b':dep>170?'#041426':'#092a39';
     ctx.fillStyle=baseColor;ctx.fillRect(0,0,W,H);
     const bg=ctx.createRadialGradient(W*.52,H*.38,10,W*.52,H*.55,Math.max(W,H)*.75);
     bg.addColorStop(0,'#10405766');bg.addColorStop(1,'#00101b00');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
@@ -506,12 +530,25 @@
     ctx.restore();
   }
   function drawEnemy(enemy){
-    const alert=enemy.aggression>.15;const a=Math.atan2(enemy.vy,enemy.vx);
+    const alert=enemy.aggression>.15,apex=enemy.tier==='apex';
+    const a=Math.atan2(enemy.vy,enemy.vx);
     ctx.save();ctx.translate(enemy.x,enemy.y);ctx.rotate(a);
-    const glow=ctx.createRadialGradient(0,0,0,0,0,43);glow.addColorStop(0,alert?'#d75b5c50':'#487a8750');glow.addColorStop(1,'#00000000');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,0,43,0,TAU);ctx.fill();
-    ctx.fillStyle='#143341';ctx.strokeStyle=alert?'#d37979':'#527d88';ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(24,0);ctx.quadraticCurveTo(2,-14,-17,-10);ctx.lineTo(-31,-19);ctx.lineTo(-27,0);ctx.lineTo(-31,19);ctx.lineTo(-17,10);ctx.quadraticCurveTo(2,14,24,0);ctx.fill();ctx.stroke();
-    ctx.fillStyle='#f88079';ctx.beginPath();ctx.arc(11,-4,2.6,0,TAU);ctx.fill();ctx.restore();
+    if(apex)ctx.scale(1.25,1.25);
+    const aura=apex?(alert?'#b249ff85':'#844bd060'):(alert?'#d75b5c50':'#487a8750');
+    const glow=ctx.createRadialGradient(0,0,0,0,0,48);
+    glow.addColorStop(0,aura);glow.addColorStop(1,'#00000000');
+    ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,0,48,0,TAU);ctx.fill();
+    ctx.fillStyle=apex?'#3e174f':'#143341';
+    ctx.strokeStyle=apex?'#e28bff':alert?'#d37979':'#527d88';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(24,0);ctx.quadraticCurveTo(2,-14,-17,-10);
+    ctx.lineTo(-31,-19);ctx.lineTo(-27,0);ctx.lineTo(-31,19);
+    ctx.lineTo(-17,10);ctx.quadraticCurveTo(2,14,24,0);ctx.fill();ctx.stroke();
+    if(apex){
+      ctx.strokeStyle='#ab6be4';ctx.beginPath();ctx.moveTo(-4,-8);ctx.lineTo(4,-19);ctx.lineTo(11,-7);
+      ctx.moveTo(-4,8);ctx.lineTo(4,19);ctx.lineTo(11,7);ctx.stroke();
+    }
+    ctx.fillStyle=apex?'#ffdbff':'#f88079';ctx.beginPath();ctx.arc(11,-4,apex?3.2:2.6,0,TAU);ctx.fill();
+    ctx.restore();
   }
   function drawLightBeam(){
     const x=player.x,y=player.y,a=player.facing;
@@ -569,7 +606,7 @@
       if(item.type==='recorder')dot(item.x,item.y,'#f4c685',5);
       else dot(item.x,item.y,'#4f9d9e',2);
     }
-    for(const enemy of scene.predators)if(distance(player,enemy)<130||enemy.alertUntil>clock)dot(enemy.x,enemy.y,'#ed7873',4);
+    for(const enemy of scene.predators)if(distance(player,enemy)<(enemy.tier==='apex'?205:130)||enemy.alertUntil>clock)dot(enemy.x,enemy.y,enemy.tier==='apex'?'#d683ff':'#ed7873',enemy.tier==='apex'?6:4);
     dot(player.x,player.y,'#b8ffe9',6);
     rctx.save();rctx.translate(cx,cy);rctx.rotate(player.facing);rctx.strokeStyle='#b7ffe8';rctx.beginPath();rctx.moveTo(14,0);rctx.lineTo(4,-6);rctx.moveTo(14,0);rctx.lineTo(4,6);rctx.stroke();rctx.restore();
     const sweep=(clock*.55)%TAU;
@@ -581,8 +618,9 @@
     $('depthStat').textContent=depth;$('ratingStat').textContent=rating;$('zoneStat').textContent=zone.name;
     $('zoneStat').style.color=zone.color;
     const enemyClose=scene.predators.some(e=>e.aggression>.15&&distance(player,e)<240);
-    const st=depth>rating?'PRESSURE ALERT':enemyClose?'PREDATOR ALERT':player.oxygen<20?'LOW OXYGEN':player.battery<15?'LOW POWER':'NOMINAL';
-    $('statusStat').textContent=st;$('statusStat').className='metric-value '+(st==='NOMINAL'?'status-safe':st==='PREDATOR ALERT'||st==='PRESSURE ALERT'?'status-danger':'status-warning');
+    const apexClose=scene.predators.some(e=>e.tier==='apex'&&e.aggression>.15&&distance(player,e)<300);
+    const st=depth>rating?'PRESSURE ALERT':apexClose?'APEX CONTACT':enemyClose?'PREDATOR ALERT':player.oxygen<20?'LOW OXYGEN':player.battery<15?'LOW POWER':'NOMINAL';
+    $('statusStat').textContent=st;$('statusStat').className='metric-value '+(st==='NOMINAL'?'status-safe':st==='PREDATOR ALERT'||st==='APEX CONTACT'||st==='PRESSURE ALERT'?'status-danger':'status-warning');
     $('signalText').textContent=st==='NOMINAL'?'VESSEL ONLINE':'VESSEL WARNING';
     const setGauge=(kind,value,max)=>{const pct=clamp(value/max*100,0,100);$(kind+'Value').textContent=Math.round(pct)+'%';$(kind+'Bar').style.width=pct+'%';};
     setGauge('hull',player.hull,maxHull());setGauge('oxygen',player.oxygen,maxOxygen());setGauge('battery',player.battery,maxBattery());setGauge('noise',player.noise,100);
@@ -590,12 +628,12 @@
     $('sonarText').textContent=player.scanCooldown>0?'SONAR CHARGING '+Math.ceil(player.scanCooldown)+'s':'SONAR READY · Q';
     $('radarStatus').textContent=player.scanCooldown>0?'COOLDOWN':'ACTIVE';
     const count=saved.secured.length,loose=player.cargo.recorders.length;
-    $('fragmentCount').textContent=count+' / 3';
-    $('fragmentIcons').innerHTML=[0,1,2].map(i=>`<span class="${saved.secured.includes(i)?'filled':player.cargo.recorders.includes(i)?'loose':''}">${saved.secured.includes(i)?'◆':player.cargo.recorders.includes(i)?'◈':'◇'}</span>`).join('');
+    $('fragmentCount').textContent=count+' / '+RECORDERS_TOTAL;
+    $('fragmentIcons').innerHTML=RECORDER_DEPTHS.map((_,i)=>`<span class="${saved.secured.includes(i)?'filled':player.cargo.recorders.includes(i)?'loose':''}">${saved.secured.includes(i)?'◆':player.cargo.recorders.includes(i)?'◈':'◇'}</span>`).join('');
     $('scrapCount').textContent=player.cargo.scrap;$('crystalCount').textContent=player.cargo.crystal;$('looseCount').textContent=loose;$('creditCount').textContent=saved.credits;
     const waiting=scene.items.filter(x=>x.type==='recorder'&&!x.collected);
-    if(waiting.length){waiting.sort((a,b)=>distance(player,a)-distance(player,b));$('targetInfo').textContent='NEAREST SIGNAL · '+Math.round(distance(player,waiting[0])/10)+' m AWAY';}
-    else $('targetInfo').textContent=loose?'RETURN TO STATION TO SECURE RECORDER'+(loose>1?'S':''):count===3?'EXPEDITION COMPLETED':'ALL SIGNALS SECURED · RETURN TO STATION';
+    if(waiting.length){waiting.sort((a,b)=>distance(player,a)-distance(player,b));$('targetInfo').textContent='NEXT SIGNAL · '+RECORDER_DEPTHS[waiting[0].index]+' m DEPTH · '+Math.round(distance(player,waiting[0])/10)+' m AWAY';}
+    else $('targetInfo').textContent=loose?'RETURN TO STATION TO SECURE RECORDER'+(loose>1?'S':''):count===RECORDERS_TOTAL?'EXPEDITION COMPLETED':'ALL SIGNALS SECURED · RETURN TO STATION';
     const lv=levelOf(saved.xp),prev=90*Math.pow(lv-1,2),next=90*Math.pow(lv,2);
     $('rankText').textContent='LV. '+lv+' · '+rankName(lv);
     $('rankFill').style.width=(clamp((saved.xp-prev)/(next-prev)*100,0,100))+'%';
@@ -634,7 +672,7 @@
   }
   function togglePause(){if(!running)return;if(!$('modalOverlay').classList.contains('hidden')){closeDialog();return;}paused=!paused;if(paused){useHeld=false;usePointerId=null;resetJoystick(true);}$('pauseBtn').textContent=paused?'▶ RESUME':'Ⅱ PAUSE';if(paused)announce('GAME PAUSED',3600);else $('notification').classList.add('hidden');}
   function briefing(){
-    const body=`<div class="briefing"><p>You pilot the <strong>NEREID MK-I</strong>, a salvage submarine. Retrieve three <strong>golden flight recorders</strong> from wrecks in the trench and dock at the surface to save them.</p><ul><li><kbd>W A S D</kbd> or <kbd>↑ ← ↓ →</kbd> moves the sub. On phones, <strong>drag the joystick</strong> in any direction. Tilt slightly for gentle thrust or to the edge for full speed. Toggle <strong>CRUISE</strong> to keep going after letting go. Turn cruise off to stop thrust.</li><li><kbd>Q</kbd> uses active sonar to reveal salvage and threats. Sonar <strong>consumes energy and attracts predators</strong>.</li><li><kbd>E</kbd> recovers nearby scrap, crystals, oxygen caches and recorders. At the station, it banks cargo and opens upgrades.</li><li><kbd>Shift</kbd> moves slowly and quietly to avoid attracting predators. On phones, toggle <strong>SILENT</strong>.</li><li><kbd>R</kbd> repairs 30 hull for two scrap. <kbd>L</kbd> toggles external lamps to conserve energy.</li><li><kbd>Esc</kbd> pauses. Always return to the surface to bank progress, refill oxygen, recharge and upgrade the ship.</li></ul><p><strong>Warning:</strong> Diving beneath your depth rating gradually damages the hull. Ship upgrades let you venture deeper. Damage or suffocation costs unbanked cargo, not your permanent progress.</p></div>`;
+    const body=`<div class="briefing"><p>You pilot the <strong>NEREID MK-I</strong>, a salvage submarine. Retrieve six <strong>golden flight recorders</strong> at approximately 75, 260, 470, 725, 1,100 and 1,500 m from wrecks in the trench and dock at the surface to save them.</p><ul><li><kbd>W A S D</kbd> or <kbd>↑ ← ↓ →</kbd> moves the sub. On phones, <strong>drag the joystick</strong> in any direction. Tilt slightly for gentle thrust or to the edge for full speed. Toggle <strong>CRUISE</strong> to keep going after letting go. Turn cruise off to stop thrust.</li><li><kbd>Q</kbd> uses active sonar to reveal salvage and threats. Sonar <strong>consumes energy and attracts predators</strong>.</li><li><kbd>E</kbd> recovers nearby scrap, crystals, oxygen caches and recorders. At the station, it banks cargo and opens upgrades.</li><li><kbd>Shift</kbd> moves slowly and quietly to avoid attracting predators. On phones, toggle <strong>SILENT</strong>.</li><li><kbd>R</kbd> repairs 30 hull for two scrap. <kbd>L</kbd> toggles external lamps to conserve energy.</li><li><kbd>Esc</kbd> pauses. Always return to the surface to bank progress, refill oxygen, recharge and upgrade the ship.</li></ul><p><strong>Warning:</strong> Diving beneath your depth rating inflicts rapidly increasing pressure damage. Your hull starts at 130 m and can be upgraded seven times by 200 m to reach 1,530 m. Common predators hunt everywhere; purple abyss stalkers spawn only below 400 m, see and hear farther, swim faster, and bite harder. Ship upgrades let you venture deeper. Damage or suffocation costs unbanked cargo, not your permanent progress.</p></div>`;
     openDialog('OPERATIONS MANUAL // NEREID','PILOT BRIEFING',body,'<div class="dialog-actions"><button id="briefDone" class="alt-btn">UNDERSTOOD</button></div>');
     $('briefDone').addEventListener('click',closeDialog);
   }
@@ -775,15 +813,16 @@
   camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
   updateUI();requestAnimationFrame(frame);
   // Tiny inspection hook for automated smoke tests.
-  window.AbyssDiagnostics={state:()=>({focusMode,running,paused,depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
+  window.AbyssDiagnostics={state:()=>({recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,paused,depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier!=='apex').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
   if(location.search.includes('testmode=1')||window.ABYSS_TEST_MODE===true){
     window.AbyssDiagnostics.fixture=({x=600,y=700,rocks=[],predators=[],items=[]}={})=>{
       player.x=x;player.y=y;player.vx=0;player.vy=0;player.facing=0;player.noise=0;
       scene.rocks=rocks.map(rock=>({...rock,vertices:rockPolygon(rock)}));
-      scene.predators=predators.map(enemy=>({...enemy,vx:0,vy:0,homeX:enemy.x,homeY:enemy.y,phase:0,aggression:enemy.aggression??0,alertUntil:enemy.alertUntil??0,forgetUntil:0,lastHit:-10}));
+      scene.predators=predators.map(enemy=>({...enemy,tier:enemy.tier||'common',vx:0,vy:0,homeX:enemy.x,homeY:enemy.y,phase:0,aggression:enemy.aggression??0,alertUntil:enemy.alertUntil??0,forgetUntil:0,lastHit:-10}));
       scene.items=items.map((i,index)=>makeItem(i.x,i.y,i.type||'scrap',{id:index}));
       return true;
     };
-    window.AbyssDiagnostics.debug=()=>({player:{...player},predators:scene.predators.map(e=>({...e})),items:scene.items.map(i=>({...i}))});
+    window.AbyssDiagnostics.debug=()=>({player:{...player},saved:{...saved,upgrades:{...saved.upgrades}},wrecks:scene.wrecks.map(w=>({...w})),predators:scene.predators.map(e=>({...e})),items:scene.items.map(i=>({...i}))});
+    window.AbyssDiagnostics.grantCredits=(value)=>{saved.credits=Math.max(0,Math.floor(value));persist();updateUI();};
   }
 })();

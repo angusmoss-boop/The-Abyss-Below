@@ -1,5 +1,5 @@
 # THE ABYSS BELOW
-### Deepwater Expedition · v0.2.2
+### Deepwater Expedition · v0.3.0
 
 A single-player submarine survival game built with vanilla HTML, CSS and JavaScript. The v0.2 update adds analogue touchscreen steering and installable fullscreen/offline Progressive Web App (PWA) support.
 
@@ -33,11 +33,11 @@ The new service worker caches core files for offline play after installation and
 
 **First publish:** create a public repo, upload root files, go to **Settings → Pages**, choose **Deploy from a branch**, `main`, `/ (root)` and Save.
 
-**Updating v0.1:** replace the three existing root game files, add `manifest.webmanifest`, `service-worker.js`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` to the same root, and commit. If using Android's GitHub web interface, enable Desktop site when GitHub hides the upload controls. You do not need to create another repository. GitHub may take a short while to refresh the site after committing. Open your published site and check the footer says **v0.2.2**.
+**Updating v0.1:** replace the three existing root game files, add `manifest.webmanifest`, `service-worker.js`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` to the same root, and commit. If using Android's GitHub web interface, enable Desktop site when GitHub hides the upload controls. You do not need to create another repository. GitHub may take a short while to refresh the site after committing. Open your published site and check the footer says **v0.3.0**.
 
 ## Mission and gameplay
 
-Locate three gold/orange flight recorders at increasing depths and **return to the surface station to deliver them**. Salvage scrap/crystals for credits, then upgrade hull, oxygen, battery, engine, sonar and stealth. Noise and sonar attract predators. Depth pressure can damage the hull. Dock to bank progress and restore your systems.
+Locate six gold/orange flight recorders at approximately 75, 260, 470, 725, 1,100 and 1,500 m and **return to the surface station to deliver them**. Salvage scrap/crystals for credits, then upgrade hull, oxygen, battery, engine, sonar and stealth. Noise and sonar attract predators. Depth pressure can damage the hull. Dock to bank progress and restore your systems.
 
 **Permanent progress:** saved credits, upgrades, XP, best depth and delivered recorders. The original localStorage key `the-abyss-below-v01` is deliberately retained to protect v0.1 saves.
 
@@ -49,7 +49,7 @@ Optional tests: `pip install playwright pillow`, `python -m playwright install c
 
 ## What comes next
 
-More creatures, salvage variety, navigation tools, and distinct depth biomes. No updates to the mission/progression rules were made in this release.
+Further navigation tools, creature variety, and richer environmental storytelling.
 
 
 ## Mobile v0.2.2: fullscreen cockpit
@@ -80,3 +80,17 @@ Pages deployment completes and clear the site's cache if necessary.
 - **Predator disengagement:** chasing predators break pursuit when you are over 345 world units from them, lose their sonar alert, and won't immediately reacquire while returning to patrol. Quiet running still helps avoid detection; staying close or pinging sonar still attracts enemies.
 - **Rocks use their actual rendered polygon outlines** with a submarine capsule hitbox, multiple small movement steps, tangential sliding, and a generated traversable corridor. Tight gaps that visually fit the vessel are more reliable. Collisions at higher speed can still damage the hull.
 - The old save key, mission objectives, app icon, installation and full-screen mode are unchanged. Update files in the existing GitHub repository; the versioned asset URLs and new PWA cache name help phones fetch the new version without reinstalling.
+
+## v0.3.0 · Into the deep
+
+- **Six recorders** instead of three, fixed at approximately 75, 260, 470, 725, 1,100 and 1,500 metres. Orange wrecks remain the mission targets; all six must be **delivered to the station** to win.
+- **Trench extended to 1,800 m**, with seven depth sectors and larger procedurally generated rock, salvage and predator fields. The continuous navigable corridor remains intact.
+- **Common DRIFTERS:** blue-grey bodies, pink/red eyes, 80-unit/s chase speed, 13 damage per bite, 345-unit pursuit leash.
+- **Rare ABYSS STALKERS:** glowing purple bodies and larger fins, 134-unit/s chase speed, better hearing/vision, 27 damage per bite, longer 505-unit pursuit leash. They spawn only beyond 400 m. Both tiers abandon pursuit after escaping their leash.
+- **Reinforced hull:** seven purchasable levels. Base rating is 130 m; each level adds 200 m to the safe depth, up to **1,530 m** at level 7. Each level also adds 28 maximum hull HP. Pressure damage outside the rating rises much more sharply, so racing to the bottom without upgrades is not a viable shortcut.
+- More crystal salvage at depth and salvage near wrecks help fund successive upgrades. Take your salvage home and return for deeper recorders. Higher-level travel and predator encounters still require caution.
+- Radar distinguishes rare predators with a purple dot, and the main dive status warns of **APEX CONTACT**.
+- Original v0.1-v0.2.2 save key remains unchanged: previously secured recorders `[0,1,2]` remain credited, and the three additional recorders are new objectives. Banked credits, XP and upgrades are preserved. Old hull upgrade levels now grant the new depth capacity.
+- Update the files from the v0.3.0 update ZIP at your existing repository root and commit. You do **not** have to reinstall the PWA. Reopen it online after GitHub Pages redeploys and verify v0.3.0 in the console footer.
+
+**Verification:** Browser regressions cover joystick + multitouch USE, existing rock physics, old-save conversion, six recorder locations, apex-only spawn depth, higher predator damage, and hull upgrades at 1,500 m. Real Samsung performance and full-campaign balancing need playtesting.
