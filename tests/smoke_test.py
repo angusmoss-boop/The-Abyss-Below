@@ -37,7 +37,7 @@ def run():
         # Verify banking/upgrade station can be entered and exited.
         desktop.keyboard.press("e")
         assert desktop.locator("#modalTitle").inner_text() == "SUBMARINE UPGRADES"
-        assert desktop.locator("[data-upgrade]").count() == 6
+        assert desktop.locator("[data-upgrade]").count() == 8
         desktop.locator("#launchAgain").click()
         assert desktop.locator("#modalOverlay").is_hidden()
 
@@ -61,7 +61,7 @@ def run():
         mobile.locator("#mobileSilent").click()
         assert "active" in (mobile.locator("#mobileSilent").get_attribute("class") or "")
         mobile.locator("#mobileLights").click()
-        assert mobile.locator("#mobileLights").inner_text() == "LIGHTS OFF"
+        assert mobile.locator("#lightsLabel").inner_text() == "LIGHTS OFF"
         mobile.locator("#mobileSonar").click()
         assert mobile.evaluate("AbyssDiagnostics.state().battery") < 100
         assert not errors, f"Mobile JS errors: {errors}"

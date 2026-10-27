@@ -30,9 +30,9 @@ def run():
                 page.goto(url)
                 page.evaluate('navigator.serviceWorker.ready')
                 page.wait_for_function('navigator.serviceWorker.controller !== null')
-                assert 'v0.6.0' in page.locator('footer').inner_text()
+                assert 'v0.7.0' in page.locator('footer').inner_text()
                 keys=page.evaluate('''async()=>{
-                    const cache=await caches.open('abyss-below-shell-v0.6.0');
+                    const cache=await caches.open('abyss-below-shell-v0.7.0');
                     return (await cache.keys()).map(r=>new URL(r.url).pathname+new URL(r.url).search);
                 }''')
                 for asset in ['game.js','styles.css','manifest.webmanifest']:
@@ -41,7 +41,7 @@ def run():
                 context.set_offline(True)
                 page.reload(wait_until='load')
                 page.wait_for_function('window.AbyssDiagnostics !== undefined')
-                assert 'v0.6.0' in page.locator('footer').inner_text()
+                assert 'v0.7.0' in page.locator('footer').inner_text()
                 page.locator('#startBtn').click()
                 state=page.evaluate('AbyssDiagnostics.state()')
                 assert state['running'] and state['credits']==777 and state['hullLevel']==4 and state['secured']==2,state
