@@ -1,0 +1,2 @@
+PASS actual v0.14 save migration: active ship/cargo/owned ammo/mine state/predators/finite loot/profile preserved; only unsafe new encounters near saved vessel are retired; no cargo duplication
+PASS current-build wildlife, fear, fish positions, reactions, hazard state and simulation time restore exactly without offline time advance or extra hazard retirement

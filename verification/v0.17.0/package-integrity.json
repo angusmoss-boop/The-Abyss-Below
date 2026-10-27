@@ -1,0 +1,22 @@
+{
+  "build_id": "0.17.0-salvage-supply-1",
+  "timestamp_utc": "2026-10-27T22:05:58.217676+00:00",
+  "runtime_assets": [
+    "index.html",
+    "styles.css",
+    "campaign-slots.js",
+    "audio.js",
+    "game.js",
+    "version-sync.js",
+    "service-worker.js",
+    "manifest.webmanifest",
+    "icon-192.png",
+    "icon-512.png",
+    "icon-maskable-512.png"
+  ],
+  "complete": "PASS",
+  "overlay": "PASS",
+  "base_archive": "the-abyss-below-v0.16.0-complete.zip",
+  "suites_passed": 23,
+  "live_offline": "BLOCKED"
+}

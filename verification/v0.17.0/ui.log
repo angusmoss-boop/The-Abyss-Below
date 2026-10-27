@@ -1,0 +1,14 @@
+Checking size 320 568
+Checking size 320 740
+Checking size 360 780
+Checking size 390 844
+Checking size 430 932
+Checking size 568 320
+Checking size 640 360
+Checking size 844 390
+Checking size 915 412
+Checking size 768 1024
+Checking size 1024 768
+Checking size 1440 900
+Checking size 1920 1080
+PASS 13 touch/desktop sizes: main menu version and hub entry, achievements scroll/close, 3-column tier-labelled systems, pinned dock controls, dual-currency pop-ups, modal focus, keyboard tablist and no horizontal overflow

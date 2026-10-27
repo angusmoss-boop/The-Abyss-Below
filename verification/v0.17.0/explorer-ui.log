@@ -1,0 +1,15 @@
+Explorer layout 320 568
+Explorer layout 390 844
+Explorer layout 430 932
+Explorer layout 568 320
+Explorer layout 640 360
+Explorer layout 844 390
+Explorer layout 915 412
+Explorer layout 768 1024
+Explorer layout 1024 768
+Explorer layout 1440 900
+Explorer layout 1920 1080
+PASS 11 new-HUD/dialog layouts, <=128px HUD, top button hit targets, low-hull warning, 14 telemetry readings, map and sound scroll/close controls
+PASS actual two-finger pinch and drag-pan on survey canvas; no underwater steering, boost or ammunition leakage
+PASS no automatic audio on launch; gesture unlock; test sonar voices; independent sliders + mute persist; pause/blur suspend and Resume resumes AudioContext
+PASS browser without Web Audio keeps menus, visible warnings and gameplay functional

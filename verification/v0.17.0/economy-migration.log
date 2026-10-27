@@ -1,0 +1,1 @@
+PASS actual v0.16 migration preserves campaign, currency, all upgrades, ammo, depletion, world, wildlife, chart, cargo and projectiles; all 3 slots get independent bounded recovery state; inactive campaigns untouched

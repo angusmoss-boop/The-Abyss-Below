@@ -1,0 +1,6 @@
+PASS eight weapon purchases through real UI, capacity/damage progression, empty installation magazines, no mine grants; full tree 22,765 CR / 464 crystals
+PASS 24 actual impacts: 2 weapons x 4 marks x 3 predator tiers; exact damage, no doubled hits, cooldown and ammunition deduction
+PASS rocks block both weapons, torpedo area damage hits multiple enemies without self-damage, railgun triggers abandoned mines
+PASS limited magazines, empty guards, cooldown, rail hold vs torpedo single press; waiting/relaunch never refill, docking does not refill; explicit paid purchases fill magazines
+PASS rounds/cooldowns/two in-flight shots restore exactly and paused; red damage pulse for impact, shield, oxygen and continuous pressure with non-strobing gaps
+PASS actual canvas red pixels pulse on damaged hull in complete darkness, then vanish without illuminating scenery
