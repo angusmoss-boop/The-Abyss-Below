@@ -1,7 +1,7 @@
 /* One verified, self-contained shell per release. No campaign data lives here. */
-const BUILD={version:'0.11.0',id:'0.11.0-adaptive-systems-1'};
+const BUILD={version:'0.12.0',id:'0.12.0-fivefold-descent-1'};
 const CACHE='abyss-below-shell-'+BUILD.id;
-const SHELL=['./','./index.html','./styles.css?v=0.11.0','./game.js?v=0.11.0','./version-sync.js?v=0.11.0','./manifest.webmanifest?v=0.11.0','./icon-192.png','./icon-512.png','./icon-maskable-512.png'];
+const SHELL=['./','./index.html','./styles.css?v=0.12.0','./game.js?v=0.12.0','./version-sync.js?v=0.12.0','./manifest.webmanifest?v=0.12.0','./icon-192.png','./icon-512.png','./icon-maskable-512.png'];
 const digest=async data=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',data)),b=>b.toString(16).padStart(2,'0')).join('');
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{

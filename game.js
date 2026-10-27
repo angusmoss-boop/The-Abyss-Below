@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const BUILD = Object.freeze({version:'0.11.0',name:'Adaptive Systems',id:'0.11.0-adaptive-systems-1'});
+  const BUILD = Object.freeze({version:'0.12.0',name:'Fivefold Descent',id:'0.12.0-fivefold-descent-1'});
   window.AbyssBuild=BUILD;
   const $ = id => document.getElementById(id);
   const canvas = $('gameCanvas');
@@ -29,40 +29,55 @@
     Object.freeze({length:620,halfAngle:.60,power:.10})
   ]);
   const MOBILE_ZOOM = .70; // World-only zoom. DOM instruments and touch targets keep their size.
-  const WORLD = Object.freeze({widthMultiplier:3,rockAttempts:1440,scrap:180,crystal:24,caches:30,
-    common:138,apex:33,reaper:15});
-  const FIELD_KEY = 'the-abyss-below-field-v1'; // Read-only legacy migration source.
-  const CAMPAIGN_KEY = 'the-abyss-below-campaign-v2';
-  const LEVEL_ID = 'calypso-trench';
-  const freshField = () => ({schema:2,seed:(Math.random()*0xffffffff)>>>0,cycle:0,
-    looted:[],health:{},loot:null,drops:[],awaitingDock:false});
+  const LEVELS = Object.freeze([
+    {id:'sunbreak-shelf',name:'SUNBREAK SHELF',tag:'01 / FIRST LIGHT',depth:300,recorders:[75,260],scrap:42,crystals:36,caches:8,rocks:190,common:15,apex:0,reaper:0,health:1,damage:1,color:'#83ddc7',description:'Sunlit approaches and a shallow seabed. Learn the return journey before the ocean closes in.'},
+    {id:'glassbone-rift',name:'GLASSBONE RIFT',tag:'02 / FRACTURED WATER',depth:600,recorders:[180,380,550],scrap:65,crystals:70,caches:12,rocks:420,common:33,apex:7,reaper:0,health:1.04,damage:1.04,color:'#99cce8',description:'Tighter rock fields and the first Abyss Stalkers. Longer journeys reward careful preparation.'},
+    {id:'drowned-gardens',name:'DROWNED GARDENS',tag:'03 / THE LAST LIGHT',depth:1000,recorders:[240,480,730,950],scrap:85,crystals:100,caches:18,rocks:760,common:60,apex:15,reaper:3,health:1.08,damage:1.08,color:'#b6adeb',description:'The light disappears. Crimson Reapers patrol below 800 metres; sonar and boost become lifelines.'},
+    {id:'midnight-cathedral',name:'MIDNIGHT CATHEDRAL',tag:'04 / BLACK WATER',depth:1400,recorders:[250,530,800,1090,1350],scrap:105,crystals:130,caches:24,rocks:1160,common:90,apex:28,reaper:8,health:1.15,damage:1.15,color:'#d5a3cb',description:'A long descent through crowded hunting grounds. Stronger shields, lamps and ordnance earn their keep.'},
+    {id:'calypso-abyss',name:'CALYPSO ABYSS',tag:'05 / FINAL TRANSMISSION',depth:1800,recorders:[300,590,880,1170,1470,1750],scrap:125,crystals:160,caches:30,rocks:1600,common:130,apex:40,reaper:16,health:1.23,damage:1.23,color:'#f0b58a',description:'The deepest seabed and the strongest hunters. Recover the final six recorders and finish the transmission.'}
+  ]);
+  const HULL_DEPTHS = Object.freeze([130,330,630,830,1030,1330,1530,1830]);
+  const CRYSTAL_PRICES = Object.freeze({hull:[2,5,10,14,18,23,30],oxygen:[2,4,6,9,13],battery:[2,4,7,10,14],engine:[3,6,10,15],flashlight:[0,3,7,12],sonar:[2,5,8,12],quiet:[2,4,7,10],minePower:[3,6,10,15],mineCapacity:[0,2,5,8],magnet:[3,5,8,12],shield:[4,7,11,16],disruptor:[4,7,11,16]});
+  const FIELD_KEY = 'the-abyss-below-field-v1'; // Legacy sources are never overwritten.
+  const LEGACY_CAMPAIGN_KEY = 'the-abyss-below-campaign-v2';
+  const CAMPAIGN_KEY = 'the-abyss-below-campaign-v3';
+  let LEVEL_ID=LEVELS[0].id,MAX_WORLD_Y=3120,RECORDER_DEPTHS=[75,260],RECORDERS_TOTAL=2,WORLD={};
+  const currentLevel=()=>LEVELS.find(l=>l.id===LEVEL_ID)||LEVELS[0];
+  const cleanCount=v=>Number.isFinite(v)&&v>=0?Math.floor(v):0;
+  const freshField = () => ({schema:3,seed:(Math.random()*0xffffffff)>>>0,cycle:0,
+    looted:[],health:{},loot:null,drops:[],secured:[],recoveries:[],recoverySerial:0,pendingCargo:null,floorReached:false,awaitingDock:false});
   let field=freshField(),campaignId='campaign-'+Date.now().toString(36)+'-'+field.seed.toString(36);
-  let campaignLevels={},storageHealthy=true,storageRecovery=false;
+  let campaignLevels={},storageHealthy=true,storageRecovery=false,migratedLegacy=false;
   const readJSON=key=>{try{return JSON.parse(localStorage.getItem(key)||'null');}catch(_){return null;}};
   function validateField(data){
-    if(!data||![1,2].includes(data.schema)||!Number.isInteger(data.seed)||data.seed<0||data.seed>0xffffffff)return null;
-    const integer=(value,fallback=0)=>Number.isInteger(value)&&value>=0?value:fallback;
-    const validNode=n=>n&&typeof n.id==='string'&&Number.isFinite(n.x)&&Number.isFinite(n.y)&&n.y>=58&&n.y<=18120&&['scrap','crystal','air'].includes(n.type);
+    if(!data||![1,2,3].includes(data.schema)||!Number.isInteger(data.seed)||data.seed<0||data.seed>0xffffffff)return null;
+    const validPoint=n=>n&&Number.isFinite(n.x)&&Number.isFinite(n.y)&&n.y>=58&&n.y<=18120;
+    const validNode=n=>validPoint(n)&&typeof n.id==='string'&&['scrap','crystal','air'].includes(n.type);
     const normalise=n=>({id:n.id,x:n.x,y:n.y,type:n.type,quantity:Number.isInteger(n.quantity)&&n.quantity>0&&n.quantity<=100?n.quantity:(n.type==='air'?1:2)});
-    return {schema:2,seed:data.seed,cycle:integer(data.cycle),
+    const cargo=n=>validPoint(n)?{x:n.x,y:n.y,scrap:cleanCount(n.scrap),crystal:cleanCount(n.crystal)}:null;
+    const loot=Array.isArray(data.loot)&&data.loot.length>0&&data.loot.length<=3000&&data.loot.every(validNode)&&new Set(data.loot.map(n=>n.id)).size===data.loot.length?data.loot.map(normalise):null;
+    const recoveries=Array.isArray(data.recoveries)?data.recoveries.filter(n=>cargo(n)&&typeof n.id==='string'&&/^recovery-/.test(n.id)).map(n=>({...cargo(n),id:n.id})).filter(n=>n.scrap||n.crystal):[];
+    return {schema:3,seed:data.seed,cycle:cleanCount(data.cycle),
       looted:Array.isArray(data.looted)?[...new Set(data.looted.filter(x=>typeof x==='string'&&/^loot-\d+$/.test(x)))]:[],
-      health:Object.fromEntries(Object.entries(data.health||{}).filter(([k,v])=>/^enemy-\d+$/.test(k)&&Number.isFinite(v)&&v>=0)),
-      loot:Array.isArray(data.loot)&&data.loot.length===234&&data.loot.every(validNode)&&new Set(data.loot.map(n=>n.id)).size===234?data.loot.map(normalise):null,
+      health:Object.fromEntries(Object.entries(data.health||{}).filter(([k,v])=>/^enemy-\d+$/.test(k)&&Number.isFinite(v)&&v>=0)),loot,
       drops:Array.isArray(data.drops)?data.drops.filter(n=>validNode(n)&&n.type==='scrap'&&/^drop-/.test(n.id)).map(normalise):[],
-      awaitingDock:data.awaitingDock===true};
+      secured:Array.isArray(data.secured)?[...new Set(data.secured.filter(n=>Number.isInteger(n)&&n>=0&&n<6))]:[],
+      recorderDepths:Array.isArray(data.recorderDepths)&&data.recorderDepths.length===6&&data.recorderDepths.every(n=>Number.isFinite(n)&&n>0&&n<1800)?[...data.recorderDepths]:null,
+      legacyLayout:data.legacyLayout===true,crystalTopUp:data.crystalTopUp===true,recoveries,recoverySerial:cleanCount(data.recoverySerial),pendingCargo:cargo(data.pendingCargo),floorReached:data.floorReached===true,awaitingDock:data.awaitingDock===true};
   }
-  field=validateField(readJSON(FIELD_KEY))||field;
-  let dockVisitActive=!field.awaitingDock;
+  function addRecovery(f,cargo){
+    if(!cargo||!(cargo.scrap||cargo.crystal))return;
+    f.recoverySerial++;
+    f.recoveries.push({id:'recovery-'+f.seed+'-'+f.recoverySerial,x:cargo.x,y:Math.min(cargo.y,120+Math.max(20,HULL_DEPTHS[saved.upgrades.hull]-12)*10),scrap:cleanCount(cargo.scrap),crystal:cleanCount(cargo.crystal)});
+  }
+  let dockVisitActive=true;
   // Reuse one mask and one small, pre-baked beam texture. No per-frame pixel loops.
   const darknessCanvas = document.createElement('canvas');
   const darknessCtx = darknessCanvas.getContext('2d');
   let beamTexture = null, lastAmbient = -1;
   const beamTextures = new Map();
   const SAVE_KEY = 'the-abyss-below-v01'; // Read-only legacy banked profile migration source.
-  // World coordinates are scaled at 10 units per metre; the new trench extends to 1,800 m.
-  const MAX_WORLD_Y = 18120;
-  const RECORDER_DEPTHS = [75,260,470,725,1100,1500];
-  const RECORDERS_TOTAL = RECORDER_DEPTHS.length;
+  // Coordinates remain 10 world units per metre. Every level has a physical floor.
   const ZONES = [
     {start:0, name:'THE SHALLOWS', code:'01', color:'#5ca1b2'},
     {start:180, name:'MIDNIGHT RIFT', code:'02', color:'#639dbf'},
@@ -78,7 +93,7 @@
     reaper:{name:'CRIMSON REAPER',level:3,health:400,speed:normalSpeedAt(THRUST.maxMark),patrolSpeed:46,detectionCap:440,leash:610,awareness:1.85,damage:42,cooldown:1.15,reach:48}
   };
   const UPGRADES = [
-    {id:'hull', name:'REINFORCED HULL', desc:'Adds 28 max hull HP and 200 m to safe depth (maximum 1,530 m).', base:80, limit:7},
+    {id:'hull', name:'REINFORCED HULL', desc:'Adds 28 max hull HP per mark. Pressure ratings: 330 / 630 / 830 / 1,030 / 1,330 / 1,530 / 1,830 m. The last mark reaches the final seabed safely.', prices:[80,150,297,420,570,760,1000], limit:7},
     {id:'oxygen', name:'AIR RECYCLER', desc:'Expand oxygen capacity and slow oxygen consumption.', base:70, limit:5},
     {id:'battery', name:'DEEP-CELL BATTERY', desc:'More energy, cheaper boost bursts and 10% faster boost recharge per level.', base:65, limit:5},
     {id:'engine', name:'MAGNETIC THRUSTERS', desc:'Mk I unlocks boost. Every mark improves normal speed, boost speed and boost endurance: 3 / 4 / 5 / 6 seconds.', base:75, limit:4},
@@ -91,18 +106,10 @@
     {id:'shield', name:'KINETIC SHIELD', desc:'An automatic energy barrier absorbs predator bites and rock impacts before they reach the hull. It recharges from your battery after eight seconds without an impact, unless you are boosting.', prices:[100,180,280,420], limit:4},
     {id:'disruptor', name:'SONIC DISRUPTOR', desc:'Your existing SONAR pulse also briefly stuns nearby predators as its wave reaches them. Stronger marks extend the stun and its effective radius. No additional action button needed.', prices:[90,160,250,380], limit:4}
   ];
-  const defaults = () => ({credits:0,xp:0,bestDepth:0,mineAmmo:0,secured:[],upgrades:{hull:0,oxygen:0,battery:0,engine:0,sonar:0,quiet:0,minePower:0,mineCapacity:1,flashlight:1,magnet:0,shield:0,disruptor:0}});
-  let saved = defaults();
-  try {
-    const data = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
-    if (data && typeof data === 'object') {
-      saved = {...defaults(),...data,upgrades:{...defaults().upgrades,...data.upgrades}};
-      saved.secured = Array.isArray(saved.secured) ? saved.secured.filter(x => Number.isInteger(x) && x>=0 && x<RECORDERS_TOTAL) : [];
-    }
-  } catch (_) { /* local storage is optional */ }
-  // A campaign is one atomic record: profile, purchased rounds, level seed,
-  // permanent placements, depletion and predator drops cannot split across saves.
-  const validCampaign=data=>Boolean(data?.schema===2&&data.profile&&typeof data.profile==='object'&&validateField(data.levels?.[LEVEL_ID])?.loot);
+  const defaults = () => ({credits:0,crystals:0,xp:0,bestDepth:0,mineAmmo:0,secured:[],achievements:{},stats:{},upgrades:{hull:0,oxygen:0,battery:0,engine:0,sonar:0,quiet:0,minePower:0,mineCapacity:1,flashlight:1,magnet:0,shield:0,disruptor:0}});
+  let saved=defaults();
+  const validCampaign=data=>Boolean(data?.schema===3&&data.profile&&typeof data.profile==='object'&&LEVELS.some(l=>validateField(data.levels?.[l.id])?.loot));
+  const validLegacy=data=>Boolean(data?.schema===2&&data.profile&&validateField(data.levels?.['calypso-trench'])?.loot);
   let campaign=readJSON(CAMPAIGN_KEY);
   if(!validCampaign(campaign)){
     const backup=readJSON(CAMPAIGN_KEY+'.backup');
@@ -110,22 +117,53 @@
   }
   if(validCampaign(campaign)){
     saved={...defaults(),...campaign.profile,upgrades:{...defaults().upgrades,...campaign.profile.upgrades}};
-    field=validateField(campaign.levels[LEVEL_ID]);campaignLevels=campaign.levels;
+    for(const l of LEVELS){const f=validateField(campaign.levels[l.id]);if(f)campaignLevels[l.id]=f;}
     campaignId=typeof campaign.id==='string'?campaign.id:campaignId;
+    LEVEL_ID=LEVELS.some(l=>l.id===campaign.selectedLevel)?campaign.selectedLevel:LEVELS[0].id;
+  }else{
+    let legacy=readJSON(LEGACY_CAMPAIGN_KEY);
+    if(!validLegacy(legacy))legacy=readJSON(LEGACY_CAMPAIGN_KEY+'.backup');
+    const oldProfile=validLegacy(legacy)?legacy.profile:readJSON(SAVE_KEY);
+    if(oldProfile&&typeof oldProfile==='object'){
+      saved={...defaults(),...oldProfile,crystals:0,achievements:{},stats:{},upgrades:{...defaults().upgrades,...oldProfile.upgrades}};
+      const oldField=validateField(validLegacy(legacy)?legacy.levels['calypso-trench']:readJSON(FIELD_KEY));
+      const imported=oldField||freshField();
+      imported.legacyLayout=true;imported.recorderDepths=[75,260,470,725,1100,1500];
+      imported.secured=Array.isArray(oldProfile.secured)?[...new Set(oldProfile.secured.filter(i=>Number.isInteger(i)&&i>=0&&i<6))]:[];
+      campaignLevels[LEVELS[4].id]=imported;migratedLegacy=true;
+      if(validLegacy(legacy)&&typeof legacy.id==='string')campaignId=legacy.id;
+    }
   }
   for(const u of UPGRADES){
     const fallback=defaults().upgrades[u.id],mark=saved.upgrades[u.id];
     saved.upgrades[u.id]=Number.isInteger(mark)&&mark>=fallback&&mark<=u.limit?mark:fallback;
   }
-  for(const key of ['credits','xp','bestDepth','mineAmmo']){
-    const value=saved[key];saved[key]=Number.isFinite(value)&&value>=0?Math.floor(value):0;
-  }
+  for(const key of ['credits','crystals','xp','bestDepth','mineAmmo'])saved[key]=cleanCount(saved[key]);
+  saved.stats=saved.stats&&typeof saved.stats==='object'?Object.fromEntries(Object.entries(saved.stats).filter(([k,v])=>/^[a-zA-Z]+$/.test(k)&&Number.isFinite(v)&&v>=0)):{};
+  saved.achievements=saved.achievements&&typeof saved.achievements==='object'?Object.fromEntries(Object.entries(saved.achievements).filter(([k,v])=>typeof v==='string'&&/^\d{4}-/.test(v))):{};
   saved.mineAmmo=saved.upgrades.minePower?Math.min(saved.mineAmmo,MINES.capacity[saved.upgrades.mineCapacity]):0;
-  saved.secured=Array.isArray(saved.secured)?[...new Set(saved.secured.filter(x=>Number.isInteger(x)&&x>=0&&x<RECORDERS_TOTAL))]:[];
-  dockVisitActive=!field.awaitingDock;
+  function levelComplete(id){const l=LEVELS.find(x=>x.id===id);return Boolean(l&&campaignLevels[id]?.secured.length===l.recorders.length);}
+  function levelUnlocked(index){return index===0||LEVELS.slice(0,index).every(l=>levelComplete(l.id));}
+  if(!levelUnlocked(LEVELS.findIndex(l=>l.id===LEVEL_ID)))LEVEL_ID=LEVELS[0].id;
+  for(const f of Object.values(campaignLevels)){
+    // Crash/reload cargo is converted once, atomically, into a persistent recovery pod.
+    if(f.pendingCargo){addRecovery(f,f.pendingCargo);f.pendingCargo=null;}
+  }
+  field=campaignLevels[LEVEL_ID]||freshField();campaignLevels[LEVEL_ID]=field;
+  function applyLevelGeometry(){
+    const l=currentLevel();MAX_WORLD_Y=120+l.depth*10;
+    RECORDER_DEPTHS=field.recorderDepths&&l.id===LEVELS[4].id?[...field.recorderDepths]:[...l.recorders];
+    RECORDERS_TOTAL=RECORDER_DEPTHS.length;
+    field.secured=field.secured.filter(i=>i<RECORDERS_TOTAL);saved.secured=field.secured;
+    WORLD={widthMultiplier:3,rockAttempts:field.legacyLayout?1440:l.rocks,scrap:l.scrap,crystal:l.crystals/2,caches:l.caches,common:l.common,apex:l.apex,reaper:l.reaper};
+    dockVisitActive=!field.awaitingDock;
+  }
+  applyLevelGeometry();
   function persist(){
+    field.secured=saved.secured;
+    if(player&&running){field.pendingCargo=player.cargo.scrap||player.cargo.crystal?{x:player.x,y:player.y,scrap:player.cargo.scrap,crystal:player.cargo.crystal}:null;}
     campaignLevels[LEVEL_ID]=field;
-    const snapshot=JSON.stringify({schema:2,id:campaignId,selectedLevel:LEVEL_ID,profile:saved,levels:campaignLevels});
+    const snapshot=JSON.stringify({schema:3,id:campaignId,selectedLevel:LEVEL_ID,profile:saved,levels:campaignLevels});
     try{
       const previous=localStorage.getItem(CAMPAIGN_KEY);
       if(previous&&validCampaign(readJSON(CAMPAIGN_KEY)))localStorage.setItem(CAMPAIGN_KEY+'.backup',previous);
@@ -185,7 +223,7 @@
   const maxHull = () => 100 + saved.upgrades.hull*28;
   const maxOxygen = () => 100 + saved.upgrades.oxygen*30;
   const maxBattery = () => 100 + saved.upgrades.battery*30;
-  const safeDepth = () => 130 + saved.upgrades.hull*200;
+  const safeDepth = () => HULL_DEPTHS[saved.upgrades.hull];
   const sonarRange = () => 230 + saved.upgrades.sonar*55;
   const sonarCost = () => Math.max(4,12-saved.upgrades.sonar*2);
   const sonarCooldown = () => SONAR.cooldown-saved.upgrades.sonar*.35;
@@ -203,9 +241,10 @@
   const mineCapacity = () => MINES.capacity[saved.upgrades.mineCapacity];
   const mineDamage = () => MINES.damage[saved.upgrades.minePower];
   const upgradeCost = (upgrade,level) => upgrade.prices?.[level]??Math.floor(upgrade.base*Math.pow(1.55,level));
+  const crystalCost = (upgrade,level) => CRYSTAL_PRICES[upgrade.id][level]||0;
   const predatorAlive = enemy => !enemy.dead && enemy.health>0;
   function createPredator(data){
-    const tier=PREDATOR_TIERS[data.tier]?data.tier:'common',maxHealth=PREDATOR_TIERS[tier].health;
+    const tier=PREDATOR_TIERS[data.tier]?data.tier:'common',maxHealth=Math.round(PREDATOR_TIERS[tier].health*currentLevel().health);
     return {...data,tier,maxHealth,health:clamp(data.health??maxHealth,0,maxHealth),dead:false};
   }
   const primaryPointer = window.matchMedia('(pointer: coarse)');
@@ -232,7 +271,7 @@
   let toastUntil=0, eventLines=[], sonarWaves=[], sonarTerrainEchoes=[];
   let pointerSilent = false, victoryShown = false;
   let useHeld = false, useHoldTimer = 0, usePointerId = null;
-  let idCounter = 0;
+  let idCounter = 0,journalTimer=0;
   function makeItem(x,y,type,extra={}) {const id=idCounter++;return {id,animationSeed:id,x,y,type,collected:false,revealUntil:0,...extra};}
   function rockPolygon(rock) {
     const verts=[],cos=Math.cos(rock.rot),sin=Math.sin(rock.rot);
@@ -278,6 +317,8 @@
             moved=true;
           }
         }
+        const floorOverlap=sy+SHIP_RADIUS-MAX_WORLD_Y;
+        if(floorOverlap>0){player.y-=floorOverlap+.02;if(player.vy>0){impactSpeed=Math.max(impactSpeed,player.vy);player.vy=0;}moved=true;}
         for(const rock of scene.rocks){
           sx=player.x+offset*cos;sy=player.y+offset*sin;
           if(Math.abs(sx-rock.x)>rock.radius+SHIP_RADIUS+4||Math.abs(sy-rock.y)>rock.radius+SHIP_RADIUS+4)continue;
@@ -302,7 +343,7 @@
           moved=true;
         }
       }
-      player.y=clamp(player.y,58,MAX_WORLD_Y);
+      player.y=clamp(player.y,58,MAX_WORLD_Y-SHIP_RADIUS-Math.abs(sin)*15);
       if(!moved)break;
     }
     return impactSpeed;
@@ -326,30 +367,49 @@
       if(!saved.secured.includes(w.index))scene.items.push(makeItem(w.x,w.y,'recorder',{id:'recorder-'+w.index,index:w.index}));
     }
     if(!field.loot){
-      // Freeze the existing v0.9 population at migration, including its cycle.
-      // Quantity changes do not consume RNG, so existing IDs/positions survive.
-      const r=randGen((field.seed^Math.imul(field.cycle+1,2654435761))>>>0);
-      field.loot=[];
+      const r=randGen((field.seed^2654435761)>>>0);field.loot=[];
       const add=(point,type)=>field.loot.push({id:'loot-'+field.loot.length,...point,type,quantity:type==='air'?1:2});
-      for(let i=0;i<8;i++)add(populationPoint(r,410+i*115,{lane:1}),'scrap');
+      // Starter deposits stay reachable with the unmodified 130 m hull.
+      for(let i=0;i<8;i++)add(populationPoint(r,420+i*95,{lane:1}),'scrap');
       for(const w of scene.wrecks){add({x:w.x-65,y:w.y+38},'scrap');add({x:w.x+65,y:w.y-38},'scrap');}
-      for(let i=0;i<WORLD.scrap-20;i++)add(populationPoint(r,400+(i+r())/(WORLD.scrap-20)*(MAX_WORLD_Y-610)),'scrap');
-      for(let i=0;i<WORLD.crystal;i++)add(populationPoint(r,1920+(i+r())/WORLD.crystal*(MAX_WORLD_Y-2140)),'crystal');
-      for(let i=0;i<WORLD.caches;i++)add(populationPoint(r,600+(i+r())/WORLD.caches*(MAX_WORLD_Y-820)),'air');
+      const rest=WORLD.scrap-8-scene.wrecks.length*2;
+      for(let i=0;i<rest;i++)add(populationPoint(r,440+(i+r())/rest*(MAX_WORLD_Y-620)),'scrap');
+      for(let i=0;i<6;i++)add(populationPoint(r,500+i*120,{lane:1}),'crystal');
+      for(let i=0;i<WORLD.crystal-6;i++)add(populationPoint(r,800+(i+r())/(WORLD.crystal-6)*(MAX_WORLD_Y-980)),'crystal');
+      for(let i=0;i<WORLD.caches;i++)add(populationPoint(r,700+(i+r())/WORLD.caches*(MAX_WORLD_Y-880)),'air');
+    }
+    if(field.legacyLayout&&!field.crystalTopUp){
+      // Existing deposits, IDs and depletion survive. Add only the missing final-level stock.
+      const amount=Math.max(0,currentLevel().crystals-field.loot.filter(n=>n.type==='crystal').reduce((a,n)=>a+n.quantity,0));
+      const r=randGen(field.seed^919191),count=Math.ceil(amount/2);
+      let nextId=1+Math.max(-1,...field.loot.map(n=>Number(n.id.slice(5))||0));
+      for(let i=0;i<count;i++)field.loot.push({id:'loot-'+nextId++,...populationPoint(r,700+(i+r())/count*(MAX_WORLD_Y-900)),type:'crystal',quantity:Math.min(2,amount-i*2)});
+      field.crystalTopUp=true;
     }
     for(const node of field.loot)scene.items.push(makeItem(node.x,node.y,node.type,{...node,collected:looted.has(node.id)}));
     for(const node of field.drops)scene.items.push(makeItem(node.x,node.y,'scrap',{...node,predatorDrop:true}));
+    for(const node of field.recoveries){
+      // Recoveries cannot be trapped inside collision outlines after an emergency.
+      node.y=clamp(node.y,300,MAX_WORLD_Y-80);
+      if(!minePositionClear(node.x,node.y)){const point=populationPoint(randGen(field.seed+field.recoverySerial),node.y,{lane:1});node.x=point.x;}
+      scene.items.push(makeItem(node.x,node.y,'recovery',{...node,type:'recovery'}));
+    }
     const r=randGen((field.seed^Math.imul(field.cycle+1,2246822519))>>>0);
     const addPredator=(y,tier,lane)=>{
       const point=populationPoint(r,y,{lane}),id='enemy-'+scene.predators.length;
-      const health=field.health[id]??PREDATOR_TIERS[tier].health;
+      const health=field.health[id]??Math.round(PREDATOR_TIERS[tier].health*currentLevel().health);
       const enemy=createPredator({id,tier,...point,homeX:point.x,homeY:y,vx:0,vy:0,phase:r()*TAU,aggression:0,lastHit:-10,alertUntil:0,forgetUntil:0,revealUntil:0,health});
       enemy.dead=enemy.health<=0;scene.predators.push(enemy);
     };
-    for(let lane=0;lane<3;lane++){
-      for(let i=0;i<46;i++)addPredator(510+i*370+r()*110,'common',lane);
-      for(let i=0;i<11;i++)addPredator(4490+i*1190+r()*220,'apex',lane);
-      for(let i=0;i<5;i++)addPredator(8220+i*2090+r()*400,'reaper',lane);
+    if(field.legacyLayout){
+      // Preserve legacy predator IDs and damage/deaths until the next real docking cycle.
+      for(let lane=0;lane<3;lane++){
+        for(let i=0;i<46;i++)addPredator(510+i*370+r()*110,'common',lane);
+        for(let i=0;i<11;i++)addPredator(4490+i*1190+r()*220,'apex',lane);
+        for(let i=0;i<5;i++)addPredator(8220+i*2090+r()*400,'reaper',lane);
+      }
+    }else for(const [tier,count,minY] of [['common',WORLD.common,800],['apex',WORLD.apex,4250],['reaper',WORLD.reaper,8300]]){
+      for(let i=0;i<count;i++)addPredator(minY+(i+r())/count*(MAX_WORLD_Y-120-minY),tier,i%3);
     }
     scene.predators=scene.predators.filter(predatorAlive);
   }
@@ -369,11 +429,11 @@
       const rock={x,y,radius,rot:r()*TAU,seed:r(),spikes:6+Math.floor(r()*4)};
       rock.vertices=rockPolygon(rock);scene.rocks.push(rock);
     }
-    for(let i=0;i<207;i++){
+    for(let i=0;i<Math.ceil(currentLevel().depth*.115);i++){
       const y=150+r()*(MAX_WORLD_Y-270);
       scene.vents.push({x:lerp(leftAt(y)+30,rightAt(y)-30,r()),y,phase:r()*TAU});
     }
-    for(let i=0;i<2370;i++){
+    for(let i=0;i<Math.ceil(currentLevel().depth*1.32);i++){
       const y=r()*MAX_WORLD_Y;
       scene.dust.push({x:lerp(leftAt(y)-120,rightAt(y)+120,r()),y,phase:r()*TAU,size:.5+r()*1.7});
     }
@@ -389,11 +449,11 @@
   function newDive() {
     // Relaunches restore the depleted population. Only physical docking resets it.
     createWorld();dockVisitActive=!field.awaitingDock;
-    player={x:600,y:160,vx:0,vy:0,facing:-Math.PI/2,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,quiet:false,damageCooldown:0,scanCooldown:0,boost:boostCapacity(),boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,cargo:{scrap:0,crystal:0,recorders:[]},lastRepair:-100,mineAmmo:0,mineCooldown:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null};
+    player={x:600,y:160,vx:0,vy:0,facing:-Math.PI/2,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,quiet:false,damageCooldown:0,scanCooldown:0,boost:boostCapacity(),boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,cargo:{scrap:0,crystal:0,recorders:[]},lastRepair:-100,mineAmmo:0,mineCooldown:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,trip:{deepest:0,hullDamage:0}};
     resupplyMines();
     sonarWaves=[];sonarTerrainEchoes=[];clock=0;lastZone='';eventLines=[];useHoldTimer=0;victoryShown=saved.secured.length===RECORDERS_TOTAL;pointerSilent=false;resetPilotInput();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
     addEvent('Dive systems initialised.');
-    addEvent('Six recorders lost as deep as 1,500 m.');
+    addEvent(currentLevel().name+' · '+RECORDERS_TOTAL+' recorders · '+currentLevel().depth.toLocaleString('en-GB')+' m seabed.');
     running=true;paused=false;showingDock=false;
     $('menuOverlay').classList.add('hidden');$('modalOverlay').classList.add('hidden');$('pauseOverlay').classList.add('hidden');
     canvas.focus({preventScroll:true});syncPauseButtons();
@@ -441,13 +501,15 @@
     }
     item.collected=true;
     const quantity=item.quantity||1;
+    if(distance(player,item)>=60&&['scrap','crystal'].includes(item.type))addStat('magnetPickups',1);
     if(item.predatorDrop){field.drops=field.drops.filter(n=>n.id!==item.id);}
-    else if(item.type!=='recorder'&&typeof item.id==='string'&&!field.looted.includes(item.id))field.looted.push(item.id);
-    if(item.type==='scrap') {player.cargo.scrap+=quantity;addEvent('Scrap recovered (+'+quantity+')');announce('SALVAGE +'+quantity+' SCRAP',1.8);}
+    else if(!['recorder','recovery'].includes(item.type)&&typeof item.id==='string'&&!field.looted.includes(item.id))field.looted.push(item.id);
+    if(item.type==='recovery'){field.recoveries=field.recoveries.filter(n=>n.id!==item.id);player.cargo.scrap+=item.scrap||0;player.cargo.crystal+=item.crystal||0;announce('RECOVERY POD SECURED · RETURN TO HUB',3);addEvent('Recovered '+(item.scrap||0)+' scrap + '+(item.crystal||0)+' crystals');}
+    else if(item.type==='scrap') {player.cargo.scrap+=quantity;addEvent('Scrap recovered (+'+quantity+')');announce('SALVAGE +'+quantity+' SCRAP',1.8);}
     else if(item.type==='crystal') {player.cargo.crystal+=quantity;addEvent('Abyss crystals recovered (+'+quantity+')');announce('RARE CRYSTALS +'+quantity,2);}
     else if(item.type==='air') {player.oxygen=Math.min(maxOxygen(),player.oxygen+35);player.battery=Math.min(maxBattery(),player.battery+12);addEvent('Emergency supply cache');announce('OXYGEN +35 · ENERGY +12',2);}
     else if(item.type==='recorder') {player.cargo.recorders.push(item.index);addEvent('ENCRYPTED RECORDER FOUND');announce('FLIGHT RECORDER RECOVERED · RETURN TO STATION',4);}
-    persist();updateUI();
+    checkAchievements();persist();updateUI();
   }
   function scan() {
     if(!running||paused)return;
@@ -470,11 +532,14 @@
       if(y<120)continue;
       for(const side of [-1,1])add('wall',{x:side<0?leftAt(y):rightAt(y),y,side});
     }
+    if(MAX_WORLD_Y>=camera.y-40&&MAX_WORLD_Y<=camera.y+viewport.h+40){
+      for(let x=Math.max(leftAt(MAX_WORLD_Y),camera.x-30);x<=Math.min(rightAt(MAX_WORLD_Y),camera.x+viewport.w+30);x+=24)add('floor',{x,y:MAX_WORLD_Y});
+    }
     const duration=range/SONAR.waveSpeed;
     const disruption=disruptorReady()?saved.upgrades.disruptor:0;
     player.battery-=sonarCost()+(disruption?DISRUPTOR.power[disruption]:0);player.scanCooldown=Math.max(sonarCooldown(),duration+.4);
     player.scanDuration=player.scanCooldown; // UI ring uses the actual screen-sized scan duration.
-    player.noise=Math.min(100,player.noise+27);
+    player.noise=Math.min(100,player.noise+27);addStat('sonarPings',1);checkAchievements();persist();
     sonarWaves.push({...origin,disruption,birth:clock,radius:range,front:0,duration,echoSeconds:sonarEchoSeconds(),contacts});
     addEvent(disruption?'Disruptor pulse · nearby contacts stunned on arrival':saved.upgrades.disruptor?'Standard scan · insufficient power for disruption':'Sonar sweeping · contacts appear on wave arrival');
     updateUI();
@@ -499,7 +564,7 @@
               object.vx=0;object.vy=0;
             }
           }
-          if(contact.kind==='wall')sonarTerrainEchoes.push(object);
+          if(contact.kind==='wall'||contact.kind==='floor'){object.echoKind=contact.kind;sonarTerrainEchoes.push(object);}
         }
         contact.previousDistance=d;
       }
@@ -511,7 +576,7 @@
     player.mineAmmo=saved.mineAmmo;player.mineCooldown=0;
   }
   function minePositionClear(x,y){
-    if(y<58||y>MAX_WORLD_Y||x<leftAt(y)+MINES.radius+2||x>rightAt(y)-MINES.radius-2)return false;
+    if(y<58||y+MINES.radius>MAX_WORLD_Y||x<leftAt(y)+MINES.radius+2||x>rightAt(y)-MINES.radius-2)return false;
     for(const rock of scene.rocks){
       if(Math.hypot(x-rock.x,y-rock.y)>rock.radius+MINES.radius+2)continue;
       if(insidePolygon(x,y,rock.vertices))return false;
@@ -559,7 +624,7 @@
     enemy.health=Math.max(0,enemy.health-amount);enemy.lastDamaged=clock;
     if(typeof enemy.id==='string')field.health[enemy.id]=enemy.health;
     if(enemy.health===0){
-      enemy.dead=true;enemy.aggression=0;enemy.alertUntil=0;player.kills++;
+      enemy.dead=true;enemy.aggression=0;enemy.alertUntil=0;player.kills++;addStat('kills',1);if(enemy.tier==='reaper')addStat('reaperKills',1);checkAchievements();
       const quantity=PREDATOR_SALVAGE[enemy.tier]||2;
       const id='drop-'+field.cycle+'-'+(enemy.id??('fixture-'+idCounter++));
       if(!field.drops.some(n=>n.id===id)){
@@ -604,23 +669,134 @@
     if(player.cargo.scrap<2) {announce('REPAIR REQUIRES 2 SCRAP',1.6);return;}
     if(clock-player.lastRepair<4) {announce('REPAIR TOOL COOLING',1);return;}
     player.cargo.scrap-=2;player.lastRepair=clock;player.hull=Math.min(maxHull(),player.hull+30);player.noise=Math.min(100,player.noise+10);
-    announce('FIELD REPAIR COMPLETE · HULL +30',2);addEvent('Used 2 scrap for repairs');updateUI();
+    announce('FIELD REPAIR COMPLETE · HULL +30',2);addEvent('Used 2 scrap for repairs');persist();updateUI();
   }
   function toggleLights(){if(!running||paused)return;player.lights=!player.lights;addEvent('External lamps '+(player.lights?'activated':'disabled'));updateUI();}
+  const ACHIEVEMENTS = Object.freeze([
+    {id:'first-signal',name:'First Transmission',description:'Bank your first flight recorder.',target:1,kind:'recorders',icon:'01'},
+    {id:'shelf',name:'Shelf Graduate',description:'Secure both Sunbreak Shelf recorders.',target:1,kind:'level',level:0,icon:'02'},
+    {id:'rift',name:'Rift Runner',description:'Secure all three Glassbone Rift recorders.',target:1,kind:'level',level:1,icon:'03'},
+    {id:'gardens',name:'Garden Keeper',description:'Secure all four Drowned Gardens recorders.',target:1,kind:'level',level:2,icon:'04'},
+    {id:'cathedral',name:'Midnight Courier',description:'Secure all five Midnight Cathedral recorders.',target:1,kind:'level',level:3,icon:'05'},
+    {id:'transmission',name:'The Signal Returns',description:'Complete all five levels and secure all 20 recorders.',target:20,kind:'recorders',icon:'06'},
+    {id:'pressure',name:'Pressure Tested',description:'Reach a depth of 1,000 metres.',target:1000,kind:'depth',icon:'07'},
+    {id:'bottom',name:'Rock Bottom',description:'Visit the seabed in all five levels.',target:5,kind:'floors',icon:'08'},
+    {id:'salvage',name:'Salvage Professional',description:'Deliver 200 scrap units to the hub across any number of dives.',target:200,kind:'stat',stat:'bankedScrap',icon:'09'},
+    {id:'crystals',name:'Crystal Archivist',description:'Deliver 100 crystals to the hub across any number of dives.',target:100,kind:'stat',stat:'bankedCrystals',icon:'10'},
+    {id:'sweep',name:'Clean Sweep',description:'Collect every fixed scrap and crystal deposit in any one level.',target:1,kind:'sweeps',icon:'11'},
+    {id:'survey',name:'Full Survey',description:'Collect every fixed scrap and crystal deposit in all five levels.',target:5,kind:'sweeps',icon:'12'},
+    {id:'first-blood',name:'First Blood',description:'Destroy your first predator.',target:1,kind:'stat',stat:'kills',icon:'13'},
+    {id:'reapers',name:'Apex Eraser',description:'Destroy 10 Crimson Reapers across repeated dives.',target:10,kind:'stat',stat:'reaperKills',icon:'14'},
+    {id:'demolition',name:'Demolition Crew',description:'Destroy 50 predators across the campaign.',target:50,kind:'stat',stat:'kills',icon:'15'},
+    {id:'echoes',name:'Echo Cartographer',description:'Send 50 successful sonar pulses.',target:50,kind:'stat',stat:'sonarPings',icon:'16'},
+    {id:'attraction',name:'Magnetic Attraction',description:'Make 50 remote resource pickups with the Salvage Magnet.',target:50,kind:'stat',stat:'magnetPickups',icon:'17'},
+    {id:'shield',name:'Shield Specialist',description:'Absorb 500 damage with the Kinetic Shield.',target:500,kind:'stat',stat:'shieldAbsorbed',icon:'18'},
+    {id:'getaway',name:'Clean Getaway',description:'Return with cargo from at least 200 m without taking hull damage during that trip.',target:1,kind:'stat',stat:'cleanGetaways',icon:'19'},
+    {id:'systems',name:'All Systems Go',description:'Fully upgrade all 12 ship systems.',target:12,kind:'systems',icon:'20'}
+  ]);
+  const addStat=(key,amount)=>{saved.stats[key]=(saved.stats[key]||0)+Math.max(0,amount);};
+  const totalRecorders=()=>LEVELS.reduce((n,l)=>n+(campaignLevels[l.id]?.secured.length||0),0);
+  function resourceProgress(id){
+    const l=LEVELS.find(x=>x.id===id),f=campaignLevels[id],nodes=f?.loot?.filter(n=>['scrap','crystal'].includes(n.type));
+    if(!nodes)return {scrapTotal:l.scrap*2,scrapRemaining:l.scrap*2,crystalTotal:l.crystals,crystalRemaining:l.crystals,collected:0,total:l.scrap+l.crystals/2};
+    const looted=new Set(f.looted),sum=(type,remaining)=>nodes.filter(n=>n.type===type&&(!remaining||!looted.has(n.id))).reduce((v,n)=>v+n.quantity,0);
+    const extra=f.legacyLayout&&!f.crystalTopUp?Math.max(0,l.crystals-sum('crystal',false)):0;
+    return {scrapTotal:sum('scrap',false),scrapRemaining:sum('scrap',true),crystalTotal:sum('crystal',false)+extra,crystalRemaining:sum('crystal',true)+extra,collected:nodes.filter(n=>looted.has(n.id)).length,total:nodes.length+Math.ceil(extra/2)};
+  }
+  function achievementProgress(a){
+    if(a.kind==='recorders')return totalRecorders();
+    if(a.kind==='level')return Number(levelComplete(LEVELS[a.level].id));
+    if(a.kind==='depth')return saved.bestDepth;
+    if(a.kind==='floors')return LEVELS.filter(l=>campaignLevels[l.id]?.floorReached).length;
+    if(a.kind==='sweeps')return LEVELS.filter(l=>{const r=resourceProgress(l.id);return r.total>0&&r.collected===r.total;}).length;
+    if(a.kind==='systems')return UPGRADES.filter(u=>saved.upgrades[u.id]===u.limit).length;
+    return saved.stats[a.stat]||0;
+  }
+  let achievementTimer=0,achievementReturnPause=false;
+  function checkAchievements(silent=false){
+    const newly=[];
+    for(const a of ACHIEVEMENTS)if(!saved.achievements[a.id]&&achievementProgress(a)>=a.target){saved.achievements[a.id]=new Date().toISOString();newly.push(a);}
+    if(newly.length&&!silent){
+      const toast=$('achievementToast');toast.textContent='ACHIEVEMENT UNLOCKED · '+newly[0].name.toUpperCase()+(newly.length>1?' + '+(newly.length-1)+' MORE':'');toast.classList.remove('hidden');clearTimeout(achievementTimer);achievementTimer=setTimeout(()=>toast.classList.add('hidden'),4800);
+    }
+    for(const id of ['menuAchievementCount','pauseAchievementCount'])if($(id))$(id).textContent=ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length+' / 20';
+    return newly.length;
+  }
+  function showAchievements(){
+    if($('upgradeDialog').open)return;
+    checkAchievements();persist();achievementReturnPause=paused;paused=true;resetPilotInput();
+    const earned=ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length;
+    $('achievementSummary').textContent=earned+' / 20 UNLOCKED · THIS CAMPAIGN';
+    $('achievementList').innerHTML=ACHIEVEMENTS.map(a=>{
+      const done=Boolean(saved.achievements[a.id]),value=Math.min(a.target,Math.floor(achievementProgress(a))),pct=clamp(value/a.target*100,0,100);
+      return '<article class="achievement-card '+(done?'earned':'')+'"><span class="achievement-medal" aria-hidden="true">'+(done?'✓':a.icon)+'</span><div><div class="achievement-title"><h3>'+a.name+'</h3><span>'+(done?'UNLOCKED':value+' / '+a.target)+'</span></div><p>'+a.description+'</p><div class="achievement-track" role="progressbar" aria-label="'+a.name+'" aria-valuenow="'+value+'" aria-valuemin="0" aria-valuemax="'+a.target+'"><i style="width:'+pct+'%"></i></div></div></article>';
+    }).join('');
+    $('achievementsDialog').showModal();$('achievementClose').focus({preventScroll:true});syncPauseButtons();
+  }
+  function closeAchievements(){
+    if(!$('achievementsDialog').open)return;
+    $('achievementsDialog').close();paused=achievementReturnPause;syncPauseButtons();
+  }
+  function stashCargo(){
+    if(!player)return;
+    if(player.cargo.scrap||player.cargo.crystal)addRecovery(field,{x:player.x,y:player.y,scrap:player.cargo.scrap,crystal:player.cargo.crystal});
+    field.pendingCargo=null;player.cargo={scrap:0,crystal:0,recorders:[]};
+  }
+  function reserveRequirement(){
+    const frontier=LEVELS.filter((l,i)=>levelUnlocked(i)).at(-1),f=campaignLevels[frontier.id];
+    if(LEVELS.every(l=>levelComplete(l.id)))return 0;
+    const depth=Math.max(...(f?.recorderDepths||frontier.recorders));
+    const required=HULL_DEPTHS.findIndex(d=>d>=depth);
+    return CRYSTAL_PRICES.hull.slice(saved.upgrades.hull,Math.max(saved.upgrades.hull,required)).reduce((a,b)=>a+b,0);
+  }
+  function remainingReachableCrystals(maxDepth=Infinity){
+    return LEVELS.reduce((sum,l,i)=>{
+      if(!levelUnlocked(i))return sum;const f=campaignLevels[l.id],looted=new Set(f?.looted||[]);
+      // An unvisited map is generated only on selection. Count only its guaranteed
+      // shallow starter crystals until its exact persisted coordinates are known.
+      const deposits=f?.loot?f.loot.filter(n=>n.type==='crystal'&&!looted.has(n.id)&&depthOf(n.y)<=maxDepth).reduce((n,r)=>n+r.quantity,0):(maxDepth>=l.depth?l.crystals:maxDepth>=130?12:0);
+      const cargo=l.id===LEVEL_ID&&running&&player?player.cargo.crystal:(f?.pendingCargo?.crystal||0);
+      const recoveries=(f?.recoveries||[]).filter(r=>depthOf(r.y)<=maxDepth).reduce((n,r)=>n+r.crystal,0);
+      return sum+deposits+recoveries+cargo;
+    },0);
+  }
+  function hullReserveProblem(afterPurchase){
+    if(!reserveRequirement())return '';
+    const frontier=LEVELS.filter((l,i)=>levelUnlocked(i)).at(-1),f=campaignLevels[frontier.id];
+    const required=HULL_DEPTHS.findIndex(d=>d>=Math.max(...(f?.recorderDepths||frontier.recorders)));
+    let reserve=0;
+    for(let mark=saved.upgrades.hull;mark<required;mark++){
+      reserve+=CRYSTAL_PRICES.hull[mark];
+      // Check every intermediate pressure gate, not just the whole level's stock.
+      // Otherwise spending shallow crystals could strand the hull before deeper
+      // crystals become reachable, even when the map's total stock is generous.
+      if(afterPurchase+remainingReachableCrystals(HULL_DEPTHS[mark])<reserve)
+        return 'Hull reserve: protect '+reserve+' crystals for hull progression through Mk '+roman(mark+1)+'. Deeper crystals do not count before their pressure gate. Fit the required hull first.';
+    }
+    return '';
+  }
+  function purchaseProblem(u){
+    const mark=saved.upgrades[u.id];if(mark>=u.limit)return 'Maximum specification installed.';
+    const cr=Math.max(0,upgradeCost(u,mark)-saved.credits),gems=Math.max(0,crystalCost(u,mark)-saved.crystals);
+    if(cr||gems)return 'Need '+[cr?cr.toLocaleString('en-GB')+' more credits':'',gems?gems+' more crystals':''].filter(Boolean).join(' and ')+'.';
+    return u.id==='hull'?'':hullReserveProblem(saved.crystals-crystalCost(u,mark));
+  }
   function depositAndDock() {
     if(!running||paused||nearestInteractable()?.type!=='station')return;
-    const gained=player.cargo.scrap*18+player.cargo.crystal*45;
-    const earnedXP=player.cargo.scrap*9+player.cargo.crystal*23+player.cargo.recorders.length*90;
-    saved.credits+=gained;saved.xp+=earnedXP;
-    for(const i of player.cargo.recorders)if(!saved.secured.includes(i))saved.secured.push(i);
-    const delivered=player.cargo.recorders.length;
-    player.cargo={scrap:0,crystal:0,recorders:[]};
-    player.hull=maxHull();player.oxygen=maxOxygen();player.battery=maxBattery();player.noise=0;resetBoost();resetShield();resupplyMines();
-    persist();
-    if(!dockVisitActive){refreshDockPopulation();dockVisitActive=true;}
-    addEvent('Docking completed · systems restored; ammunition sold separately');
-    if(gained||delivered)announce('SALVAGE BANKED: +'+gained+' CREDITS · +'+earnedXP+' XP',4);
-    if(saved.secured.length===RECORDERS_TOTAL&&!victoryShown){openVictory();return;}
+    const wasComplete=levelComplete(LEVEL_ID),gained=player.cargo.scrap*18,bankedCrystals=player.cargo.crystal;
+    const earnedXP=player.cargo.scrap*9+bankedCrystals*23+player.cargo.recorders.length*90;
+    const delivered=player.cargo.recorders.length,realReturn=!dockVisitActive;
+    addStat('bankedScrap',player.cargo.scrap);addStat('bankedCrystals',bankedCrystals);
+    if(realReturn&&player.trip?.deepest>=200&&player.trip.hullDamage<.001&&(gained||bankedCrystals||delivered))addStat('cleanGetaways',1);
+    saved.credits+=gained;saved.crystals+=bankedCrystals;saved.xp+=earnedXP;
+    for(const i of player.cargo.recorders)if(!saved.secured.includes(i)&&i>=0&&i<RECORDERS_TOTAL)saved.secured.push(i);
+    player.cargo={scrap:0,crystal:0,recorders:[]};field.pendingCargo=null;
+    player.hull=maxHull();player.oxygen=maxOxygen();player.battery=maxBattery();player.noise=0;resetBoost();resetShield();resupplyMines();player.trip={deepest:0,hullDamage:0};
+    if(realReturn){refreshDockPopulation();dockVisitActive=true;}
+    checkAchievements();persist();updateUI();
+    addEvent('Docked · +'+gained+' CR · +'+bankedCrystals+' crystals · systems restored');
+    if(gained||bankedCrystals||delivered)announce('CARGO BANKED · +'+gained+' CR · +'+bankedCrystals+' CRYSTALS',4);
+    if(!wasComplete&&levelComplete(LEVEL_ID)){openVictory();return;}
     showDock();
   }
   function syncPauseButtons(){
@@ -661,7 +837,7 @@
   function upgradeStats(id,mark){
     const n=v=>Number(v.toFixed(2)).toLocaleString('en-GB');
     switch(id){
-      case 'hull':return [['Safe depth',(130+mark*200).toLocaleString('en-GB')+' m'],['Hull integrity',(100+mark*28)+' HP']];
+      case 'hull':return [['Safe depth',HULL_DEPTHS[mark].toLocaleString('en-GB')+' m'],['Hull integrity',(100+mark*28)+' HP']];
       case 'oxygen':return [['Oxygen capacity',(100+mark*30)+' units'],['Consumption',n(.22/(1+mark*.2)*60)+'/min']];
       case 'battery':return [['Battery capacity',(100+mark*30)+' power'],['Boost power use',n(BOOST.powerPerSecond/(1+mark*.12))+'/sec'],['Boost recharge',n(BOOST.recharge*(1+mark*.1))+'/sec']];
       case 'engine':return [['Normal speed',n(normalSpeedAt(mark)/10)+' m/s'],['Boost speed',mark?n(normalSpeedAt(mark)*BOOST.multipliers[mark]/10)+' m/s':'Locked'],['Boost endurance',mark?BOOST.capacities[mark]/BOOST.drain+' sec':'None']];
@@ -676,28 +852,43 @@
       default:return [];
     }
   }
-  function showDock() {
-    showingDock=true;dockTab='upgrades';
-    openDialog('SURFACE OPERATIONS / DOCK 01','NEREID SYSTEMS BAY',
-      '<div class="dock-intro"><div><span class="dock-online"><i></i> VESSEL SECURED</span><p>Build your next advantage.</p></div><div class="dock-credit"><span>AVAILABLE CREDITS</span><strong id="dockCredits">0</strong></div></div><div id="dockBalance" class="dock-balance"></div><div class="dock-tabs" role="tablist" aria-label="Dock services"><button id="upgradesTab" role="tab" aria-controls="dockPanel">SHIP UPGRADES</button><button id="ammunitionTab" role="tab" aria-controls="dockPanel">AMMUNITION</button></div><div id="dockPanel" role="tabpanel"></div>',
-      '<div class="dock-departure"><span>Hull, oxygen &amp; power restored.<br>Mine ammunition sold separately.</span><button class="primary-btn" id="launchAgain">UNDOCK <span aria-hidden="true">↗</span></button></div>');
-    for(const [id,tab] of [['upgradesTab','upgrades'],['ammunitionTab','ammunition']]){
-      $(id).addEventListener('click',()=>{dockTab=tab;drawDockPanel();});
-      $(id).addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();dockTab=e.key==='Home'?'upgrades':e.key==='End'?'ammunition':dockTab==='upgrades'?'ammunition':'upgrades';drawDockPanel();$(dockTab==='upgrades'?'upgradesTab':'ammunitionTab').focus();}});
+  const DOCK_TABS=[['upgradesTab','upgrades'],['ammunitionTab','ammunition'],['expeditionsTab','expeditions']];
+  function showDock(tab='upgrades') {
+    showingDock=true;dockTab=tab;
+    openDialog('SURFACE OPERATIONS / CAMPAIGN HUB','NEREID EXPEDITION HUB',
+      '<div class="dock-intro"><div><span class="dock-online"><i></i> VESSEL SECURED</span><p>Refit. Revisit. Go deeper.</p></div><div class="dock-wallet"><div class="dock-credit"><span>CREDITS</span><strong id="dockCredits">0</strong></div><div class="dock-credit crystal-wallet"><span>CRYSTALS</span><strong id="dockCrystals">0</strong></div></div></div><div id="dockBalance" class="dock-balance"></div><div class="dock-tabs" role="tablist" aria-label="Dock services"><button id="upgradesTab" role="tab" aria-controls="dockPanel">SHIP UPGRADES</button><button id="ammunitionTab" role="tab" aria-controls="dockPanel">AMMUNITION</button><button id="expeditionsTab" role="tab" aria-controls="dockPanel">EXPEDITIONS</button></div><div id="dockPanel" role="tabpanel"></div>',
+      '<div class="dock-departure"><span id="departureLevel">'+currentLevel().name+'<br>Seabed '+currentLevel().depth.toLocaleString('en-GB')+' m · bank all recorders to unlock the next level.</span><button class="primary-btn" id="launchAgain">UNDOCK <span aria-hidden="true">↗</span></button></div>');
+    dialogReturnPause=false;
+    for(const [id,tabName] of DOCK_TABS){
+      $(id).addEventListener('click',()=>{dockTab=tabName;drawDockPanel();});
+      $(id).addEventListener('keydown',e=>{
+        if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();
+        let i=DOCK_TABS.findIndex(t=>t[1]===dockTab);i=e.key==='Home'?0:e.key==='End'?2:(i+(e.key==='ArrowRight'?1:2))%3;dockTab=DOCK_TABS[i][1];drawDockPanel();$(DOCK_TABS[i][0]).focus();
+      });
     }
-    drawDockPanel();$('upgradesTab').focus({preventScroll:true});
-    $('launchAgain').addEventListener('click',()=>{closeDialog();canvas.focus({preventScroll:true});addEvent('Station departure authorised');});
+    drawDockPanel();$(DOCK_TABS.find(t=>t[1]===dockTab)[0]).focus({preventScroll:true});
+    $('launchAgain').addEventListener('click',()=>{closeDialog();canvas.focus({preventScroll:true});addEvent('Course set · '+currentLevel().name);});
   }
   function drawDockPanel(){
     if(!showingDock||!$('dockPanel'))return;
-    $('dockCredits').textContent=saved.credits.toLocaleString('en-GB');
-    $('dockBalance').innerHTML='<span><b>'+safeDepth().toLocaleString('en-GB')+' m</b> HULL RATING</span><span><b>'+player.mineAmmo+'/'+mineCapacity()+'</b> MINES</span><span><b>'+saved.secured.length+'/'+RECORDERS_TOTAL+'</b> RECORDERS</span>';
-    for(const [id,tab] of [['upgradesTab','upgrades'],['ammunitionTab','ammunition']]){
-      $(id).setAttribute('aria-selected',String(dockTab===tab));$(id).tabIndex=dockTab===tab?0:-1;
-    }
-    $('dockPanel').setAttribute('aria-labelledby',dockTab==='upgrades'?'upgradesTab':'ammunitionTab');
-    if(dockTab==='upgrades'){$('dockPanel').innerHTML='<div class="dock-grid-caption"><span>SELECT A SYSTEM</span><span>12 UPGRADE PATHS</span></div><div class="upgrade-grid" id="upgradeList"></div>';drawUpgrades();}
-    else drawAmmunition();
+    $('dockCredits').textContent=saved.credits.toLocaleString('en-GB');$('dockCrystals').textContent=saved.crystals.toLocaleString('en-GB');
+    $('dockBalance').innerHTML='<span><b>'+safeDepth().toLocaleString('en-GB')+' m</b> HULL</span><span><b>'+player.mineAmmo+'/'+mineCapacity()+'</b> MINES</span><span><b>'+saved.secured.length+'/'+RECORDERS_TOTAL+'</b> LEVEL RECORDERS</span>';
+    for(const [id,tab] of DOCK_TABS){$(id).setAttribute('aria-selected',String(dockTab===tab));$(id).tabIndex=dockTab===tab?0:-1;}
+    $('dockPanel').setAttribute('aria-labelledby',DOCK_TABS.find(t=>t[1]===dockTab)[0]);
+    if(dockTab==='upgrades'){$('dockPanel').innerHTML='<div class="dock-grid-caption"><span>SELECT A SYSTEM</span><span>CREDITS + CRYSTALS</span></div><div class="upgrade-grid" id="upgradeList"></div>';drawUpgrades();}
+    else if(dockTab==='ammunition')drawAmmunition();else drawExpeditions();
+  }
+  function drawExpeditions(){
+    $('dockPanel').innerHTML='<div class="expedition-intro"><span>'+totalRecorders()+' / 20 RECORDERS BANKED</span><p>Switch levels here for free. Fixed resources never respawn. Remaining stocks are measured in units, not deposits.</p></div><div class="expedition-list">'+LEVELS.map((l,i)=>{
+      const unlocked=levelUnlocked(i),active=l.id===LEVEL_ID,complete=levelComplete(l.id),r=resourceProgress(l.id),f=campaignLevels[l.id];
+      return '<article class="expedition-card '+(active?'selected ':'')+(!unlocked?'locked':'')+'" style="--level-accent:'+l.color+'"><div class="expedition-heading"><span>'+l.tag+'</span><b>'+(active?'CURRENT COURSE':complete?'CLEARED':unlocked?'UNLOCKED':'LOCKED')+'</b></div><h3>'+l.name+'</h3><p>'+l.description+'</p><div class="expedition-metrics"><span><strong>'+l.depth.toLocaleString('en-GB')+' m</strong> SEABED</span><span><strong>'+(f?.secured.length||0)+' / '+l.recorders.length+'</strong> RECORDERS</span><span><strong>'+r.scrapRemaining+' / '+r.scrapTotal+'</strong> SCRAP LEFT</span><span><strong>'+r.crystalRemaining+' / '+r.crystalTotal+'</strong> CRYSTALS LEFT</span></div>'+(f?.recoveries.length?'<div class="recovery-hint">'+f.recoveries.length+' RECOVERY POD'+(f.recoveries.length===1?'':'S')+' WAITING</div>':'')+'<button class="expedition-select" data-travel="'+l.id+'" '+(!unlocked||active?'disabled':'')+'>'+(active?'COURSE SELECTED':unlocked?'SET COURSE →':'BANK ALL RECORDERS IN LEVEL '+i)+'</button></article>';
+    }).join('')+'</div><p class="expedition-note">Predators and supply caches refresh after an actual return to the dock. Switching levels never replenishes ore, crystals, mines or uncollected salvage drops.</p>';
+    document.querySelectorAll('[data-travel]').forEach(b=>b.addEventListener('click',()=>selectLevel(b.dataset.travel)));
+  }
+  function selectLevel(id){
+    const index=LEVELS.findIndex(l=>l.id===id);
+    if(index<0||id===LEVEL_ID||!levelUnlocked(index)||!showingDock||!running||!paused||$('upgradeDialog').open||$('achievementsDialog').open||nearestInteractable()?.type!=='station'||player.cargo.scrap||player.cargo.crystal||player.cargo.recorders.length)return false;
+    persist();LEVEL_ID=id;field=campaignLevels[id]||freshField();campaignLevels[id]=field;applyLevelGeometry();newDive();showDock('expeditions');persist();return true;
   }
   function buyAmmunition(fill=false){
     if(!showingDock||$('upgradeDialog').open||nearestInteractable()?.type!=='station'||saved.upgrades.minePower<1)return false;
@@ -734,7 +925,7 @@
   }
   function renderUpgradeDetails(){
     const u=UPGRADES.find(x=>x.id===selectedUpgrade);if(!u)return;
-    const level=saved.upgrades[u.id],maxed=level>=u.limit,next=Math.min(u.limit,level+1),cost=maxed?0:upgradeCost(u,level);
+    const level=saved.upgrades[u.id],maxed=level>=u.limit,next=Math.min(u.limit,level+1),cost=maxed?0:upgradeCost(u,level),gems=maxed?0:crystalCost(u,level);
     const [category,group,note]=SYSTEM_META[u.id],current=upgradeStats(u.id,level),future=upgradeStats(u.id,next);
     $('upgradeDialog').dataset.group=group;
     $('upgradeCategory').textContent=category;
@@ -744,43 +935,45 @@
     $('upgradeTierTrack').innerHTML=Array.from({length:u.limit},(_,i)=>'<span class="'+(i<level?'fitted':i===level?'next':'')+'" '+(i+1===level?'aria-current="step"':'')+'>MK '+roman(i+1)+'</span>').join('');
     $('upgradeStats').innerHTML='<table class="upgrade-comparison"><thead><tr><th scope="col">SPECIFICATION</th><th scope="col">CURRENT</th><th scope="col">'+(maxed?'MAXIMUM':'NEXT · MK '+roman(next))+'</th></tr></thead><tbody>'+current.map((row,i)=>'<tr><th scope="row">'+row[0]+'</th><td>'+row[1]+'</td><td class="'+(row[1]!==future[i][1]?'improved':'')+'">'+future[i][1]+'</td></tr>').join('')+'</tbody></table>';
     $('upgradeTacticalNote').textContent=note;
-    $('upgradeBalance').textContent=saved.credits.toLocaleString('en-GB')+' CR AVAILABLE';
-    const short=Math.max(0,cost-saved.credits),button=$('upgradePurchase');
-    button.dataset.upgrade=u.id;button.disabled=maxed||short>0;
-    button.textContent=maxed?'FULLY UPGRADED':short?'NEED '+short.toLocaleString('en-GB')+' MORE CR':(level?'UPGRADE TO MK ':'INSTALL MK ')+roman(next)+' · '+cost.toLocaleString('en-GB')+' CR';
-    $('upgradePriceNote').textContent=maxed?'Maximum specification installed.':short?'Next upgrade costs '+cost.toLocaleString('en-GB')+' credits.':'One permanent upgrade. No ammunition included.';
+    $('upgradeBalance').textContent=saved.credits.toLocaleString('en-GB')+' CR · '+saved.crystals+' CRYSTALS AVAILABLE';
+    const problem=purchaseProblem(u),button=$('upgradePurchase');
+    button.dataset.upgrade=u.id;button.disabled=maxed||Boolean(problem);
+    button.textContent=maxed?'FULLY UPGRADED':(level?'UPGRADE TO MK ':'INSTALL MK ')+roman(next)+' · '+cost.toLocaleString('en-GB')+' CR + '+gems+' ◆';
+    $('upgradePriceNote').textContent=problem||'Price: '+cost.toLocaleString('en-GB')+' credits and '+gems+' crystals. Permanent upgrade; no ammunition included.';
     button.onclick=()=>purchaseUpgrade(u.id);
   }
   function purchaseUpgrade(id){
     const u=UPGRADES.find(x=>x.id===id);
     if(!u||id!==selectedUpgrade||!$('upgradeDialog').open||!showingDock||!running||!paused||nearestInteractable()?.type!=='station')return false;
-    const level=saved.upgrades[id],cost=upgradeCost(u,level);
-    if(level>=u.limit||saved.credits<cost)return false;
-    saved.credits-=cost;saved.upgrades[id]++;
+    const level=saved.upgrades[id],cost=upgradeCost(u,level),gems=crystalCost(u,level);
+    if(level>=u.limit||purchaseProblem(u))return false;
+    saved.credits-=cost;saved.crystals-=gems;saved.upgrades[id]++;checkAchievements();
     if(id==='flashlight')beamTexture=buildBeamTexture();
     player.hull=maxHull();player.oxygen=maxOxygen();player.battery=maxBattery();resetBoost();resetShield();resupplyMines();
     const stored=persist();drawDockPanel();renderUpgradeDetails();updateUI();addEvent(u.name+' upgraded');
-    $('upgradeFeedback').textContent=stored?'MK '+roman(saved.upgrades[id])+' INSTALLED · '+cost.toLocaleString('en-GB')+' CR SPENT':'INSTALLED THIS SESSION · STORAGE UNAVAILABLE';
+    $('upgradeFeedback').textContent=stored?'MK '+roman(saved.upgrades[id])+' INSTALLED · '+cost.toLocaleString('en-GB')+' CR + '+gems+' CRYSTALS SPENT':'INSTALLED THIS SESSION · STORAGE UNAVAILABLE';
     if($('upgradePurchase').disabled)$('upgradeDetailClose').focus({preventScroll:true});
     return true;
   }
   function openVictory() {
-    victoryShown=true;
-    openDialog('TRANSMISSION // RESTORED','THE SIGNAL RETURNS',`<div class="briefing"><p>All six flight recorders are secured. The <em>Calypso</em> went silent because it found something beneath the final trench, something that appeared to be listening.</p><p><strong>MISSION COMPLETE.</strong> Your expedition rank is now ${levelOf(saved.xp)}. You may keep exploring, collect salvage and upgrade the NEREID, or start a brand-new expedition from the main menu.</p><p>The story continues in future builds of The Abyss Below.</p></div>`, '<div class="dialog-actions"><button class="alt-btn" id="victoryClose">CONTINUE EXPLORING</button></div>');
-    $('victoryClose').addEventListener('click',closeDialog);
+    victoryShown=true;const index=LEVELS.findIndex(l=>l.id===LEVEL_ID),allDone=LEVELS.every(l=>levelComplete(l.id));
+    const next=LEVELS[index+1];
+    openDialog('TRANSMISSION // '+(allDone?'COMPLETE':'LEVEL SECURED'),allDone?'THE SIGNAL RETURNS':currentLevel().name+' CLEARED',
+      '<div class="briefing"><p>All '+RECORDERS_TOTAL+' recorders from this level are safely banked.</p><p><strong>'+(allDone?'CAMPAIGN COMPLETE · 20 / 20 RECORDERS':next?'NEXT EXPEDITION UNLOCKED: '+next.name:'FINAL TRANSMISSION SECURED')+'</strong></p><p>'+(allDone?'The five transmissions form one story. Every level remains available for unfinished salvage, achievements and predator hunts.':next?'Set your next course at the hub, or return to any unlocked level for its remaining resources.':'Visit the other levels to complete their transmissions.')+'</p></div>',
+      '<div class="dialog-actions"><button class="primary-btn" id="victoryClose">RETURN TO EXPEDITION HUB →</button></div>');
+    dialogReturnPause=false;$('victoryClose').addEventListener('click',()=>{paused=false;showDock('expeditions');});
   }
   function defeat(reason) {
-    running=false;paused=true;player.hull=Math.max(0,player.hull);persist();
-    openDialog('SIGNAL LOST // EMERGENCY','VESSEL LOST',`<div class="briefing"><p>${reason}</p><p>Unbanked cargo and undelivered recorders were lost. Your secured recorders, credits, upgrades and expedition rank remain saved.</p><p><strong>Best depth:</strong> ${saved.bestDepth} m · <strong>Secured recorders:</strong> ${saved.secured.length}/${RECORDERS_TOTAL}</p></div>`, '<div class="dialog-actions"><button class="primary-btn" id="retryBtn">LAUNCH RESCUE VESSEL <span>→</span></button><button class="alt-btn" id="defeatMenuBtn">MAIN MENU</button></div>');
-    $('retryBtn').addEventListener('click',newDive);
-    $('defeatMenuBtn').addEventListener('click',()=>returnToMenu(false));
+    stashCargo();running=false;paused=true;player.hull=Math.max(0,player.hull);checkAchievements();persist();
+    openDialog('SIGNAL LOST // RECOVERY AVAILABLE','VESSEL LOST',`<div class="briefing"><p>${reason}</p><p>Your unbanked scrap and crystals are in a persistent recovery pod near the loss position. Undelivered recorders return to their wrecks. Banked currencies, upgrades and achievements remain saved.</p><p><strong>Selected level:</strong> ${currentLevel().name}<br><strong>Best depth:</strong> ${saved.bestDepth} m · <strong>Secured recorders:</strong> ${saved.secured.length}/${RECORDERS_TOTAL}</p></div>`, '<div class="dialog-actions"><button class="primary-btn" id="retryBtn">LAUNCH RESCUE VESSEL <span>→</span></button><button class="alt-btn" id="defeatMenuBtn">MAIN MENU</button></div>');
+    $('retryBtn').addEventListener('click',newDive);$('defeatMenuBtn').addEventListener('click',()=>returnToMenu(false));
   }
   function takeDamage(amount,reason='Hull breach') {
     if(player.damageCooldown>0)return;
     const absorbed=Math.min(player.shield||0,amount);
     player.shield=Math.max(0,(player.shield||0)-absorbed);
     if(shieldCapacity()>0){player.shieldDelay=SHIELD.delay;player.shieldFlashUntil=clock+.45;}
-    player.hull-=Math.max(0,amount-absorbed);player.damageCooldown=.7;
+    player.hull-=Math.max(0,amount-absorbed);if(player.trip)player.trip.hullDamage+=Math.max(0,amount-absorbed);addStat('shieldAbsorbed',absorbed);checkAchievements();player.damageCooldown=.7;
     if(amount>=8) {addEvent(reason);announce(reason.toUpperCase(),2);}
     if(player.hull<=0)defeat(reason+' destroyed the NEREID.');
   }
@@ -905,13 +1098,15 @@
     const energyDrain=dt*((.018+(hasInput?(quiet?.028:.075):0))/(1+saved.upgrades.battery*.12)+(headlightsActive()?flashlightPowerRate():0));
     player.battery=clamp(player.battery-energyDrain,0,maxBattery());
     player.oxygen=clamp(player.oxygen-dt*(.22/(1+saved.upgrades.oxygen*.2)),0,maxOxygen());
-    if(player.oxygen<=0){player.hull-=dt*7;if(player.hull<=0){defeat('The oxygen supply ran dry.');return;}}
+    if(player.oxygen<=0){if(player.trip)player.trip.hullDamage+=dt*7;player.hull-=dt*7;if(player.hull<=0){defeat('The oxygen supply ran dry.');return;}}
     const depth=depthOf(player.y),over=Math.max(0,depth-safeDepth());
     if(over>0) {
-      player.hull-=dt*(.26+Math.pow(over/30,1.7)*1.5); // Overshooting a tier is risky; deep skips are lethal.
+      const pressureDamage=dt*(.26+Math.pow(over/30,1.7)*1.5);if(player.trip)player.trip.hullDamage+=pressureDamage;player.hull-=pressureDamage; // Overshooting a tier is risky; deep skips are lethal.
       if(player.hull<=0){defeat('Crushing pressure breached the hull.');return;}
     }
     if(depth>saved.bestDepth) {saved.bestDepth=depth;if(depth%10===0)persist();}
+    if(player.trip)player.trip.deepest=Math.max(player.trip.deepest,depth);
+    if(depth>=currentLevel().depth-4&&!field.floorReached){field.floorReached=true;checkAchievements();persist();}
     const zone=zoneFor(depth);
     if(zone.name!==lastZone){if(lastZone)addEvent('Entered '+zone.name);lastZone=zone.name;}
     updateShield(dt);
@@ -946,7 +1141,7 @@
       enemy.vx=lerp(enemy.vx,(tx-enemy.x)/ed*es,1-Math.exp(-dt*2));
       enemy.vy=lerp(enemy.vy,(ty-enemy.y)/ed*es,1-Math.exp(-dt*2));
       enemy.x=clamp(enemy.x+enemy.vx*dt,leftAt(enemy.y)+34,rightAt(enemy.y)-34);
-      enemy.y=clamp(enemy.y+enemy.vy*dt,58,MAX_WORLD_Y);
+      enemy.y=clamp(enemy.y+enemy.vy*dt,58,MAX_WORLD_Y-30);
       // Tier-3 encounters never leak into the upper 800 m, even in pursuit.
       if(enemy.tier==='reaper'&&enemy.y<8120){enemy.y=8120;enemy.vy=Math.max(0,enemy.vy);enemy.aggression=0;enemy.alertUntil=0;enemy.forgetUntil=clock+1;}
     }
@@ -956,7 +1151,7 @@
       const tier=PREDATOR_TIERS[enemy.tier];
       if(predatorAlive(enemy)&&(enemy.stunnedUntil||0)<=clock&&enemy.aggression>.13&&distance(player,enemy)<tier.reach&&clock-enemy.lastHit>tier.cooldown){
         enemy.lastHit=clock;
-        takeDamage(tier.damage,tier.name+' attack');
+        takeDamage(Math.round(tier.damage*currentLevel().damage),tier.name+' attack');
         if(!running)return;
         player.vx+=(player.x-enemy.x)*2;player.vy+=(player.y-enemy.y)*2;
       }
@@ -965,6 +1160,7 @@
     camera.x=lerp(camera.x,player.x-viewport.w/2,Math.min(1,dt*3.4));
     camera.y=lerp(camera.y,player.y-viewport.h*.52,Math.min(1,dt*3.4));
     if(clock>toastUntil)$('notification').classList.add('hidden');
+    journalTimer+=dt;if(journalTimer>=5){journalTimer=0;checkAchievements();persist();}
     uiTimer+=dt;if(uiTimer>.13){uiTimer=0;updateUI();}
   }
   function lerpAngle(a,b,t){const diff=Math.atan2(Math.sin(b-a),Math.cos(b-a));return a+diff*t;}
@@ -1008,7 +1204,7 @@
       for(let i=0;i<8;i++){let x=200+i*130;ctx.beginPath();ctx.moveTo(x,75);ctx.lineTo(x-50,400);ctx.strokeStyle='#6bcfda09';ctx.lineWidth=25;ctx.stroke();}
       drawStation();
     }
-    drawTrench();
+    drawTrench();drawSeabed();
     for(const particle of scene.dust)if(onscreen(particle.x,particle.y)){
       const x=particle.x+Math.sin(clock*.28+particle.phase)*17,y=particle.y+Math.cos(clock*.37+particle.phase)*7;
       ctx.beginPath();ctx.arc(x,y,particle.size,0,TAU);ctx.fillStyle='#83dfe12a';ctx.fill();
@@ -1093,6 +1289,15 @@
       ctx.strokeStyle='#76d2d51b';ctx.lineWidth=1;ctx.stroke();
     }
   }
+  function drawSeabed(){
+    if(MAX_WORLD_Y>camera.y+viewport.h+100||MAX_WORLD_Y<camera.y-200)return;
+    const y=MAX_WORLD_Y,left=Math.max(camera.x,leftAt(y)),right=Math.min(camera.x+viewport.w,rightAt(y));
+    const g=ctx.createLinearGradient(0,y,0,y+150);g.addColorStop(0,'#29414e');g.addColorStop(.15,'#122631');g.addColorStop(1,'#030c14');
+    ctx.fillStyle=g;ctx.fillRect(camera.x,y,viewport.w,Math.max(200,camera.y+viewport.h-y));
+    ctx.strokeStyle='#709a9e';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();
+    for(let x=Math.floor(left/38)*38;x<right;x+=38){const h=8+Math.abs(Math.sin(x*.071+field.seed))*21;ctx.fillStyle='#3b566044';ctx.beginPath();ctx.moveTo(x,y+3);ctx.lineTo(x+18,y+h);ctx.lineTo(x+34,y+3);ctx.fill();}
+    ctx.fillStyle='#a2c4c9';ctx.font='10px monospace';ctx.textAlign='center';ctx.fillText('SEABED / '+currentLevel().depth.toLocaleString('en-GB')+' m',centerAt(y),y+46);ctx.textAlign='left';
+  }
   function drawRock(rock){
     ctx.save();ctx.translate(rock.x,rock.y);ctx.rotate(rock.rot);
     ctx.beginPath();for(let i=0;i<rock.spikes;i++){const a=i/rock.spikes*TAU;const radius=rock.radius*(.78+Math.sin(i*10+rock.seed*99)*.19);const x=Math.cos(a)*radius,y=Math.sin(a)*radius;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.closePath();
@@ -1111,7 +1316,7 @@
   function drawItem(item,sonared){
     const {x,y,type}=item,phase=clock*1.8+(item.animationSeed||0);
     ctx.save();ctx.translate(x,y);
-    const color=type==='recorder'?'#efbd77':type==='crystal'?'#ab96f5':type==='air'?'#60d5f6':'#8ce4c9';
+    const color=type==='recovery'?'#ffcb8c':type==='recorder'?'#efbd77':type==='crystal'?'#ab96f5':type==='air'?'#60d5f6':'#8ce4c9';
     const glow=ctx.createRadialGradient(0,0,0,0,0,type==='recorder'?44:27);glow.addColorStop(0,color+'66');glow.addColorStop(1,color+'00');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,0,type==='recorder'?44:27,0,TAU);ctx.fill();
     ctx.rotate(Math.sin(phase)*.15);
     if(type==='recorder'){
@@ -1332,6 +1537,7 @@
         ctx.rotate(-.5);ctx.beginPath();ctx.ellipse(0,0,49,17,0,0,TAU);ctx.stroke();ctx.strokeRect(-7,-27,14,17);
       }else if(kind==='vents'){
         ctx.beginPath();ctx.ellipse(0,0,13,6,0,0,TAU);ctx.moveTo(-4,-4);ctx.lineTo(-7,-22);ctx.moveTo(5,-5);ctx.lineTo(8,-30);ctx.stroke();
+      }else if(kind==='floor'){ctx.beginPath();ctx.moveTo(-12,0);ctx.lineTo(12,0);ctx.stroke();
       }else if(kind==='wall'){
         ctx.beginPath();const edge=object.side<0?leftAt:rightAt;
         ctx.moveTo(edge(object.y-12)-object.x,-12);ctx.lineTo(0,0);ctx.lineTo(edge(object.y+12)-object.x,12);ctx.stroke();
@@ -1339,7 +1545,7 @@
       ctx.restore();
     };
     for(const kind of ['rocks','wrecks','vents','items','predators','mines'])for(const object of scene[kind])echo(object,kind);
-    for(const wall of sonarTerrainEchoes)echo(wall,'wall');
+    for(const wall of sonarTerrainEchoes)echo(wall,wall.echoKind||'wall');
     ctx.restore();
   }
   function drawMouseTarget(){
@@ -1350,7 +1556,7 @@
   }
   function drawEdgeArrows(){
     if(!player||!running)return;
-    const missing=scene.items.filter(i=>i.type==='recorder'&&!i.collected);
+    const missing=scene.items.filter(i=>['recorder','recovery'].includes(i.type)&&!i.collected);
     if(!missing.length)return;
     let target=missing[0],best=Infinity;
     for(const item of missing){const d=distance(player,item);if(d<best){target=item;best=d;}}
@@ -1400,7 +1606,7 @@
     const setGauge=(kind,value,max)=>{const pct=clamp(value/max*100,0,100);$(kind+'Value').textContent=Math.round(pct)+'%';$(kind+'Bar').style.width=pct+'%';
       $(kind+'Tab').classList.toggle('alert',kind==='noise'?pct>75:pct<(kind==='hull'?35:kind==='oxygen'?25:20));};
     setGauge('hull',player.hull,maxHull());setGauge('oxygen',player.oxygen,maxOxygen());setGauge('battery',player.battery,maxBattery());setGauge('noise',player.noise,100);
-    $('coordsText').textContent=zone.code+' · '+zone.name;
+    $('coordsText').textContent=(LEVELS.findIndex(l=>l.id===LEVEL_ID)+1)+' / 5 · '+currentLevel().name+' · FLOOR '+currentLevel().depth+' m';
     const sonarCooling=player.scanCooldown>0;
     $('sonarText').textContent=sonarCooling?Math.ceil(player.scanCooldown)+'s':player.battery<sonarCost()?'LOW':'READY';
     const sonarPct=sonarCooling?clamp(1-player.scanCooldown/(player.scanDuration||sonarCooldown()),0,1)*100:100;
@@ -1450,10 +1656,10 @@
     const count=saved.secured.length,loose=player.cargo.recorders.length;
     $('fragmentCount').textContent=count+' / '+RECORDERS_TOTAL;
     $('fragmentIcons').innerHTML=RECORDER_DEPTHS.map((_,i)=>`<span class="${saved.secured.includes(i)?'filled':player.cargo.recorders.includes(i)?'loose':''}">${saved.secured.includes(i)?'◆':player.cargo.recorders.includes(i)?'◈':'◇'}</span>`).join('');
-    $('scrapCount').textContent=player.cargo.scrap;$('crystalCount').textContent=player.cargo.crystal;$('looseCount').textContent=loose;$('creditCount').textContent=saved.credits;
-    const waiting=scene.items.filter(x=>x.type==='recorder'&&!x.collected);
-    if(waiting.length){waiting.sort((a,b)=>distance(player,a)-distance(player,b));$('targetInfo').textContent='NEXT SIGNAL · '+RECORDER_DEPTHS[waiting[0].index]+' m DEPTH · '+Math.round(distance(player,waiting[0])/10)+' m AWAY';}
-    else $('targetInfo').textContent=loose?'RETURN TO STATION TO SECURE RECORDER'+(loose>1?'S':''):count===RECORDERS_TOTAL?'EXPEDITION COMPLETED':'ALL SIGNALS SECURED · RETURN TO STATION';
+    $('scrapCount').textContent=player.cargo.scrap;$('crystalCount').textContent=player.cargo.crystal;$('looseCount').textContent=loose;$('creditCount').textContent=saved.credits;$('bankedCrystalCount').textContent=saved.crystals;$('missionTitle').textContent=currentLevel().name;$('missionDescription').textContent='Bank all '+RECORDERS_TOTAL+' recorders to secure this level. Seabed: '+currentLevel().depth.toLocaleString('en-GB')+' m. Campaign: '+totalRecorders()+' / 20.';
+    const waiting=scene.items.filter(x=>['recorder','recovery'].includes(x.type)&&!x.collected);
+    if(waiting.length){waiting.sort((a,b)=>distance(player,a)-distance(player,b));$('targetInfo').textContent=(waiting[0].type==='recovery'?'RECOVERY POD · '+depthOf(waiting[0].y):'NEXT SIGNAL · '+RECORDER_DEPTHS[waiting[0].index])+' m DEPTH · '+Math.round(distance(player,waiting[0])/10)+' m AWAY';}
+    else $('targetInfo').textContent=loose?'RETURN TO STATION TO SECURE RECORDER'+(loose>1?'S':''):count===RECORDERS_TOTAL?'LEVEL CLEARED · EXPEDITIONS AT HUB':'ALL SIGNALS SECURED · RETURN TO STATION';
     const lv=levelOf(saved.xp),prev=90*Math.pow(lv-1,2),next=90*Math.pow(lv,2);
     $('rankText').textContent='LV. '+lv+' · '+rankName(lv);
     $('rankFill').style.width=(clamp((saved.xp-prev)/(next-prev)*100,0,100))+'%';
@@ -1462,7 +1668,7 @@
     $('dockBtn').disabled=!station;$('dockBtn').textContent=station?'◈ DOCK · BANK SALVAGE · UPGRADE':'◈ RETURN TO STATION TO UPGRADE';
     const close=nearestInteractable();const prompt=$('interactionPrompt');
     if(running&&!paused&&close){
-      prompt.textContent=(touchControls?'HOLD USE · ':'[ E ] ')+(close.type==='station'?'DOCK & UPGRADE':close.type==='recorder'?'RECOVER BLACK BOX':close.type==='air'?'CLAIM SUPPLY CACHE':distance(player,close)>=60?'MAGNET '+close.type.toUpperCase()+' · '+magnetPower()+' POWER':'SALVAGE '+close.type.toUpperCase());prompt.classList.remove('hidden');
+      prompt.textContent=(touchControls?'HOLD USE · ':'[ E ] ')+(close.type==='station'?'DOCK & UPGRADE':close.type==='recorder'?'RECOVER BLACK BOX':close.type==='air'?'CLAIM SUPPLY CACHE':close.type==='recovery'?'RECOVER LOST CARGO':distance(player,close)>=60?'MAGNET '+close.type.toUpperCase()+' · '+magnetPower()+' POWER':'SALVAGE '+close.type.toUpperCase());prompt.classList.remove('hidden');
     } else prompt.classList.add('hidden');
     $('mobileSilent').classList.toggle('active',pointerSilent);
     $('mobileSilent').setAttribute('aria-pressed',String(pointerSilent));
@@ -1507,16 +1713,18 @@
     $('saveStatus').textContent=storageHealthy?(storageRecovery?'RECOVERED CAMPAIGN BACKUP':'CAMPAIGN SAVED ON THIS DEVICE'):'STORAGE UNAVAILABLE · PROGRESS WILL NOT BE SAVED';
     $('saveStatus').classList.toggle('save-warning',!storageHealthy||storageRecovery);
     window.dispatchEvent(new Event('abyss-menu'));
+    checkAchievements(true);$('menuHubBtn').disabled=running;
     $('startBtn').innerHTML=running?'CONTINUE EXPEDITION <span>→</span>':'BEGIN EXPEDITION <span>→</span>';
+    $('menuHubBtn').title=running?'Bank or quit the active dive before opening the hub.':'Choose a level and refit at the hub.';
     const existing=saved.bestDepth>0||saved.credits>0||saved.xp>0||saved.secured.length>0||Object.entries(saved.upgrades).some(([id,v])=>v>(defaults().upgrades[id]??0));
     $('menuProgress').textContent=running?'DIVE SUSPENDED · '+depthOf(player.y)+'m · '+player.cargo.recorders.length+' RECORDER(S) ABOARD':
-      existing?'BANKED PROGRESS · '+saved.secured.length+'/'+RECORDERS_TOTAL+' RECORDERS · BEST '+saved.bestDepth+'m':'NEW CAPTAIN · NO SAVED PROGRESS';
+      existing?'CAMPAIGN · '+totalRecorders()+'/20 RECORDERS · '+saved.crystals+' CRYSTALS · '+currentLevel().name:'NEW CAPTAIN · LEVEL 1 / SUNBREAK SHELF';
   }
   function returnToMenu(preserveDive){
     closeUpgradeDetails(false);
     resetPilotInput();
     $('modalOverlay').classList.add('hidden');$('pauseOverlay').classList.add('hidden');
-    if(!preserveDive) {running=false;paused=false;persist();}
+    if(!preserveDive) {stashCargo();running=false;paused=false;checkAchievements();persist();}
     else paused=true;
     syncPauseButtons();updateMainMenu();
     $('menuOverlay').classList.remove('hidden');updateUI();
@@ -1535,17 +1743,22 @@
   }
   function quitDiveConfirmation(){
     openDialog('MISSION CONTROL // ABORT','ABANDON THIS DIVE?',
-      '<p class="dialog-info">Unbanked salvage and undelivered recorders will be lost. Secured recorders, upgrades, credits, rank and best depth will remain saved.</p>',
+      '<p class="dialog-info">Unbanked scrap and crystals will be left in a persistent recovery pod. Undelivered recorders return to their wrecks. Banked currencies, upgrades and achievements remain saved.</p>',
       '<div class="dialog-actions"><button id="cancelQuitBtn" class="alt-btn">GO BACK</button><button id="confirmQuitBtn" class="danger-btn">QUIT DIVE</button></div>');
     $('cancelQuitBtn').addEventListener('click',closeDialog);
     $('confirmQuitBtn').addEventListener('click',()=>returnToMenu(false));
   }
   function newGameConfirmation(){
     openDialog('EXPEDITION CONTROL // RESET','START A NEW GAME?',
-      '<p class="dialog-info">This begins again from zero. <strong>All saved credits, upgrades, secured recorders, rank and best-depth records will be erased.</strong> Any current unbanked cargo will also be lost.</p>',
+      '<p class="dialog-info">This begins again from zero. <strong>All five level maps, banked credits and crystals, upgrades, recorders, achievements and rank will be erased.</strong> Any current unbanked cargo will also be lost.</p>',
       '<div class="dialog-actions"><button id="cancelNewGameBtn" class="alt-btn">KEEP PROGRESS</button><button id="confirmNewGameBtn" class="danger-btn">START FRESH</button></div>');
     $('cancelNewGameBtn').addEventListener('click',closeDialog);
-    $('confirmNewGameBtn').addEventListener('click',()=>{saved=defaults();field=freshField();campaignLevels={};campaignId='campaign-'+Date.now().toString(36)+'-'+field.seed.toString(36);storageRecovery=false;beamTexture=buildBeamTexture();launchDive();});
+    $('confirmNewGameBtn').addEventListener('click',()=>{
+      closeAchievements();running=false;saved=defaults();field=freshField();campaignLevels={};LEVEL_ID=LEVELS[0].id;campaignLevels[LEVEL_ID]=field;applyLevelGeometry();
+      campaignId='campaign-'+Date.now().toString(36)+'-'+field.seed.toString(36);storageRecovery=false;migratedLegacy=false;
+      try{for(const key of [CAMPAIGN_KEY,CAMPAIGN_KEY+'.backup',LEGACY_CAMPAIGN_KEY,LEGACY_CAMPAIGN_KEY+'.backup',SAVE_KEY,FIELD_KEY])localStorage.removeItem(key);}catch(_){}
+      $('achievementToast').classList.add('hidden');beamTexture=buildBeamTexture();launchDive();
+    });
   }
   function launchDive(){newDive();enterMobileCockpit();}
   function enterMobileCockpit(){
@@ -1557,7 +1770,7 @@
     }
   }
   function briefing(){
-    const body=`<div class="briefing"><p>You pilot the <strong>NEREID MK-II</strong>. Recover six golden recorders at 75, 260, 470, 725, 1,100 and 1,500 m and bring them to the surface.</p><ul>
+    const body=`<div class="briefing"><p>You pilot the <strong>NEREID MK-II</strong>. Explore five unlockable levels with 2, 3, 4, 5 and 6 recorders. Bank every recorder in a level to unlock the next. Change levels at the hub; cleared levels remain available.</p><ul>
       <li><strong>PC helm:</strong> hold the left mouse button over the water and move the cursor. The sub points and travels towards it, easing off when close. Release to coast to a stop. <kbd>WASD</kbd> / arrow keys still work.</li>
       <li><strong>Mobile:</strong> touch and drag anywhere over the water that is not a button. A minimal transparent joystick appears only after dragging and disappears on release. The left-side CRUISE button retains your heading after release; the large left USE button salvages while you steer.</li>
       <li><kbd>Space</kbd> / hold <strong>BOOST</strong>: requires Mk I magnetic thrusters. Mk I / II / III / IV offer 3 / 4 / 5 / 6 seconds of boost and progressively faster boosted speeds. Costs battery and boost charge. Charge recovers after 1.5 seconds; a fully emptied meter locks until full. Release to rearm. Boost is loud and overrides quiet running. Battery upgrades reduce its power drain and speed up recharge.</li>
@@ -1570,7 +1783,7 @@
       <li><strong>Exploration:</strong> mobile sees 43% farther in each direction; PC zoom is unchanged. The trench is three times wider, with more obstacles and hunters but fewer salvage pieces and much rarer crystals. The three clear navigation lanes keep descent routes open.</li>
       <li><strong>Flashlight Mk I–IV:</strong> the standard Mk I lamp reaches 26 m. Dock upgrades extend this to 36 / 48 / 62 m and widen the beam. The lamp draws power slowly only while on; battery upgrades improve efficiency. Switch it off with <kbd>L</kbd> / LIGHTS to conserve energy.</li>
       <li><strong>Adaptive ship systems:</strong> the Salvage Magnet extends USE / hold E for visible scrap and crystals, including predator drops, at a small power cost. It cannot recover through rocks or fetch distant recorders/caches. The Kinetic Shield absorbs bites and rock impacts, but not pressure or oxygen loss; recharge starts after 8 seconds without impacts, uses battery power and pauses during boost. The Sonic Disruptor adds a short stun to nearby predators on sonar-wave arrival, with shorter stuns for stronger tiers. Low battery falls back to a normal scan.</li>
-      <li><strong>Persistent campaign resources:</strong> salvage and crystals are placed once for this campaign level. Collected deposits never return, even after docking or reloading. Scrap and crystal deposits each yield 2 units. The full untouched map banks 8,640 credits, about 72% of the expanded upgrade tree before ammunition and repairs. Predators drop 2 / 4 / 8 scrap when destroyed; collect and dock to bank it. Predators and supply caches refresh on a genuine return to dock after departure. Drops persist until collected. Secured recorders never respawn. New Game resets the campaign; active dives still do not survive page reloads, so bank cargo first.</li>
+      <li><strong>Persistent campaign resources:</strong> salvage and crystals are placed once for this campaign level. Collected deposits never return, even after docking or reloading. Scrap and crystal deposits each yield 2 units. Across five fresh levels, fixed resources provide 15,192 credits worth of scrap and 496 crystals. Scrap banks at 18 credits per unit; crystals stay a separate currency. All paid ship upgrades cost both. If an optional purchase would consume the last crystals needed for the current recorder gate, the shop reserves them for the hull instead. Predators drop 2 / 4 / 8 scrap when destroyed; collect and dock to bank it. Predators and supply caches refresh on a genuine return to dock after departure. Drops persist until collected. Secured recorders never respawn. Lost, quit or interrupted dives leave recoverable scrap and crystal pods; undelivered recorders return to their wrecks. Active ship position is not reload-persistent. Twenty achievements are available from the main and pause menus. New Game resets all five levels and achievements.</li>
       <li><kbd>Esc</kbd> / <strong>PAUSE</strong> freezes the dive. MENU suspends it for this session; QUIT loses unbanked cargo. NEW GAME asks before erasing saved progress. Refreshing the page does not preserve an active dive.</li>
     </ul></div>`;
     openDialog('OPERATIONS MANUAL // NEREID','PILOT BRIEFING',body,'<div class="dialog-actions"><button id="briefDone" class="alt-btn">UNDERSTOOD</button></div>');
@@ -1595,6 +1808,9 @@
     const cockpitObserver=new ResizeObserver(syncCockpitLayout);
     for(const node of [canvas.parentElement,...document.querySelectorAll('.cockpit-hud,.mobile-controls,.desktop-keybinds')])cockpitObserver.observe(node);
     primaryPointer.addEventListener('change',()=>{resetPilotInput();syncInputMode();resize();syncCockpitLayout();updateUI();});
+    $('menuAchievementsBtn').addEventListener('click',showAchievements);$('pauseAchievementsBtn').addEventListener('click',showAchievements);
+    $('achievementClose').addEventListener('click',closeAchievements);$('achievementsDialog').addEventListener('cancel',e=>{e.preventDefault();closeAchievements();});
+    $('menuHubBtn').addEventListener('click',()=>{if(running)return;launchDive();showDock('expeditions');});
     $('startBtn').addEventListener('click',()=>{
       if(running)resumeDive();else launchDive();
     });
@@ -1617,6 +1833,7 @@
     $('pauseBtn').addEventListener('click',togglePause);
     $('dockBtn').addEventListener('click',()=>{if(running&&!paused&&nearestInteractable()?.type==='station')depositAndDock();});
     window.addEventListener('keydown',e=>{
+      if($('achievementsDialog').open)return;
       const k=e.key.toLowerCase();
       if($('upgradeDialog').open){if(k==='escape'){e.preventDefault();closeUpgradeDetails();}return;}
       if(k==='tab'&&!$('modalOverlay').classList.contains('hidden')){
@@ -1634,7 +1851,8 @@
     });
     window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
     window.addEventListener('blur',resetPilotInput);
-    document.addEventListener('visibilitychange',()=>{if(document.hidden)resetPilotInput();});
+    document.addEventListener('visibilitychange',()=>{if(document.hidden){resetPilotInput();checkAchievements();persist();}});
+    window.addEventListener('pagehide',()=>{checkAchievements();persist();});
     canvas.addEventListener('pointerdown',e=>{
       if(e.pointerType==='touch'||e.button!==0||mouseHelm.pointerId!==null||!running||paused)return;
       e.preventDefault();resetJoystick(true);canvas.focus({preventScroll:true});
@@ -1770,7 +1988,7 @@
   player={x:600,y:160,vx:0,vy:0,facing:0,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),lights:true,noise:0,cargo:{scrap:0,crystal:0,recorders:[]},scanCooldown:0,damageCooldown:0,boost:boostCapacity(),boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,mineAmmo:0,mineCooldown:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null};
   resupplyMines();
   camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
-  updateMainMenu();updateUI();requestAnimationFrame(frame);
+  checkAchievements(true);persist();updateMainMenu();updateUI();requestAnimationFrame(frame);
   setTimeout(()=>{
     if(window.AbyssVersion)return;
     $('syncIndicator').dataset.state='unverified';$('syncStatus').textContent='UPDATE CHECKER NOT LOADED';
@@ -1780,7 +1998,7 @@
   },3500);
 
   // Tiny inspection hook for automated smoke tests.
-  window.AbyssDiagnostics={state:()=>({version:BUILD.version,versionName:BUILD.name,buildId:BUILD.id,shield:player.shield,shieldCapacity:shieldCapacity(),shieldDelay:player.shieldDelay,magnetRange:magnetRange(),magnetPower:magnetPower(),disruptorMark:saved.upgrades.disruptor,scanPowerCost:scanPowerCost(),upgradeOpen:$('upgradeDialog').open,storageHealthy,campaignId,levelId:LEVEL_ID,boostCapacity:boostCapacity(),boostUnlocked:boostUnlocked(),boostMultiplier:boostMultiplier(),boostSeconds:boostCapacity()/BOOST.drain,joystickVisible:$('mobileJoystick').classList.contains('engaged'),zoom:viewport.zoom,flashlightMark:saved.upgrades.flashlight,flashlightLength:flashlightSpec().length,flashlightAngle:flashlightSpec().halfAngle*360/Math.PI,flashlightPowerRate:flashlightPowerRate(),worldWidth:widthAt(player.y)*2,populationCycle:field.cycle,mineAmmo:player.mineAmmo,mineCapacity:mineCapacity(),minePower:saved.upgrades.minePower,mineCapacityMark:saved.upgrades.mineCapacity,mineDamage:mineDamage(),mineCooldown:player.mineCooldown,deployedMines:scene.mines.length,kills:player.kills,normalSpeed:normalSpeedAt(saved.upgrades.engine),maxNormalSpeed:normalSpeedAt(THRUST.maxMark),ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),inputMode:touchControls?'touch':'desktop',vesselLabel:vesselLabel(),boost:player.boost,boosting:player.boosting,boostLocked:player.boostLocked,boostNeedsRelease:player.boostNeedsRelease,boostRechargeDelay:player.boostRechargeDelay,boostPowerRate:boostPowerRate(),boostRechargeRate:boostRechargeRate(),scanCooldown:player.scanCooldown,sonarCost:sonarCost(),mouseHeld:mouseHelm.pointerId!==null,boostHeld,facing:player.facing,hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier==='common').length,reaperCount:scene.predators.filter(e=>e.tier==='reaper').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
+  window.AbyssDiagnostics={state:()=>({version:BUILD.version,versionName:BUILD.name,buildId:BUILD.id,shield:player.shield,shieldCapacity:shieldCapacity(),shieldDelay:player.shieldDelay,magnetRange:magnetRange(),magnetPower:magnetPower(),disruptorMark:saved.upgrades.disruptor,scanPowerCost:scanPowerCost(),upgradeOpen:$('upgradeDialog').open,storageHealthy,campaignId,levelId:LEVEL_ID,levelName:currentLevel().name,crystals:saved.crystals,totalRecorders:totalRecorders(),achievements:ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length,recoveryPods:field.recoveries.length,levelComplete:levelComplete(LEVEL_ID),boostCapacity:boostCapacity(),boostUnlocked:boostUnlocked(),boostMultiplier:boostMultiplier(),boostSeconds:boostCapacity()/BOOST.drain,joystickVisible:$('mobileJoystick').classList.contains('engaged'),zoom:viewport.zoom,flashlightMark:saved.upgrades.flashlight,flashlightLength:flashlightSpec().length,flashlightAngle:flashlightSpec().halfAngle*360/Math.PI,flashlightPowerRate:flashlightPowerRate(),worldWidth:widthAt(player.y)*2,populationCycle:field.cycle,mineAmmo:player.mineAmmo,mineCapacity:mineCapacity(),minePower:saved.upgrades.minePower,mineCapacityMark:saved.upgrades.mineCapacity,mineDamage:mineDamage(),mineCooldown:player.mineCooldown,deployedMines:scene.mines.length,kills:player.kills,normalSpeed:normalSpeedAt(saved.upgrades.engine),maxNormalSpeed:normalSpeedAt(THRUST.maxMark),ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),inputMode:touchControls?'touch':'desktop',vesselLabel:vesselLabel(),boost:player.boost,boosting:player.boosting,boostLocked:player.boostLocked,boostNeedsRelease:player.boostNeedsRelease,boostRechargeDelay:player.boostRechargeDelay,boostPowerRate:boostPowerRate(),boostRechargeRate:boostRechargeRate(),scanCooldown:player.scanCooldown,sonarCost:sonarCost(),mouseHeld:mouseHelm.pointerId!==null,boostHeld,facing:player.facing,hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier==='common').length,reaperCount:scene.predators.filter(e=>e.tier==='reaper').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
   if(location.search.includes('testmode=1')||window.ABYSS_TEST_MODE===true){
     window.AbyssDiagnostics.fixture=({x=600,y=700,rocks=[],predators=[],items=[]}={})=>{
       player.x=x;player.y=y;player.vx=0;player.vy=0;player.facing=0;player.noise=0;
@@ -1808,11 +2026,11 @@
     };
     window.AbyssDiagnostics.ambientAtDepth=depth=>ambientLightAt(120+depth*10);
     window.AbyssDiagnostics.renderWorld=()=>{const before=running;running=false;render();running=before;};
-    window.AbyssDiagnostics.debug=()=>({clock,field:JSON.parse(JSON.stringify(field)),mines:scene.mines.map(m=>({...m})),blasts:scene.blasts.map(b=>({...b})),sonarWaves:sonarWaves.map(({contacts,...w})=>({...w,contacts:contacts.map(c=>({kind:c.kind,hit:c.hit,x:c.object.x,y:c.object.y}))})),camera:{...camera},viewport:{...viewport},sonarTerrainEchoes:sonarTerrainEchoes.map(e=>({...e})),rocks:scene.rocks.map(e=>({...e})),vents:scene.vents.map(e=>({...e})),player:{...player},saved:{...saved,upgrades:{...saved.upgrades}},wrecks:scene.wrecks.map(w=>({...w})),predators:scene.predators.map(e=>({...e})),items:scene.items.map(i=>({...i}))});
+    window.AbyssDiagnostics.debug=()=>({clock,field:JSON.parse(JSON.stringify(field)),mines:scene.mines.map(m=>({...m})),blasts:scene.blasts.map(b=>({...b})),sonarWaves:sonarWaves.map(({contacts,...w})=>({...w,contacts:contacts.map(c=>({kind:c.kind,hit:c.hit,x:c.object.x,y:c.object.y}))})),camera:{...camera},viewport:{...viewport},sonarTerrainEchoes:sonarTerrainEchoes.map(e=>({...e})),rocks:scene.rocks.map(e=>({...e})),vents:scene.vents.map(e=>({...e})),player:{...player},saved:{...saved,upgrades:{...saved.upgrades}},campaignLevels:JSON.parse(JSON.stringify(campaignLevels)),levels:LEVELS.map((l,i)=>({...l,unlocked:levelUnlocked(i),complete:levelComplete(l.id),resources:resourceProgress(l.id)})),wrecks:scene.wrecks.map(w=>({...w})),predators:scene.predators.map(e=>({...e})),items:scene.items.map(i=>({...i}))});
     window.AbyssDiagnostics.simulationFixture=({depth=500,facing=Math.PI/2,lights=false,battery=maxBattery(),boost=null,upgrades={},items=[],predators=[],rocks=[],wrecks=[],vents=[],mines=[],mineAmmo=null}={})=>{
       resetPilotInput();Object.assign(saved.upgrades,upgrades);beamTexture=buildBeamTexture();
       const y=120+depth*10,x=centerAt(y);
-      player={...player,x,y,vx:0,vy:0,facing,lights,battery,boost:boost??boostCapacity(),hull:maxHull(),oxygen:maxOxygen(),noise:0,quiet:false,boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,damageCooldown:0,scanCooldown:0,mineAmmo:mineAmmo??(saved.upgrades.minePower?mineCapacity():0),mineCooldown:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,cargo:{scrap:0,crystal:0,recorders:[]}};
+      player={...player,x,y,vx:0,vy:0,facing,lights,battery,boost:boost??boostCapacity(),hull:maxHull(),oxygen:maxOxygen(),noise:0,quiet:false,boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,damageCooldown:0,scanCooldown:0,mineAmmo:mineAmmo??(saved.upgrades.minePower?mineCapacity():0),mineCooldown:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,trip:{deepest:0,hullDamage:0},cargo:{scrap:0,crystal:0,recorders:[]}};
       saved.mineAmmo=player.mineAmmo;
       scene={items:items.map((i,n)=>makeItem(x+i.dx,y+i.dy,i.type||'scrap',{id:n,index:i.index??0,...i})),
         rocks:rocks.map(r=>{const k={x:x+r.dx,y:y+r.dy,radius:30,rot:0,seed:.4,spikes:8,...r};return {...k,vertices:rockPolygon(k)};}),
@@ -1834,7 +2052,7 @@
     window.AbyssDiagnostics.pulseMines=dt=>{clock+=dt;updateMines(dt);updateUI();render();};
     window.AbyssDiagnostics.ping=()=>{const before=paused;paused=false;scan();paused=before;render();};
     window.AbyssDiagnostics.unfreeze=()=>{paused=false;canvas.focus({preventScroll:true});};
-    window.AbyssDiagnostics.regenerate=(seed=12345)=>{field={...freshField(),seed:seed>>>0};createWorld();return window.AbyssDiagnostics.state();};
+    window.AbyssDiagnostics.regenerate=(seed=12345)=>{field={...freshField(),seed:seed>>>0};campaignLevels[LEVEL_ID]=field;applyLevelGeometry();createWorld();return window.AbyssDiagnostics.state();};
     window.AbyssDiagnostics.moveTo=(x,y)=>{player.x=x;player.y=y;player.vx=0;player.vy=0;camera={x:x-viewport.w/2,y:y-viewport.h*.52};updateUI();render();};
     window.AbyssDiagnostics.hurtEnemy=(id,damage)=>{const enemy=scene.predators.find(e=>e.id===id);if(enemy)damagePredator(enemy,damage);scene.predators=scene.predators.filter(predatorAlive);};
     window.AbyssDiagnostics.use=()=>{const before=paused;paused=false;interact();if(!showingDock)paused=before;updateUI();};
@@ -1843,6 +2061,14 @@
     window.AbyssDiagnostics.hit=(amount=10)=>{player.damageCooldown=0;takeDamage(amount,'Test impact');updateUI();};
     window.AbyssDiagnostics.setSystems=values=>{for(const k of ['battery','shield','shieldDelay','hull','oxygen','damageCooldown'])if(Number.isFinite(values[k]))player[k]=values[k];updateUI();};
     window.AbyssDiagnostics.upgradeCatalog=()=>UPGRADES.map(u=>({...u,level:saved.upgrades[u.id],stats:upgradeStats(u.id,saved.upgrades[u.id])}));
+    window.AbyssDiagnostics.grantCrystals=value=>{saved.crystals=cleanCount(value);persist();updateUI();};
+    window.AbyssDiagnostics.achievementCatalog=()=>ACHIEVEMENTS.map(a=>({...a,progress:achievementProgress(a),earned:Boolean(saved.achievements[a.id])}));
+    window.AbyssDiagnostics.loseDive=()=>defeat('Test emergency');
+    window.AbyssDiagnostics.save=()=>{checkAchievements();persist();};
+    window.AbyssDiagnostics.setStats=stats=>{Object.assign(saved.stats,stats);checkAchievements();persist();};
+    window.AbyssDiagnostics.selectLevel=selectLevel;
+    window.AbyssDiagnostics.fixtureLevel=index=>{LEVEL_ID=LEVELS[index].id;field=campaignLevels[LEVEL_ID]||freshField();campaignLevels[LEVEL_ID]=field;applyLevelGeometry();newDive();paused=true;return window.AbyssDiagnostics.state();};
+    window.AbyssDiagnostics.costs=()=>UPGRADES.map(u=>({id:u.id,prices:Array.from({length:u.limit},(_,i)=>({credits:upgradeCost(u,i),crystals:crystalCost(u,i)}))}));
     window.AbyssDiagnostics.grantCredits=(value)=>{saved.credits=Math.max(0,Math.floor(value));persist();updateUI();};
   }
 })();

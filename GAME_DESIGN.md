@@ -1,65 +1,47 @@
-# The Abyss Below: Current Game Design
+# The Abyss Below: current design
 
-## v0.11.0: Adaptive Systems
+## v0.12.0 / Fivefold Descent
 
-This document describes the current build. Historical changelog entries describe old behaviour, not additional active rules.
+The detailed current rules and all numerical balance tables live in **CAMPAIGN-v0.12.0.md**. Earlier changelog entries describe past versions and do not override the current guide.
 
-### Expedition loop
+### Player loop
 
-Pilot, listen, illuminate, salvage and return. The permanent campaign is about choosing which equipment earns the next safe depth band. Docking banks cargo, restores hull/oxygen/power, opens upgrades and the paid ammunition shop, and refreshes threats and supply caches only after a genuine departure/return. Permanent resources never refresh. A surface visit without docking does not bank cargo or reset populations.
+Choose an unlocked expedition at the surface hub, inspect the fitted ship, buy upgrades or ammunition, descend, find fixed resources and mission recorders, evade or destroy hunters, then return to bank cargo. Banking all recorders opens the next deeper destination. The five physical floors are 300 / 600 / 1,000 / 1,400 / 1,800 m, with 2 / 3 / 4 / 5 / 6 recorder objectives.
 
-### Geography and progression
+Previous destinations remain available for resource completion and repeat hunts. Every map owns a permanent seed and deposit snapshot. Fixed scrap/crystals never respawn. Predators and supply caches refresh only on genuine dock returns, not tab changes or level reselection. Banked recorders never reappear.
 
-One playable campaign level, Calypso Trench, has a saved terrain seed and immutable resource snapshot. The world is 1,800 m deep and three times the original lateral width, with three winding navigation lanes, obstacles, wrecks and six recorder objectives at 75, 260, 470, 725, 1,100 and 1,500 m. Seven hull upgrades add 200 m safe depth and 28 hull HP each; the maximum safe pressure depth is 1,530 m. Securing all six recorders is the campaign objective.
+### Economy
 
-The original banked profile, rank progression, repair cost, flashlight, sonar, silent running and upgrade purchase prices are retained. Mobile shows more world at 0.70x; desktop remains 1.00x. A lightless world begins at 1,000 m; instruments remain readable.
+Two independent banked wallets: credits from scrap (18 each), and crystal units. All paid ship-upgrade increments consume both. Ammo remains credits-only and is never granted by upgrades, death, launch or docking. The starting flashlight and two-slot mine rack remain fitted but the warhead launcher still needs purchase.
 
-### Finite resources, renewable enemies
+A fresh campaign offers 15,192 CR of fixed scrap and 496 crystal units against 12,223 CR + 432 crystals for all 51 paid upgrades. Predator drops supply renewable credits. Crystal stock is finite, with a margin and per-pressure-gate spending guards. A shop warning protects the next required hull steps from optional spending that would strand access to deeper crystals.
 
-There are 180 scrap deposits and 24 crystal clusters, each yielding two units, plus 30 resupply caches. Scrap banks at 18 credits per unit, crystals at 45. The map's untouched deposit economy is 8,640 credits. The complete upgrade tree costs 11,924 credits. This deliberately funds most equipment without requiring more map clutter, while renewable kill drops cover remaining costs and consumables. These are arithmetic balance checks, not a claim of a completed campaign playtest.
+Unbanked fixed resources are journaled and become recovery pods after defeat/quit/reload. This protects the finite crystal economy without pretending the full active expedition has been saved. Pods require physical collection and banking; expendables are not refunded.
 
-Resource IDs, coordinates, quantities and collected flags are stored per level and persist between docks/reloads. Existing v0.9 current-cycle positions are migrated without reshuffling. The eight shallow starter bundles support first upgrades. Existing collected resources do not return after the update. Unbanked resources consumed by repairs or lost on death/quit/reload are lost; their deposits remain depleted.
+### Difficulty and navigation
 
-Enemies refresh only after departing the dock radius and returning to dock. Reopening services does not regenerate anything. Supply caches use the same refresh event. Each kill awards one physical scrap drop: 2 for Drifter, 4 for Stalker, 8 for Reaper. Uncollected drops persist, even when enemies refresh. Collection plus successful docking is required for credit. The same kill cannot be rewarded twice.
+Each destination increases total and per-depth predator density, obstacle density, predator HP and bite damage. Existing tier behaviours, detection/leashes and speed relationships are retained. Reapers appear and pursue only at/below 800 m, matching Mk IV normal thrust. Mines, boost, sonar disruption, shielding and quiet running offer complementary responses.
 
-### Threats and ordnance
+Rock collision uses the submarine capsule. Each floor is a solid physical boundary, with sonar-reveal support. Generated recorder approaches and resource positions are kept clear across the automated seed samples. Navigation is not guaranteed difficulty-free across every possible seed; physical-device playtesting remains necessary.
 
-The refreshed field contains 138 Drifters, 33 Stalkers and 15 Reapers, maintaining lower density for higher tiers. Health is 100/200/400, contact damage 13/27/42 and chase speeds 96/158/245.28 world units per second. Stalkers spawn below 400 m; Reapers do not enter the upper 800 m. Finite perception and pursuit leashes remain. Reaper chase speed exactly equals Mk IV normal thrust.
+Ambient light fades continuously to zero at 1,000 m. Four flashlight marks expand the beam and consume battery slowly. Sonar reveals timed echoes as its wave passes. The salvage magnet requires visibility and a clear route. The shield cannot negate pressure/oxygen damage. Thruster marks unlock and extend boost; battery upgrades improve efficiency and recharge.
 
-Mine warheads Mk I-IV deal 60/110/180/240 damage. Independent racks hold 2/4/6/8 rounds. Paid ammunition costs 12 credits per round, regardless of warhead mark. Unlocking a launcher or a larger rack supplies no rounds. A round uses current fitted warhead power when deployed. Mines arm after 0.65 seconds, have a 1.1-second deployment cooldown, damage multiple nearby predators and cannot damage the submarine. Deployed mines are cleared at population refresh and are not restored across reloads.
+### Interface
 
-The Ammunition dock tab offers one round or all missing affordable rounds. Every purchase atomically deducts credits and adds owned stock. Every deployment persists the spent round. Docking, rescue, launch, upgrades and caches never create ammunition. Unspent purchased rounds survive death/reload.
+Mobile uses a floating transparent joystick on open-water touch and eight circular left-side actions. USE is largest; BOOST second. PC uses held mouse/keyboard piloting with a key-reference strip. Mobile world zoom is 0.70; desktop is 1.00. Instruments stay full-size.
 
-### Refit catalogue and adaptive systems
+The dock keeps three-column name-only upgrade tiles with detailed native purchase pop-ups. Its three tabs are SHIP UPGRADES, AMMUNITION and EXPEDITIONS. Credits and crystals appear together. Expedition cards show unlock state, selected destination, floor, secured recorders, remaining fixed stocks and recovery-pod count.
 
-The dock presents twelve name-only system tiles in exactly three columns. A native child dialog contains all tiers, costs, current/next statistics, tactical descriptions and the purchase action. Closing it never resumes the dive. Shop tabs and undock controls stay reachable in short landscape layouts. Every paid upgrade is applied to the canonical profile; max-level and insufficient-credit purchases are guarded. Owned ammunition is never increased by refitting.
+The achievement sheet opens from both main and pause menus, with 20 progress-tracked goals and unlock notifications. It preserves the previous paused state when closed. Small-landscape sheets scroll within their viewport. Achievements are campaign-specific, reset with confirmed New Game and do not award currency.
 
-Three optional Mk I-IV systems complement the original nine paths. All ship behaviour derives from the saved upgrade marks; there are no new mandatory action buttons.
+### Persistence and deployment boundaries
 
-- Salvage Magnet: 10/14/18/22 m recovery versus the ordinary 6 m; 1.2/1.0/0.8/0.6 power per remote pickup; prices 80/130/200/300. USE/E gathers scrap, crystals and kill drops one at a time. Close pickups stay free. Requires usable light or sonar echo and a clear path. Rocks/walls block it. Recorders/caches remain close-use objects. Persistent resource positions are never moved.
-- Kinetic Shield: 20/35/50/70 HP; recharge 2/3/4/5 HP/s after 8 seconds without impact; 0.35 battery per recovered point; prices 100/180/280/420. Takes predator/rock damage before the hull. Pressure and oxygen loss bypass it. Boost and very low battery suspend recharge. Docking restores it. The fitted-only top HUD meter occupies a fourth capability slot, not a new row on portrait screens.
-- Sonic Disruptor: local radii 18/22/26/30 m; Drifter stuns 1.2/1.6/2.0/2.4 s; extra scan costs 3/4/5/6; prices 90/160/250/380. Stalker/Reaper durations are 80%/60%. Status applies at wave arrival; stunned predators neither move nor bite. Scan visibility is still screen-wide and uses the ordinary cooldown. Without enough extra power, scanning falls back to a non-disrupting ordinary ping.
+Campaign schema 3 stores the ship profile, separate currencies, owned ammo, achievement counters/timestamps and independent level fields in `the-abyss-below-campaign-v3`, with a previous-snapshot backup. The old schema 2 trench migrates into the fifth level without replacing old deposits or recorders. Four new levels are still completed in sequence.
 
-The new paths add 2,570 credits of optional purchases. The full 51-level paid tree costs 11,924 credits. The untouched fixed map still contains 8,640 credits, approximately 72.46% before ammo/repairs/losses; renewable predator drops fund the remainder. No loot quantity, layout, depletion or respawn rule changes in this release.
+A single snapshot couples resource depletion, cargo journal and upgrade spending. Full ship position/combat resume is still absent. This remains a browser/PWA implementation with local site-specific storage; it is not an Android application bundle or cloud-synced campaign.
 
-### Thruster-based boost
+The existing version checker validates loaded build markers, published runtime hashes and controlling service worker. It reports offline, partial, stale or local-preview states without claiming verified deployment. Run `tests/build_release.py` after runtime changes. Host all matching files together.
 
-Standard drive speed is 146 world units/s and has no boost. Each engine mark adds 17% of the standard normal speed. Boost multipliers Mk I-IV are 1.45/1.60/1.75/1.85. Boost capacities are 75/100/125/150, spent at 25 per second, yielding 3/4/5/6 seconds. Recharge begins after 1.5 seconds, at base 12.5 per second. Full exhaustion requires full recharge and releasing the boost command. Battery upgrades retain cheaper power cost and faster recharge. Boost produces noise and overrides quiet running.
+### Evidence
 
-### Control and display contract
-
-Touch steering starts at the first open-water finger, anywhere not occupied by a control or modal. It remains hidden until a drag clears the dead zone. A simple transparent base/thumb then tracks the held gesture. Release hides the helm. First pointer ownership prevents a second finger from stealing steering. Action fingers can independently hold/use/boost/mine. Pause, cancel, orientation change and app blur clear input. All eight circular actions remain bottom left, USE largest and BOOST second. CRUISE retains its existing explicit-heading mode.
-
-Desktop shows a bottom keyboard reference, not mobile controls. Hold left click for cursor steering or use WASD/arrows. Space boosts only with a fitted engine. Both platforms show top ship/mark/pressure cards and health/oxygen/power/noise/sonar/boost/ammo instruments. The vessel has no overhead nameplate.
-
-### Save and deployment boundaries
-
-The atomic campaign record contains a profile and a per-level field object. It tracks banked progress, purchased ammunition, immutable resource records, depletion, enemy damage/death and drops, plus the legitimate dock-return flag. A previous valid record is retained for recovery. Only one level is currently playable. This format supports future level keys without pretending a level selector exists now.
-
-Active vessel state and cargo are not saved. Finite resource collection and ammunition spend are persistent, so reloading during a dive can lose unbanked value. NEW GAME is an explicit confirmed reset. Local campaign saves are not cloud sync.
-
-The menu's sync check fetches the hosted release manifest and six runtime assets without caches, compares SHA-256 checksums, checks loaded HTML/CSS/game build markers and asks the controlling worker whether its complete verified shell is present. Green means agreement with the current deployed build, not unpublished repository commits. Offline or inconclusive checks never show latest verified. An incomplete upload cannot install the new worker shell. Manual loading is blocked while an expedition remains active. No update check clears saved campaign data.
-
-### Validation priorities
-
-Current tests cover true mobile pointer input, three-column and nested modal layout, all 51 paid purchase levels, all three systems at every mark, stun tier resistance, recharge/battery limits, deterministic v0.10/v0.9 migration, permanent depletion, kill rewards, all engine marks, all warhead/predator combinations, collisions and canvas-level lighting. Network/worker boundaries are mocked separately. Physical hardware, a hosted update/offline round trip and full-campaign tuning still require playtesting. See the verification report for the actual evidence and limitations.
+Use VERIFICATION-v0.12.0.md and verification/v0.12.0/results.json for this release's acceptance evidence. Automated synthetic checks are not equivalent to a physical phone trial, full balance playthrough or hosted offline update.

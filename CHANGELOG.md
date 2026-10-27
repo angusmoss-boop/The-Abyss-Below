@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.12.0 · Fivefold Descent (27 October 2026)
+
+- Added five selectable campaign destinations, physical seabeds at 300/600/1000/1400/1800 m, and 2/3/4/5/6 banked-recorder gates. Unlocked maps remain freely revisitable from a new EXPEDITIONS hub tab; switching never rerolls finite resources or refreshes enemies.
+- Increased obstacle density, predator density, health and damage by level without breaking the Mk IV/Reaper speed relationship or the 800 m Reaper restriction. Seabed collision covers rotated and boosted submarine capsules; sonar reveals floor contours.
+- Added exactly 20 persistent, progress-tracked achievements in the main/pause menus, with unlock notices and campaign reset semantics. Objectives cover exploration, recorders, surveys, hunting, sonar, magnet use, shields, safe return and equipment completion.
+- Split crystals from credits. Scrap still banks at 18 CR/unit; crystals bank as crystals. All 51 paid upgrade increments require both. Hull III costs 297 CR + 10 crystals; safe depths now end at 1,830 m. Fresh stock is 15,192 CR + 496 crystals; full upgrade cost is 12,223 CR + 432 crystals. Ammo remains 12 CR per round and never auto-refills.
+- Added per-pressure-gate crystal-reserve purchase checks. Inaccessible deep crystals cannot justify spending the last shallow crystals needed for hull progression.
+- Added persistent recovery pods for unbanked scrap/crystals on defeat, quit or reload. Atomic cargo/depletion journaling avoids destroying irreplaceable crystal stock or minting duplicate currency. Active vessel position and combat state still do not resume after reload; unbanked recorders return to wrecks.
+- Migrated to campaign schema 3. Existing credits, upgrades, ammo and old finite trench progress are retained in Level 5; the four new levels must still be unlocked in order. Imported old recorders retain their locations, and missing crystal stock is added once without respawning collected old deposits.
+- Updated hub/popup currency displays, campaign objectives, floor status, notifications, help and deployment markers. Kept existing floating controls, mobile/desktop zoom, flashlight, boost, ordnance and adaptive systems.
+- Added current campaign, achievement/world, migration, responsive interface, touch, systems, gameplay, integrity and mocked update/worker checks. Actual acceptance outcomes and limitations are in VERIFICATION-v0.12.0.md.
+
 ## v0.11.0 · Adaptive Systems (27 October 2026)
 
 - Replaced the long dock list with twelve name-only tiles in a fixed three-column grid. Added separate native upgrade pop-ups with current/next stats, mark progression, field notes, exact price, credit balance, maximum-tier and affordability states. Buying stays in the pop-up; closing returns to the catalogue without unpausing. Preserved the paid Ammunition tab.

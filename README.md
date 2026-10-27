@@ -1,154 +1,83 @@
 # The Abyss Below
 
-## v0.11.0: Adaptive Systems
+## v0.12.0: Fivefold Descent
 
-A standalone, dependency-free browser/PWA expedition game. Pilot the NEREID through a 1,800 m trench, bank resources, purchase upgrades and recover six recorders. This release rebuilds the dock around a three-column catalogue and detailed purchase pop-ups, then adds three optional systems: the Salvage Magnet, Kinetic Shield and Sonic Disruptor.
+A dependency-free browser/PWA submarine expedition game. This release turns the original single trench into a five-level campaign with physical seabeds, a revisitable expedition hub, 20 achievements and separate credit/crystal upgrade costs.
 
-## Update your existing game
+## Install the update
 
-1. Return to the surface, bank cargo, then quit the active dive from the pause menu. Active dives and unbanked cargo still do not survive a page reload.
-2. Extract the update ZIP and copy its contents into the existing repository root, replacing matching files. Do not upload the ZIP itself or put the game inside an extra nested folder.
-3. Keep **version-sync.js** present and include the updated **version.json**, game, stylesheet, HTML and worker. Commit all update files together. Partial uploads are deliberately reported as incomplete and cannot replace the verified offline shell.
-4. Allow your existing GitHub Pages deployment to complete. Reopen online at the same address and browser profile. The title menu should show **v0.11.0 / Adaptive Systems**. Press CHECK AGAIN if necessary.
-5. **UP TO DATE · SYNC VERIFIED** means the running game, loaded HTML/CSS, published release hashes and controlling offline worker all agree. Offline, blocked checks or a worker still installing are reported honestly as unverified. It is not a cloud-save status or a check of unpublished GitHub commits.
+1. **On the old build, dock and bank your cargo before updating.** Then quit the active dive. The v0.11 build cannot recover unbanked cargo across a reload.
+2. Extract the update ZIP. Copy its contents into the existing repository root, replacing matching files. Do not upload the ZIP itself or add an extra enclosing directory.
+3. Publish the runtime files together, including `game.js`, `index.html`, `styles.css`, `service-worker.js`, `version-sync.js` and `version.json`. Keep the manifest and icons in place. The version checker rejects partial or mismatched deployments.
+4. After your normal hosting deployment completes, reopen online at the same site and browser profile. The menu should show **v0.12.0 / Fivefold Descent**. Use CHECK AGAIN to check the published files.
+5. **UP TO DATE · SYNC VERIFIED** requires matching loaded build markers, published asset hashes and the controlling worker. It checks your deployed website, not unpublished repository changes or cloud saves. A local preview correctly remains unverified.
 
-No repository push, hosting change or live deployment is performed by this package. No app reinstall is required by the update process. Do not clear site data, change host/browser profile or select NEW GAME merely to update. Saved campaigns are local to this browser and site, not synced between devices.
+This package does not push a repository or deploy a website. No reinstallation is required by the update process. Do not clear site data or choose New Game to update. Saves remain local to this site and browser profile.
 
-Existing v0.10 campaigns retain banked credits, all previous upgrades, secured recorders, owned ammunition, exact resource placements and depleted deposits. The three new systems start unfitted at level 0. No reset or new campaign is required. For older v0.9 saves only, free ammo was never persistent owned stock and migrates empty; launcher and rack upgrades remain fitted.
+## Five-level campaign
 
-## Dock overhaul: twelve systems, three columns
+| Level | Destination | Seabed | Recorders |
+|---|---|---:|---:|
+| 1 | Sunbreak Shelf | 300 m | 2 |
+| 2 | Glassbone Rift | 600 m | 3 |
+| 3 | Drowned Gardens | 1,000 m | 4 |
+| 4 | Midnight Cathedral | 1,400 m | 5 |
+| 5 | Calypso Abyss | 1,800 m | 6 |
 
-The SHIP UPGRADES catalogue is a fixed three-column, four-row grid on both platforms. Tiles show only the system name. Tapping a tile opens a separate native modal with a description, installed marks, side-by-side current/next specifications, field notes, available credits and a single paid install/upgrade action. Prices and statistics do not crowd the catalogue. Fully upgraded or unaffordable systems remain inspectable; their purchase buttons explain why buying is unavailable.
+Bank every recorder in a level to unlock the next. Merely carrying the recorders does not unlock it. At the dock, choose **EXPEDITIONS** to select any unlocked destination at no cost. A main-menu EXPEDITION HUB button also opens the hub when no dive is active; it cannot teleport a submerged vessel.
 
-The vessel remains paused while reading or buying. Escape, the close button or the backdrop closes the child pop-up and returns focus to the selected tile, without undocking. Keyboard focus stays within the top modal. The dock has a separate AMMUNITION tab, a persistent credits display and an always-reachable UNDOCK button. Small landscape layouts scroll the catalogue independently of the header and departure controls.
+Each level has a solid, collision-tested seabed, persistent deposits, its own predator population and saved recorder progress. Threat density, rock-field density, predator durability and damage increase through the campaign. Reapers remain below 800 m and still match Mk IV normal-thruster speed. The wider trench and mobile zoom are unchanged.
 
-The original nine upgrade paths keep their prices and limits. Three optional systems each add four paid marks. No new action circles or keyboard shortcuts are required. The shield meter appears in the existing top system row only once fitted.
+## Two currencies, finite resources
 
-## Three new ship systems
+Scrap deposits and crystal clusters each contain two units. On docking, each scrap unit becomes **18 credits**; each crystal unit becomes **one banked crystal**, never credits. Every paid ship-upgrade increment needs both currencies. Standard fitted Mk I flashlight/rack equipment remains free. Ammunition is still bought separately for **12 credits per round**, without a crystal charge or automatic refill.
 
-### Salvage Magnet
+The shop keeps the three-column name-only catalogue. Tap a system to see the current/next statistics and both prices. For example, fitting **Hull Mk III costs 297 CR + 10 crystals**. Hull pressure limits are now 130 m standard, then 330 / 630 / 830 / 1,030 / 1,330 / 1,530 / 1,830 m.
 
-Hold **USE** on mobile or **E** on PC to recover scrap, crystals and predator drops from farther away. Ordinary close collection remains free, even with an empty battery. Remote collection consumes power per pickup, not continuously while the button is held. Deposits are collected at their original positions; the magnet does not move or regenerate the saved map.
+A fresh campaign contains **15,192 credits' worth of fixed scrap and 496 crystals**. All 51 paid upgrade steps cost **12,223 credits and 432 crystals**, leaving 64 spare crystals. These are arithmetic totals, not a completed balance playthrough. Ammo, repairs and lost expendables have additional costs. Predator salvage supplies renewable credits.
 
-| Mark | Recovery reach | Remote pickup cost | Upgrade price |
-|---|---:|---:|---:|
-| Mk I | 10 m | 1.2 power | 80 CR |
-| Mk II | 14 m | 1.0 power | 130 CR |
-| Mk III | 18 m | 0.8 power | 200 CR |
-| Mk IV | 22 m | 0.6 power | 300 CR |
+Fixed scrap/crystal deposits never regenerate on docking, level switching, quitting or reloading. The hub shows remaining stocks for each level. Predators and supply caches refresh only after a genuine dive and return to that level's dock. Switching maps is not a population reset. Secured recorders stay secured.
 
-The standard close-use range is 6 m. Resources must be visible in sufficient ambient light, inside the working flashlight beam, or revealed by an unexpired sonar echo. A clear route is required: the magnet cannot reach through rocks or trench walls. Recorders and supply caches retain their original close-use range. Multiple nearby resources are collected one at a time while USE/E remains held. The interaction prompt displays the remote pickup's power cost.
+## Recovery pods and crystal safeguards
 
-### Kinetic Shield
+Collected resources are journaled together with deposit depletion. Defeat, quitting a dive or reloading leaves unbanked scrap/crystals in a persistent recovery pod instead of deleting finite resources. Recover the pod and dock to bank it. Pods are placed no deeper than the current safe hull range and are visible to sonar and the objective indicator. Undelivered recorders return to their wrecks. Spent ammunition and repair scrap are not refunded.
 
-An automatic barrier absorbs **predator bites and rock impacts** before hull HP. Damage beyond the available shield spills into the hull. It does **not** absorb pressure damage or oxygen-loss damage, so hull progression and air management remain essential.
+The ship's active position, oxygen, combat simulation and planted mines are **not** resumed after a reload. A recovery pod is not an active-dive save. Browser storage failure or clearing site data can still lose progress; the game displays a warning if saving fails.
 
-| Mark | Shield capacity | Recharge rate | Upgrade price |
-|---|---:|---:|---:|
-| Mk I | 20 HP | 2 HP/sec | 100 CR |
-| Mk II | 35 HP | 3 HP/sec | 180 CR |
-| Mk III | 50 HP | 4 HP/sec | 280 CR |
-| Mk IV | 70 HP | 5 HP/sec | 420 CR |
+The shop checks the crystal budget at every remaining hull pressure gate. Optional purchases are refused only when they would leave too few crystals obtainable before a required hull step. Crystals below that pressure limit do not count as available funds. Fit the indicated hull upgrade first.
 
-Recharge begins after **8 seconds without an impact**. Each recovered shield point costs **0.35 battery power**. Recharge pauses during boost and at very low battery; the delay still counts down during boost. Docking restores the fitted barrier. A top SHIELD meter shows charge and recharge status. The brief impact outline is painted into the world before the darkness mask, so it does not reveal unlit scenery.
+## Achievements
 
-### Sonic Disruptor
+Open **ACHIEVEMENTS** from the main menu or pause menu. Twenty objectives cover recorder completion, all seabeds, resource surveys, predator hunting, sonar, magnet use, shielding, a damage-free return and fully upgrading the ship. Each has a progress indicator and an unlock notification. Counters and unlocks persist through reloads and level changes, and reset only with a confirmed New Game. They are in-game, campaign-specific achievements, not Google Play Games integration.
 
-Press the existing **SONAR / Q** action. When sufficient power is available, the scan carries a short-range disruption pulse that stops predators from moving or biting when the expanding wave reaches them. It does not deal damage or replace mines. The scan itself still reveals the full current screen; disruption has its own smaller radius.
+See **CAMPAIGN-v0.12.0.md** for the full achievement list, level stocks, all upgrade costs and migration details.
 
-| Mark | Disruption radius | Drifter stun | Extra power per scan | Upgrade price |
-|---|---:|---:|---:|---:|
-| Mk I | 18 m | 1.2 sec | 3 | 90 CR |
-| Mk II | 22 m | 1.6 sec | 4 | 160 CR |
-| Mk III | 26 m | 2.0 sec | 5 | 250 CR |
-| Mk IV | 30 m | 2.4 sec | 6 | 380 CR |
+## Existing campaigns
 
-Stalkers receive **80%** of the listed duration; Reapers receive **60%**. Thus Mk IV briefly stops a Reaper for **1.44 seconds**, not 2.4. Existing sonar cooldowns prevent repeated immediate pulses. The extra power is charged in addition to the fitted sonar's base scan cost. If only the normal scan is affordable, it still fires without a stun and the field log explains the fallback. An unaffordable ordinary scan cannot fire. Sonar outlines identify stunned targets while their echo remains visible.
+Existing credits, XP, best depth, fitted upgrades and purchased ammunition are retained. The old trench is preserved as **Level 5, Calypso Abyss**, including its original resource locations/depletion and secured recorders. You start the expanded campaign at Level 1 and must clear the four new levels to revisit that old trench. Old secured recorders remain stored while access is locked.
 
-These systems work together: reveal salvage with sonar, recover it using the magnet, or stun a pursuing predator to buy time to boost or plant mines. The shield is an impact buffer, not a licence to descend beyond your hull rating.
+Imported Level 5 receives a one-time addition of missing crystal deposits to reach the new generated-stock target. Previously sold/collected crystals are not refunded or respawned. Existing purchased upgrades do not incur a retrospective crystal bill. New crystal balances begin at zero because old crystals were sold for credits. Fresh-campaign stock totals do not describe every migrated save.
 
-## Floating mobile controls
+## Controls
 
-Touch open water anywhere and drag to pilot from that starting point. A minimal transparent joystick appears only after the drag passes a small dead zone. A stationary tap shows no pad. Release hides it. The first water finger owns steering until released; extra fingers cannot steal it. Action buttons and menus never start steering.
-
-All eight circular actions remain at bottom left, USE largest and BOOST next. Steering, boost, use and mines can be operated simultaneously with separate fingers. Pause, app switching, pointer cancellation and orientation changes release inputs. CRUISE can retain the last commanded heading after an ordinary release, as before.
-
-Mobile world zoom stays at 0.70x; PC stays at 1.00x. Instruments retain full size. Desktop still uses click-held steering or keyboard movement and the bottom key-reference strip.
-
-| Action | PC | Touch |
+| Action | PC | Mobile |
 |---|---|---|
-| Pilot | Hold left click and move cursor; WASD / arrows | Touch and drag open water anywhere |
-| Boost | Hold Space while moving, once thrusters are fitted | Hold BOOST while steering / cruising |
-| Collect / dock | E, or hold E to collect repeatedly | USE / hold USE |
+| Pilot | Hold left mouse button and move pointer; WASD/arrows | Touch and drag open water anywhere |
+| Boost | Hold Space while piloting, after fitting thrusters | Hold BOOST while steering/cruising |
+| Collect / dock | E; hold E for repeated collection | USE; hold for repeated collection |
 | Mine | F | MINE |
-| Sonar | Q | SONAR |
+| Sonar / disruptor | Q | SONAR |
 | Repair | R | REPAIR |
-| Lights | L | LIGHTS |
+| Flashlight | L | LIGHTS |
 | Quiet running | Hold Shift | SILENT toggle |
-| Pause | Esc | Top pause button |
+| Pause | Esc | Top pause control |
 
-## Magnetic thrusters and boost
+All existing flashlight, boost, shield, magnet, disruption and paid ammunition systems remain. Eight circular mobile actions stay bottom left; the floating steering pad appears where you touch open water. PC retains its keybind reference strip.
 
-The standard drive has **no boost**. Buy Mk I Magnetic Thrusters at the dock to unlock it. Each subsequent mark increases ordinary speed, boosted speed and full-charge duration.
+## Development and verification
 
-| Thrusters | Normal speed | Boost multiplier | Boosted speed | Full charge |
-|---|---:|---:|---:|---:|
-| Standard | 14.60 m/s | Unavailable | Unavailable | 0 s |
-| Mk I | 17.08 m/s | 1.45x | 24.77 m/s | 3 s |
-| Mk II | 19.56 m/s | 1.60x | 31.30 m/s | 4 s |
-| Mk III | 22.05 m/s | 1.75x | 38.58 m/s | 5 s |
-| Mk IV | 24.53 m/s | 1.85x | 45.38 m/s | 6 s |
+Serve the folder over HTTP for local development, for example `python -m http.server 8000`. Normal local-preview version status is not a verified hosted release.
 
-Speeds rounded from internal world units (10 units = 1 m). Battery upgrades still reduce boost energy cost and accelerate recharge. Recovery begins after 1.5 seconds without boosting. Complete exhaustion locks boost until full and requires releasing the input before reuse. Boost overrides quiet running. The Crimson Reaper still matches Mk IV **normal** speed, not boosted speed.
+After editing any runtime asset, run `python tests/build_release.py` before publishing. Run the current suite with `python tests/run_v0120.py`; see **tests/README-v0.12.0.md** for dependencies and limitations. Historical tests/reports describe earlier rules and are not current acceptance evidence.
 
-## Permanent resources and predator salvage
-
-Each campaign stores a fixed resource snapshot for its selected level. The current game contains one playable level, Calypso Trench; this update does not introduce a new level selector. A new campaign generates its resource layout once. Docking, quitting, rescue, menu navigation and reloading do not move or replenish scrap/crystals.
-
-There are **180 scrap deposits and 24 crystal clusters**. Each yields **2 units**, so there is more value without adding more visual clutter. An untouched map is worth **8,640 credits**, compared with **11,924 credits** for the entire upgrade tree. That is about **72%**, before ammunition, field repairs or losses. Existing campaigns that have already collected resources have less remaining. Eight shallow starter bundles and objective-adjacent resources support early progression.
-
-| Destroyed predator | Recoverable scrap | Bank value |
-|---|---:|---:|
-| Drifter | 2 | 36 credits |
-| Abyss Stalker | 4 | 72 credits |
-| Crimson Reaper | 8 | 144 credits |
-
-Kill rewards appear as salvage at the kill location, with a safe nearby placement if necessary. They are **not instant credits**: collect them, return safely and dock to bank them. Uncollected drops persist across reloads and dock visits. A single kill cannot award twice. Collected cargo can still be lost by death, abandoning a dive or reloading before banking; the original finite deposit does not reappear.
-
-**Predators and the 30 supply caches still refresh only on a genuine return to the dock after departure.** Reopening the dock or buying upgrades without departing does not reset them. Rock layout, resource positions and depleted resource IDs remain unchanged. Secured recorders stay secured. Unbanked recorders remain recoverable after a lost dive. Refresh removes old deployed mines/sonar echoes, but does not delete uncollected kill salvage.
-
-## Paid mine ammunition
-
-The dock now has separate **UPGRADES** and **AMMUNITION** tabs. Buy Mk I Sea Mine Warheads to fit the launcher, then buy rounds for **12 credits each**. BUY 1 and FILL RACK are available. With insufficient credits for a full refill, the bulk button buys only the affordable number and displays the exact price.
-
-Warhead power remains 60 / 110 / 180 / 240 damage. Independent capacity upgrades remain **2 / 4 / 6 / 8 slots**. Extra slots arrive empty. Rounds use the current warhead mark, so there is no separate incompatible ammo type per mark.
-
-Spent rounds are saved immediately. Loaded rounds persist across docking, relaunch, death and reload, but none of these events grants free rounds. Unlocking warheads, upgrading capacity, buying another upgrade, collecting caches or waiting cannot replenish ammunition. Only a successful paid purchase increases owned stock.
-
-## Existing exploration features retained
-
-The expanded trench remains three times the original width and 1,800 m deep, with six recorders at 75 / 260 / 470 / 725 / 1,100 / 1,500 m. Each fresh predator cycle has 138 Drifters, 33 Stalkers and 15 Reapers. Health remains 100 / 200 / 400. Tier 2 begins below 400 m and Tier 3 below 800 m.
-
-Ambient light fades continuously to complete darkness at 1,000 m. Mk I-IV flashlight reach remains 26 / 36 / 48 / 62 m with progressively wider cones and slow power draw. Sonar reveals objects as the expanding wave reaches them, then fades; it has a cooldown. Mines, pursuit leashes, swept collision handling and simultaneous mobile actions are retained. The top cards show ship name, mark and current pressure rating instead of a nameplate over the vessel.
-
-## Saving and recovery
-
-The canonical localStorage record is `the-abyss-below-campaign-v2`. It holds the banked profile, owned ammunition, campaign ID and per-level field records together. A previous valid record is kept at the same key with `.backup`. If the primary record is unreadable, the backup can recover it and the menu shows a warning. A storage failure is reported, not disguised as a saved campaign.
-
-Legacy `the-abyss-below-v01` and `the-abyss-below-field-v1` records are read for migration but no longer written. Current v0.9/v0.10 seed/cycle placements and collected IDs are retained. The v0.11 modules are additive profile fields, not a new campaign schema. Do not downgrade to an earlier build after using the new campaign format: earlier releases cannot read it and could show their old progress. New Game requires confirmation and intentionally resets the campaign, seed, resources, upgrades, ammo and banked progress.
-
-This is **not** a full mid-dive save. Vessel position, oxygen, power, active mines and unbanked cargo are not restored after reload. Finite resource depletion and ammunition spending do persist. Bank before updating or closing the game.
-
-## Release verification and development
-
-See `VERIFICATION-v0.11.0.md` for precise test coverage and limitations. Five current Chromium suites cover the three new systems, dock/purchase/layout/migration, campaign economy, touch/desktop controls and gameplay regressions. An additional static release suite checks HTML wiring and checksums. Two Node suites run production version-checker/service-worker code with mocked browser/network/cache boundaries. These mocks are not live online/offline PWA integration tests.
-
-Runtime is plain HTML/CSS/JavaScript with no build dependency. Serve the root over HTTPS for service workers; localhost is also a secure development context in compatible browsers. Before deploying any edit to a runtime asset, regenerate checksums:
-
-```sh
-python tests/build_release.py
-```
-
-The runtime build markers and the release manifest must agree. Use a new version/build ID for a new published release. Do not hand-edit a deployed runtime file without regenerating the manifest.
-
-Current commands and harness caveats are in `tests/README-v0.11.0.md`. Historical tests and reports are retained for reference, but old assertions about inline purchases, free ammo, fixed joysticks or resource respawns are superseded by this release. Physical phone performance, a complete campaign playthrough and real hosted update/offline operation remain unverified in this environment.
+**VERIFICATION-v0.12.0.md** records the actual test outcomes. Physical Android hardware, real hosted/offline updating and a full human campaign playthrough are not verified. This remains a browser/PWA source release, not a signed Android app bundle.

@@ -1,5 +1,5 @@
 /* Shell, dock and menu skin. */
-:root{--abyss-build:"0.11.0-adaptive-systems-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
+:root{--abyss-build:"0.12.0-fivefold-descent-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
 body{background:radial-gradient(ellipse at 40% -20%,#12344a 0%,#061019 65%)}
@@ -291,7 +291,7 @@ body.game-focus .desktop-keybinds{bottom:calc(15px + env(safe-area-inset-bottom,
  .touch-ui .viewport .interaction-prompt{bottom:calc(15px + env(safe-area-inset-bottom,0px));max-width:160px;font-size:8px;padding:8px 10px}
 }
 
-/* v0.11.0: floating helm, persistent campaign and dock stores. */
+/* v0.12.0: floating helm, persistent campaign and dock stores. */
 .floating-joystick{--floating-radius:44px;position:absolute;z-index:10;pointer-events:none;display:none;width:calc(var(--floating-radius)*2 + 18px);height:calc(var(--floating-radius)*2 + 18px);transform:translate(-50%,-50%);border:1px solid #d1eeee60;border-radius:50%;background:#c8f7f006;contain:layout style;}
 .touch-ui .floating-joystick.engaged{display:block}
 .floating-thumb{position:absolute;left:calc(50% - 13px);top:calc(50% - 13px);width:26px;height:26px;border:1px solid #d5fff0a8;background:#b9f5e91c;border-radius:50%;pointer-events:none;will-change:transform}
@@ -332,7 +332,7 @@ body.game-focus .desktop-keybinds{bottom:calc(15px + env(safe-area-inset-bottom,
 @media(max-width:540px){.overlay{padding:12px}.menu-card{padding:20px 18px}.menu-icon{font-size:39px;margin:4px 0}.version-card{padding:11px 12px;margin:13px auto}.version-heading{font-size:11px}.version-card p{font-size:10px}.menu-card h1{font-size:38px}.menu-card>p{font-size:11px}.menu-feature-list{font-size:8px}.ammo-purchases{gap:7px}}
 
 
-/* v0.11.0 / Adaptive Systems: a compact three-column refit catalogue. */
+/* v0.12.0 / Fivefold Descent: a compact three-column refit catalogue. */
 .dock-overlay{padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:#020b13e6}
 .dock-overlay .dialog-card{width:min(100%,780px);max-width:780px;max-height:calc(100dvh - 24px);padding:0;overflow:hidden;display:flex;flex-direction:column;border:1px solid #426775;border-radius:20px;background:radial-gradient(ellipse at 100% 0,#17445266,transparent 55%),linear-gradient(145deg,#0c2230,#071722);box-shadow:0 32px 120px #000b}
 .dock-overlay .dialog-top{padding:19px 25px 0;flex:none}
@@ -426,3 +426,35 @@ body.game-focus .desktop-keybinds{bottom:calc(15px + env(safe-area-inset-bottom,
  .dock-overlay .dock-grid-caption{margin-top:1px;margin-bottom:8px}
 }
 @media(min-width:361px) and (max-width:540px){.upgrade-tile span{font-size:10px}.dock-overlay .dock-balance{font-size:7px}}
+
+/* v0.12 / Fivefold Descent: expedition atlas, two-currency wallet and captain's log. */
+.dock-wallet{display:flex;gap:20px;align-items:center}.crystal-wallet strong{color:#c9b7ff}.crystal-wallet>span{color:#b3a2d3}
+.dock-departure #departureLevel{max-width:62%;font-size:9px;line-height:1.6}
+.expedition-intro{margin:1px 0 14px}.expedition-intro>span{font:700 9px ui-monospace,monospace;letter-spacing:1px;color:#b2e7db}.expedition-intro p,.expedition-note{font-size:11px;line-height:1.7;color:#8ba6b4;margin:8px 0 0}
+.expedition-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.expedition-card{position:relative;min-width:0;padding:18px;border:1px solid #365465;border-radius:13px;background:linear-gradient(140deg,#18344070,#0b1c27);overflow:hidden}
+.expedition-card::before{content:'';display:block;position:absolute;inset:0 auto 0 0;width:3px;background:var(--level-accent);opacity:.65}.expedition-card.selected{border-color:#75baa9;background:linear-gradient(140deg,#1c4a4360,#102b33)}.expedition-card.locked{background:#0a1923;border-color:#263e4e}.expedition-card.locked::before{opacity:.3}
+.expedition-heading{display:flex;justify-content:space-between;gap:8px;font:650 7px ui-monospace,monospace;letter-spacing:.6px;color:#9bb0bc;line-height:1.7}.expedition-heading b{color:var(--level-accent);text-align:right}.locked .expedition-heading b{color:#7b93a4}
+.expedition-card h3{font-size:17px;color:#e3eff2;letter-spacing:.6px;line-height:1.4;margin:10px 0 8px}.expedition-card>p{font-size:11px;color:#9eb5c0;line-height:1.7;margin:0 0 14px;min-height:57px}
+.expedition-metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px 10px}.expedition-metrics span{display:flex;flex-direction:column;gap:4px;font:600 7px ui-monospace,monospace;letter-spacing:.5px;color:#859fad}.expedition-metrics strong{font-size:14px;color:#d6e6e9;letter-spacing:0}.expedition-metrics span:nth-child(4) strong{color:#c5b6eb}
+.expedition-select{margin-top:17px;width:100%;min-height:42px;padding:10px 8px;border:1px solid #497c77;border-radius:7px;background:#214940;color:#c2eade;font:700 9px ui-monospace,monospace;letter-spacing:.8px;line-height:1.5}.expedition-select:disabled{cursor:default;background:#112732;border-color:#35505f;color:#92acb8}.expedition-card.selected .expedition-select{color:#b7e8da;border-color:#61978d;background:#1f453e}
+.expedition-select:focus-visible{outline:2px solid #b8f0de;outline-offset:2px}.recovery-hint{font:650 8px ui-monospace,monospace;color:#efc28d;margin-top:13px}.expedition-note{margin:13px 0 0;padding:10px 0;border-top:1px solid #3d596d55}
+.achievement-menu-btn{display:flex;align-items:center;justify-content:space-between;gap:10px}.achievement-menu-btn>span{font-size:9px;color:#b1d6c9;border:1px solid #416c66;border-radius:20px;padding:3px 8px;background:#173b3455}
+.achievements-dialog{width:min(780px,calc(100vw - 24px));max-width:none;max-height:calc(100dvh - 24px);padding:0;margin:auto;border:1px solid #50717e;border-radius:18px;background:radial-gradient(ellipse at 100% 0,#214e4b55,transparent 60%),#091c29;color:#d5e7ec;overflow:hidden;box-shadow:0 30px 120px #000c;font-family:inherit}.achievements-dialog:not([open]){display:none}.achievements-dialog[open]{display:flex;flex-direction:column}.achievements-dialog::backdrop{background:#010810dd;backdrop-filter:blur(8px)}
+.achievements-header{padding:23px 25px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;border-bottom:1px solid #43627166;flex:none}.achievements-header h2{font-size:27px;letter-spacing:1.7px;margin:10px 0}.achievements-header p{font:650 9px ui-monospace,monospace;color:#98c6bb;letter-spacing:1px;margin:0}.achievements-header .close-btn{flex:none;min-width:40px;min-height:40px;background:#153340;border:1px solid #4b6c7b;border-radius:9px;color:#c4dee6}
+.achievement-list{padding:18px 23px;overflow:auto;overscroll-behavior:contain;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;scrollbar-width:thin;scrollbar-color:#41606e transparent}
+.achievement-card{display:grid;grid-template-columns:36px 1fr;gap:11px;align-items:start;padding:15px 12px;background:#09172188;border:1px solid #38536566;border-radius:10px;min-width:0}.achievement-card>div{min-width:0}.achievement-card.earned{background:#173d3244;border-color:#78b69b66}
+.achievement-medal{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid #486677;border-radius:50%;font:600 11px ui-monospace,monospace;color:#7f9caa}.earned .achievement-medal{color:#bbf0cf;background:#285a4455;border-color:#7fa68b;font-size:15px}.achievement-title{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}.achievement-title h3{font-size:12px;color:#dde9ed;line-height:1.5;margin:0}.achievement-title>span{font:650 7px ui-monospace,monospace;letter-spacing:.3px;color:#8db3b5;white-space:nowrap}.earned .achievement-title>span{color:#a4dbbb}.achievement-card p{font-size:10px;color:#9bb2bd;line-height:1.65;margin:6px 0 11px}.achievement-track{height:3px;border-radius:6px;background:#29444f;overflow:hidden}.achievement-track i{display:block;height:100%;background:#7fc4b0;border-radius:6px}.achievement-footer{flex:none;padding:13px 25px;background:#071722;border-top:1px solid #41607066;font-size:9px;color:#8eacb7;line-height:1.6;letter-spacing:.2px;text-align:center}
+.achievement-toast{position:fixed;z-index:110;top:max(12px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 24px);border:1px solid #8fc7b2;border-radius:9px;background:#123b32f5;color:#dcf9e5;box-shadow:0 10px 30px #0007;padding:13px 18px;pointer-events:none;font:650 10px ui-monospace,monospace;line-height:1.6;letter-spacing:.7px;text-align:center}
+.pause-card{overflow:auto;max-height:calc(100dvh - 24px)}
+@media(max-width:540px){
+ .dock-wallet{gap:14px}.dock-credit>strong{font-size:21px}.dock-overlay .dock-tabs{gap:2px}.dock-overlay .dock-tabs button{font-size:8px;letter-spacing:.3px;padding:10px 3px}.dock-departure #departureLevel{font-size:8px}
+ .expedition-list{grid-template-columns:1fr;gap:10px}.expedition-card{padding:14px 15px}.expedition-card>p{min-height:0;margin-bottom:12px}.expedition-card h3{font-size:16px}.expedition-metrics{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.expedition-metrics span{font-size:5.5px;letter-spacing:.1px}.expedition-metrics strong{font-size:11px}.expedition-heading{font-size:6.5px}.expedition-intro p,.expedition-note{font-size:10px}.expedition-select{font-size:8px}
+ .achievements-header{padding:17px 17px 15px}.achievements-header h2{font-size:22px;letter-spacing:1px}.achievements-header .menu-kicker{font-size:7px;letter-spacing:1px}.achievements-header p{font-size:8px;letter-spacing:.5px}.achievement-list{padding:12px 14px;grid-template-columns:1fr;gap:8px}.achievement-card{padding:13px 12px}.achievement-card p{font-size:11px}.achievement-title h3{font-size:13px}.achievement-footer{padding:11px 17px;font-size:8px}.achievement-toast{font-size:8px;padding:10px 12px}
+ .upgrade-purchase-meta{flex-wrap:wrap}.upgrade-detail-footer .primary-btn{letter-spacing:.3px}.menu-card #menuHubBtn,.menu-card #menuAchievementsBtn{font-size:11px}
+}
+@media(orientation:landscape) and (max-height:540px){
+ .dock-overlay .dialog-card>h2{font-size:15px;max-width:45%;letter-spacing:.6px}.dock-overlay .dock-wallet{gap:14px}.dock-overlay .dock-credit{flex-direction:column;align-items:flex-end;gap:3px}.dock-overlay .dock-credit>strong{font-size:18px}.dock-overlay .dock-credit>span{font-size:6px}
+ .achievements-header{padding:12px 19px 10px}.achievements-header h2{font-size:20px;margin:6px 0}.achievement-list{padding:12px 16px}.achievement-footer{padding:9px 16px;font-size:8px}.achievement-card p{font-size:10px}.achievement-toast{top:8px;padding:8px 14px}
+}
+@media(max-width:360px){.dock-wallet{gap:9px}.dock-credit>strong{font-size:18px}.dock-intro p{font-size:9px}.dock-online{font-size:6px}.expedition-metrics{grid-template-columns:1fr 1fr;gap:9px}.expedition-metrics span{font-size:7px}.expedition-metrics strong{font-size:12px}}
+.cockpit-context #coordsText{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.cockpit-context #statusStat{flex:none}

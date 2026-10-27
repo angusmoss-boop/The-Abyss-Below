@@ -1,18 +1,18 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta name="abyss-build" content="0.11.0-adaptive-systems-1">
+  <meta name="abyss-build" content="0.12.0-fivefold-descent-1">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#06121d" />
   <meta name="description" content="The Abyss Below: a submarine exploration and survival game." />
   <title>The Abyss Below | Deepwater Expedition</title>
-  <link rel="manifest" href="manifest.webmanifest?v=0.11.0" />
+  <link rel="manifest" href="manifest.webmanifest?v=0.12.0" />
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="stylesheet" href="styles.css?v=0.11.0" />
+  <link rel="stylesheet" href="styles.css?v=0.12.0" />
 </head>
 <body>
   <div class="app">
@@ -84,21 +84,21 @@
       </div>
       <aside class="sidebar">
         <div class="section-tag">OPERATIONS CONSOLE <span class="tag-live">● LIVE</span></div>
-        <div class="panel mission-panel"><div class="panel-label">PRIMARY OBJECTIVE</div><h2>THE LOST SIGNAL</h2><p>Recover the six encrypted flight recorders from the missing <em>Calypso</em> expedition. Deliver them to the surface station.</p><div class="objective-row"><span>RECORDERS SECURED</span><strong id="fragmentCount">0 / 6</strong></div><div class="fragment-icons" id="fragmentIcons"><span>◇</span><span>◇</span><span>◇</span><span>◇</span><span>◇</span><span>◇</span></div><div id="targetInfo" class="target-info">SCAN FOR A DISTRESS SIGNAL</div></div>
+        <div class="panel mission-panel"><div class="panel-label">PRIMARY OBJECTIVE</div><h2 id="missionTitle">SUNBREAK SHELF</h2><p id="missionDescription">Five levels. Twenty recorders. Bank each level’s complete transmission to go deeper.</p><div class="objective-row"><span>RECORDERS SECURED</span><strong id="fragmentCount">0 / 6</strong></div><div class="fragment-icons" id="fragmentIcons"><span>◇</span><span>◇</span><span>◇</span><span>◇</span><span>◇</span><span>◇</span></div><div id="targetInfo" class="target-info">SCAN FOR A DISTRESS SIGNAL</div></div>
         <div class="panel radar-panel"><div class="panel-top"><div class="panel-label">BATHYMETRIC RADAR</div><span id="radarStatus">PASSIVE</span></div><canvas id="radarCanvas" width="420" height="210" aria-label="Mini radar"></canvas><div class="radar-footer"><span><i class="legend sub"></i> YOU</span><span><i class="legend signal"></i> SIGNAL</span><span><i class="legend threat"></i> THREAT</span></div></div>
-        <div class="panel manifest-panel"><div class="panel-label">CARGO / FIELD LOG</div><div class="cargo-grid"><div><span>SCRAP</span><strong id="scrapCount">0</strong></div><div><span>CRYSTALS</span><strong id="crystalCount">0</strong></div><div><span>UNSECURED</span><strong id="looseCount">0</strong></div><div><span>BANKED CREDITS</span><strong id="creditCount">0</strong></div></div><div id="eventLog" class="event-log"><div>◈ Listening to the darkness...</div></div></div>
+        <div class="panel manifest-panel"><div class="panel-label">CARGO / FIELD LOG</div><div class="cargo-grid"><div><span>SCRAP</span><strong id="scrapCount">0</strong></div><div><span>CRYSTALS</span><strong id="crystalCount">0</strong></div><div><span>UNSECURED</span><strong id="looseCount">0</strong></div><div><span>BANKED CREDITS</span><strong id="creditCount">0</strong></div><div><span>BANKED CRYSTALS</span><strong id="bankedCrystalCount">0</strong></div></div><div id="eventLog" class="event-log"><div>◈ Listening to the darkness...</div></div></div>
         <div class="rank-panel"><div><div class="panel-label">EXPEDITION RANK</div><strong id="rankText">LV. 1 · DECKHAND</strong></div><div class="rank-track"><div id="rankFill"></div></div><div class="rank-caption"><span id="xpText">0 / 100 XP</span><span id="bestDepth">BEST: 0 m</span></div></div>
         <button id="dockBtn" class="dock-btn" disabled>◈ RETURN TO STATION TO UPGRADE</button>
       </aside>
     </main>
-    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.11.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
+    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.12.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
   </div>
   <div class="overlay" id="menuOverlay"><div class="menu-card"><div class="menu-kicker">TRANSMISSION // 0001</div><div class="menu-icon">⌁</div><h1>THE ABYSS<br><span>BELOW</span></h1><section class="version-card" aria-label="Game build and update status">
-  <div class="version-heading"><strong id="menuVersion">v0.11.0</strong><span id="menuVersionName">Adaptive Systems</span></div>
+  <div class="version-heading"><strong id="menuVersion">v0.12.0</strong><span id="menuVersionName">Fivefold Descent</span></div>
   <div class="sync-indicator" id="syncIndicator" data-state="checking"><span class="sync-dot" aria-hidden="true"></span><strong id="syncStatus" role="status">CHECKING DEPLOYMENT</strong></div>
   <p id="syncDetail">Checking the latest published build. Your campaign stays on this device.</p>
   <div class="version-actions"><button id="checkVersionBtn" class="version-btn">CHECK AGAIN</button><button id="updateVersionBtn" class="version-btn hidden">LOAD UPDATE</button></div>
-</section><p>Something went silent beneath the continental shelf. Six recorders remain, scattered as deep as 1,500 metres. Your oxygen is finite. Your vessel is not invincible. The deeper you go, the more the darkness notices you.</p><div class="menu-feature-list"><span>◈ PROCEDURAL TRENCH</span><span>◈ SURVIVAL SYSTEMS</span><span>◈ MINES &amp; PREDATORS</span><span>◈ UPGRADABLE SUB</span></div><button id="startBtn" class="primary-btn">BEGIN EXPEDITION <span>→</span></button><button id="newGameBtn" class="menu-secondary-btn">✦ NEW GAME</button><p id="menuProgress" class="menu-progress" aria-live="polite"></p><p id="saveStatus" class="save-status"></p><button id="instructionsBtn" class="text-btn">VIEW PILOT BRIEFING</button><button id="installBtn" class="install-btn hidden">⬇ INSTALL ON PHONE</button><div class="menu-bottom">NEREID EXPLORATION PROGRAM · CLASSIFIED</div></div></div>
+</section><p>Five descents. Twenty lost transmissions. Venture from the sunlit shelf to a 1,800-metre abyss, secure each level’s recorders and return for everything you left behind.</p><div class="menu-feature-list"><span>◈ FIVE PERSISTENT LEVELS</span><span>◈ 20 ACHIEVEMENTS</span><span>◈ MINES &amp; PREDATORS</span><span>◈ UPGRADABLE SUB</span></div><button id="startBtn" class="primary-btn">BEGIN EXPEDITION <span>→</span></button><button id="menuHubBtn" class="menu-secondary-btn">⌁ EXPEDITION HUB</button><button id="menuAchievementsBtn" class="menu-secondary-btn achievement-menu-btn">◇ ACHIEVEMENTS <span id="menuAchievementCount">0 / 20</span></button><button id="newGameBtn" class="menu-secondary-btn">✦ NEW GAME</button><p id="menuProgress" class="menu-progress" aria-live="polite"></p><p id="saveStatus" class="save-status"></p><button id="instructionsBtn" class="text-btn">VIEW PILOT BRIEFING</button><button id="installBtn" class="install-btn hidden">⬇ INSTALL ON PHONE</button><div class="menu-bottom">NEREID EXPLORATION PROGRAM · CLASSIFIED</div></div></div>
   <div class="overlay pause-overlay hidden" id="pauseOverlay" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
     <div class="pause-card">
       <div class="pause-emblem" aria-hidden="true">Ⅱ</div>
@@ -107,10 +107,10 @@
       <p id="pauseStats">Systems holding. The abyss can wait.</p>
       <div class="pause-actions">
         <button id="resumeBtn" class="primary-btn">▶ RESUME <span>→</span></button>
-        <button id="pauseMenuBtn" class="menu-secondary-btn">⌂ MENU</button>
+        <button id="pauseAchievementsBtn" class="menu-secondary-btn achievement-menu-btn">◇ ACHIEVEMENTS <span id="pauseAchievementCount">0 / 20</span></button><button id="pauseMenuBtn" class="menu-secondary-btn">⌂ MENU</button>
         <button id="quitBtn" class="menu-danger-btn">⏻ QUIT</button>
       </div>
-      <div class="pause-note">MENU suspends this dive · QUIT abandons unbanked cargo</div>
+      <div class="pause-note">MENU suspends this dive · QUIT leaves a recovery pod</div>
     </div>
   </div>
   <div class="overlay hidden" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="dialog-card"><div class="dialog-top"><div id="modalKicker" class="menu-kicker">FIELD BRIEFING</div><button id="modalClose" class="close-btn">✕</button></div><h2 id="modalTitle">PILOT BRIEFING</h2><div id="modalBody"></div><div id="modalFooter"></div></div></div>
@@ -130,7 +130,13 @@
       <p id="upgradePriceNote"></p>
     </div>
   </dialog>
-  <script src="game.js?v=0.11.0" defer></script>
-  <script src="version-sync.js?v=0.11.0" defer></script>
+  <dialog id="achievementsDialog" class="achievements-dialog" aria-labelledby="achievementsTitle">
+    <header class="achievements-header"><div><div class="menu-kicker">NEREID / CAPTAIN’S LOG</div><h2 id="achievementsTitle">ACHIEVEMENTS</h2><p id="achievementSummary">0 / 20 UNLOCKED · THIS CAMPAIGN</p></div><button id="achievementClose" class="close-btn" aria-label="Close achievements">✕</button></header>
+    <div id="achievementList" class="achievement-list"></div>
+    <footer class="achievement-footer">Progress saves across dives and levels. New Game resets this campaign’s awards.</footer>
+  </dialog>
+  <div id="achievementToast" class="achievement-toast hidden" role="status" aria-live="polite"></div>
+  <script src="game.js?v=0.12.0" defer></script>
+  <script src="version-sync.js?v=0.12.0" defer></script>
 </body>
 </html>
