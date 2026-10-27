@@ -1,3 +1,12 @@
+# v0.17.2 / Delta Helm
+
+- Tight mobile weapon triangle: railgun above torpedo and mine. Cyan linkage is decorative and pointer-transparent.
+- One four-button bottom row in descending size: Boost, Use, Sonar, Repair. Enlarged centred icons; no visible captions; minimum 44px targets.
+- Removed silent and cruise toggles, latched cruise behaviour and Shift slowdown. Actual underwater speed controls noise and gentle analogue input reduces propulsion use.
+- Retained Silent Drive as passive insulation with unchanged prices and fitted levels. Legacy saved quiet flags are cleared when restoring.
+- Moved the mobile flashlight toggle into telemetry; safe to change while paused and persistent across reload. Desktop L remains.
+- Existing pause fade/music, three slots, weapon economy, regeneration and crystal scarcity preserved. No new resource or upgrade costs.
+
 # v0.17.1 / Quiet Command
 
 - Compact icon-only bottom-left controls; vertical railgun/torpedo/mine stack, larger SVG icons, retained charge/cooldown/ammunition rings and accessible labels.

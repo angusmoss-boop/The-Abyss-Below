@@ -1,8 +1,8 @@
-/* Quiet Command: original procedural audio, no downloads or permissions.
+/* Delta Helm: original procedural audio, no downloads or permissions.
    Start/resume only after user input. Settings persist independently of campaigns. */
 (() => {
   'use strict';
-  const KEY='abyss-audio-v1', BUILD='0.17.1-quiet-command-1';
+  const KEY='abyss-audio-v1', BUILD='0.17.2-delta-helm-1';
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   let settings={effects:.5,ambience:.35,music:.3,muted:false};
   try { const v=JSON.parse(localStorage.getItem(KEY)||'null'); if(v){
@@ -225,7 +225,7 @@
     const speed=clamp(data.speed/260,0,1.5),isAir=data.airborne===true;
     ramp(engine.frequency,38+speed*25+(data.boost?35:0),.2);
     ramp(motor.frequency,76+speed*60+(data.boost?100:0),.15);
-    ramp(engineGain.gain,isAir?.018:data.quiet?.025:.035+speed*.035,.15);
+    ramp(engineGain.gain,isAir?.018:.018+speed*.045,.15);
     ramp(motorGain.gain,isAir?0:data.boost?.035:.008*speed,.13);
     ramp(waterGain.gain,isAir?.025:data.harbour?.035:.055+Math.min(1800,data.depth)*.000012,.3);
     ramp(waterFilter.frequency,isAir?1600:Math.max(150,480-data.depth*.15),.2);

@@ -1,3 +1,7 @@
+## Current input specification: v0.17.2 / Delta Helm
+
+Mobile has seven icon-only circular controls: a railgun / torpedo / mine triangle over a Boost / Use / Sonar / Repair row, largest to smallest. Flashlight moves to telemetry; desktop L remains. No silent/cruise toggle or Shift slowdown. Actual speed governs noise and Silent Drive is passive insulation. See DELTA-HELM-v0.17.2.md for current details. Earlier design notes below are historical where they conflict.
+
 > Historical design notes. The current specification is README.md and SALVAGE-SUPPLY-v0.17.0.md. These supersede old permanent-scrap, free-gun-reload, save-resume and pricing rules below.
 
 # The Abyss Below: current design

@@ -1,18 +1,18 @@
 # The Abyss Below
 
-## v0.17.1: Quiet Command
+## v0.17.2: Delta Helm
 
-A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. This patch adds compact icon-only mobile controls, a vertical weapon column, smoother pause/background audio transitions and an original chilled pause theme. The existing five-level game, three local campaign slots, weapons and v0.17 economy are unchanged.
+A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. This patch implements a left-side weapon triangle above a four-button graduated Boost / Use / Sonar / Repair row. Silent and cruise modes are removed; movement speed controls noise, with existing Silent Drive upgrades working passively. The flashlight switch is in telemetry. All three campaign slots and the v0.17 economy are preserved.
 
-See [QUIET-COMMAND-v0.17.1.md](QUIET-COMMAND-v0.17.1.md) and [VERIFICATION-v0.17.1.md](VERIFICATION-v0.17.1.md).
+See [DELTA-HELM-v0.17.2.md](DELTA-HELM-v0.17.2.md) and [VERIFICATION-v0.17.2.md](VERIFICATION-v0.17.2.md).
 
 ## Install or update
 
-For an existing v0.17.0 site, bank cargo and quit the old dive as a precaution, extract the update ZIP, and replace the matching files at the repository root. Publish these files together:
+For an existing v0.17.1 site, bank cargo and quit the old dive as a precaution, extract the update ZIP, and replace the matching files at the repository root. Publish these files together:
 
 `index.html`, `styles.css`, **`campaign-slots.js`**, `audio.js`, `game.js`, `version-sync.js`, `service-worker.js`, `manifest.webmanifest`, `version.json`.
 
-Keep the existing icons. Do not upload the ZIP itself or create an extra nested directory. Use the complete ZIP for a new installation. The package does not deploy automatically. Reopen the same site online and check for **v0.17.1 / Quiet Command**. CHECK AGAIN compares the deployed checksums, runtime build markers and controlling service worker. Local/offline/unverified status must not be interpreted as a successful hosted upgrade.
+Keep the existing icons. Do not upload the ZIP itself or create an extra nested directory. Use the complete ZIP for a new installation. The package does not deploy automatically. Reopen the same site online and check for **v0.17.2 / Delta Helm**. CHECK AGAIN compares the deployed checksums, runtime build markers and controlling service worker. Local/offline/unverified status must not be interpreted as a successful hosted upgrade.
 
 Keep the same origin and browser profile. Do not clear site data, uninstall or start a new campaign to update. Existing slots retain their saves, finite crystal depletion, owned rounds and upgrades. The existing original-scrap recovery timers are preserved.
 
@@ -39,7 +39,7 @@ Hold **Z / RAIL** for rapid direct shots; tap **X / TORP** for a forward explosi
 
 Mines: use **F / MINE**, capacity 2 / 4 / 6 / 8, ammunition purchased separately at 18 credits per round. No automatic mine refills.
 
-Mobile has an icon-only vertical railgun / torpedo / mine column beside the smaller utility circles, with Use and Boost below the utilities. Use is the largest circle, then Boost. Unfitted equipment is grey; thin rings preserve charge, cooldown and ammunition feedback. Exact stocks are in telemetry. Drag open water to anchor the invisible-until-used joystick. Desktop shows a keybind strip; mouse-held piloting and WASD/arrows remain.
+Mobile has an icon-only weapon triangle (railgun above torpedo and mine). A single row below is Boost, Use, Sonar and Repair, decreasing in size. Unfitted equipment is grey; thin rings preserve charge/cooldown/ammunition feedback. Exact stocks and the flashlight switch are in telemetry. Drag open water to anchor the floating joystick; light drags move quietly, and release stops thrust. Desktop shows a keybind strip; mouse-held piloting and WASD/arrows remain. Silent Drive insulation is passive, with no manual silent mode or cruise latch.
 
 ## Full controls
 
@@ -50,12 +50,11 @@ Mobile has an icon-only vertical railgun / torpedo / mine column beside the smal
 | Scrap recovery | Automatic within magnet range | Automatic within magnet range |
 | Boost | Hold Space, requires magnetic thrusters | Hold chevrons |
 | Railgun | Hold Z | Hold upper weapon icon |
-| Torpedo | X, one round per press | Tap middle weapon icon |
-| Mine | F | Lower weapon icon |
+| Torpedo | X, one round per press | Tap lower-left weapon icon |
+| Mine | F | Lower-right weapon icon |
 | Sonar | Q | Sonar icon |
 | Repair | R | Wrench icon |
-| Lights | L | Lamp icon |
-| Quiet running | Shift | Muted speaker icon |
+| Lights | L | Sliders / telemetry → FLASHLIGHT |
 | Map | M | Map icon |
 | Pause | Escape | Pause icon |
 
@@ -92,10 +91,10 @@ The version manifest includes the exact runtime checksums. Inconsistent deployed
 Current test runner:
 
 ```sh
-python tests/run_v0171.py --jobs 3
-python tests/v0171_live_pwa_test.py
+python tests/run_v0172.py --jobs 3
+python tests/v0172_live_pwa_test.py
 ```
 
-Tests require Python, Playwright, Node and Chromium. Current evidence is in `verification/v0.17.1/`, not historical reports. Some UI tests use synthetic credits/gear or deterministic scene fixtures, never real user saves. The live PWA test is separate and must not be described as passing because mocked worker tests passed.
+Tests require Python, Playwright, Node and Chromium. Current evidence is in `verification/v0.17.2/`, not historical reports. Some UI tests use synthetic credits/gear or deterministic scene fixtures, never real user saves. The live PWA test is separate and must not be described as passing because mocked worker tests passed.
 
-Read **SALVAGE-SUPPLY-v0.17.0.md** for full rules and prices, **VERIFICATION-v0.17.1.md** for current tested/untested boundaries. Historical guides remain for earlier versions. This is a web/PWA source package, not a signed Android app bundle or Play Store-ready release.
+Read **SALVAGE-SUPPLY-v0.17.0.md** for full rules and prices, **VERIFICATION-v0.17.2.md** for current tested/untested boundaries. Historical guides remain for earlier versions. This is a web/PWA source package, not a signed Android app bundle or Play Store-ready release.

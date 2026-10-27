@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const BUILD = Object.freeze({version:'0.17.0',name:'Salvage & Supply',id:'0.17.0-salvage-supply-1'});
+  const BUILD = Object.freeze({version:'0.17.2',name:'Delta Helm',id:'0.17.2-delta-helm-1'});
   window.AbyssBuild=BUILD;
   const $ = id => document.getElementById(id);
   const canvas = $('gameCanvas');
@@ -22,8 +22,17 @@
   const HARBOUR = Object.freeze({x:600,y:160,safeRadius:260,exclusionRadius:330,dockRadius:128});
   const inHarbour = object => Boolean(object && Math.hypot(object.x-HARBOUR.x,object.y-HARBOUR.y)<=HARBOUR.safeRadius);
   let surfaceEffects=[];
-  const THRUST = Object.freeze({normal:146,quiet:68,perMark:.17,maxMark:4});
+  const THRUST = Object.freeze({normal:146,perMark:.17,maxMark:4});
   const normalSpeedAt = mark => THRUST.normal*(1+mark*THRUST.perMark);
+  function movementNoiseAt(speed,insulationMark=0,boosting=false){
+    const velocity=Math.max(0,Number.isFinite(speed)?speed:0);
+    const insulation=1+Math.max(0,insulationMark)*.32;
+    if(boosting)return Math.max(82,100/insulation);
+    // Match the existing full-throttle signature, but remove the fixed noise floor
+    // at low speed. Small drags are quiet; insulation is always passive.
+    const lowSpeedGain=Math.pow(Math.min(1,velocity/THRUST.normal),1.4);
+    return Math.min(95,(45+velocity*.2)*lowSpeedGain)/insulation;
+  }
   const MINES = Object.freeze({damage:[0,60,110,180,240],capacity:[0,2,4,6,8],
     armDelay:.65,deployCooldown:1.1,triggerRadius:52,blastRadius:108,radius:8});
   const roman = mark => ['0','I','II','III','IV','V','VI','VII'][mark]||String(mark);
@@ -132,7 +141,7 @@
     {id:'engine', name:'MAGNETIC THRUSTERS', desc:'Mk I unlocks boost. Every mark improves normal speed, boost speed and boost endurance: 3 / 4 / 5 / 6 seconds.', base:75, limit:4},
     {id:'flashlight', name:'EXPLORATION FLASHLIGHT', desc:'Mk I fitted. Upgrade the forward beam for longer reach and a wider view. Uses power slowly while switched on.', prices:[0,75,150,300], limit:4},
     {id:'sonar', name:'WIDEBAND SONAR', desc:'Wider scans, longer-lived echoes, lower power cost and shorter cooldowns.', base:90, limit:4},
-    {id:'quiet', name:'SILENT DRIVE', desc:'Suppress engine noise and reduce predator detection.', base:95, limit:4},
+    {id:'quiet', name:'SILENT DRIVE', desc:'Passively suppress movement noise and reduce predator detection at every speed.', base:95, limit:4},
     {id:'minePower', name:'SEA MINE WARHEADS', desc:'Buy Mk I to unlock mines. Four warhead tiers: 60 / 110 / 180 / 240 damage.', prices:[100,180,320,520], limit:4},
     {id:'mineCapacity', name:'MINE AMMO RACK', desc:'Separate capacity upgrade: 2 / 4 / 6 / 8 mines. Mk I rack is standard. Extra slots are empty; buy ammunition in the dock Ammunition tab.', prices:[0,90,160,280], limit:4},
     {id:'magnet', name:'SALVAGE MAGNET', desc:'Automatically collect visible scrap and predator salvage within magnet range. Crystals still require USE; recorders require a close approach. Remote pickups use power; close pickups stay free.', prices:[80,130,200,300], limit:4},
@@ -292,13 +301,11 @@
   let scene = {rocks:[],items:[],predators:[],vents:[],dust:[],wrecks:[],mines:[],blasts:[],projectiles:[]};
   let player = null;
   const keys = new Set();
-  // Joystick is analogue (-1..1 on each axis). Cruise stores the last steering vector.
+  // Analogue helm (-1..1). Releasing input always returns throttle to zero.
   const joystick = {x:0,y:0,pointerId:null,originX:0,originY:0,radius:44};
-  const cruiseHeading = {x:0,y:0};
   // Pointer coordinates remain in screen space while the follow camera moves.
   const mouseHelm = {pointerId:null,clientX:0,clientY:0};
   let boostHeld=false,boostPointerId=null,railHeld=false,railPointerId=null;
-  let cruiseEnabled=false;
   let installPrompt=null;
   let running = false, paused = false, showingDock = false;
   let dialogReturnPause = false;
@@ -306,7 +313,7 @@
   let viewport = {w:700,h:550,dpr:1};
   let previousTime=0, clock=0, uiTimer=0, lastZone='';
   let toastUntil=0, eventLines=[], sonarWaves=[], sonarTerrainEchoes=[];
-  let pointerSilent = false, victoryShown = false;
+  let victoryShown = false;
   let useHeld = false, useHoldTimer = 0, usePointerId = null;
   let idCounter = 0,journalTimer=0,simulationStepping=false,saveRequested=false;
   function makeItem(x,y,type,extra={}) {const id=idCounter++;return {id,animationSeed:id,x,y,type,collected:false,revealUntil:0,...extra};}
@@ -530,9 +537,9 @@
   function newDive() {
     // A new launch is distinct from restoring the existing expedition.
     loadedActive=null;running=false;buildingWorld=true;createWorld();buildingWorld=false;dockVisitActive=!field.awaitingDock;
-    player={x:600,y:160,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing:-Math.PI/2,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,quiet:false,damageCooldown:0,scanCooldown:0,boost:boostCapacity(),boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,cargo:{scrap:0,crystal:0,recorders:[]},lastRepair:-100,mineAmmo:0,mineCooldown:0,weaponAmmo:{...saved.weaponAmmo},weaponCooldown:{railgun:0,torpedo:0},damageFlashUntil:0,nextDamageFlash:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,autoSalvageCooldown:0,trip:{deepest:0,hullDamage:0}};
+    player={x:600,y:160,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing:-Math.PI/2,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,damageCooldown:0,scanCooldown:0,boost:boostCapacity(),boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,cargo:{scrap:0,crystal:0,recorders:[]},lastRepair:-100,mineAmmo:0,mineCooldown:0,weaponAmmo:{...saved.weaponAmmo},weaponCooldown:{railgun:0,torpedo:0},damageFlashUntil:0,nextDamageFlash:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,autoSalvageCooldown:0,trip:{deepest:0,hullDamage:0}};
     resupplyMines();
-    sonarWaves=[];sonarTerrainEchoes=[];surfaceEffects=[];clock=0;for(const m of scene.derelictMines||[])Object.assign(m,mineLocation(m));lastZone='';eventLines=[];useHoldTimer=0;victoryShown=saved.secured.length===RECORDERS_TOTAL;pointerSilent=false;resetPilotInput();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
+    sonarWaves=[];sonarTerrainEchoes=[];surfaceEffects=[];clock=0;for(const m of scene.derelictMines||[])Object.assign(m,mineLocation(m));lastZone='';eventLines=[];useHoldTimer=0;victoryShown=saved.secured.length===RECORDERS_TOTAL;resetPilotInput();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
     addEvent('Dive systems initialised.');
     addEvent(currentLevel().name+' · '+RECORDERS_TOTAL+' recorders · '+currentLevel().depth.toLocaleString('en-GB')+' m seabed.');
     running=true;paused=false;showingDock=false;
@@ -763,7 +770,7 @@
     player.cargo.scrap-=2;player.lastRepair=clock;player.hull=Math.min(maxHull(),player.hull+30);player.noise=Math.min(100,player.noise+10);
     announce('FIELD REPAIR COMPLETE · HULL +30',2);addEvent('Used 2 scrap for repairs');persist();updateUI();
   }
-  function toggleLights(){if(!running||paused)return;player.lights=!player.lights;window.AbyssAudio?.event('lights');persist();addEvent('External lamps '+(player.lights?'activated':'disabled'));updateUI();}
+  function toggleLights(fromTelemetry=false){if(!running||(paused&&!(fromTelemetry===true&&$('telemetryDialog').open)))return;player.lights=!player.lights;window.AbyssAudio?.event('lights');persist();addEvent('External lamps '+(player.lights?'activated':'disabled'));updateUI();}
   const ACHIEVEMENTS = Object.freeze([
     {id:'first-signal',name:'First Transmission',description:'Bank your first flight recorder.',target:1,kind:'recorders',icon:'01'},
     {id:'shelf',name:'Shelf Graduate',description:'Secure both Sunbreak Shelf recorders.',target:1,kind:'level',level:0,icon:'02'},
@@ -921,7 +928,7 @@
     engine:['PROPULSION','support','Mk I unlocks boost. Boost uses both the charge meter and battery; a Crimson Reaper matches Mk IV normal speed.'],
     flashlight:['OPTICS','exploration','At 1,000 m ambient light disappears. A wider, longer beam lets you plan routes and locate resources.'],
     sonar:['SENSORS','exploration','Scans cover the current screen. Very large screens can extend the cooldown until the wave finishes.'],
-    quiet:['SIGNATURE CONTROL','support','Suppresses ordinary engine noise. Boost remains loud, and sonar can alert nearby predators.'],
+    quiet:['SIGNATURE CONTROL','support','Always-on acoustic insulation reduces speed-based movement noise. Small joystick drags or a nearby mouse cursor keep you quiet. Boost and weapons remain loud; no silent toggle is needed.'],
     minePower:['ORDNANCE','defence','The launcher unlocks at Mk I. Warheads strengthen every mine; ammunition is bought separately.'],
     mineCapacity:['ORDNANCE STORAGE','defence','A larger rack adds empty slots only. Buy rounds in the Ammunition tab for 18 credits each.'],
     magnet:['RESOURCE RECOVERY','exploration','Scrap collects automatically. Remote pickups require power, visibility and a clear path. Crystals still need USE or E, and recorders and supply caches need a close approach.'],
@@ -1167,7 +1174,7 @@
     const id=usePointerId;useHeld=false;usePointerId=null;
     $('mobileInteract').classList.remove('held');
     if(id!==null&&$('mobileInteract').hasPointerCapture(id))$('mobileInteract').releasePointerCapture(id);
-    resetJoystick(true);
+    resetJoystick();
   }
   function keepPredatorOutsideHarbour(enemy){
     // Keep a buffer larger than every bite reach outside the marked safe area.
@@ -1226,13 +1233,12 @@
     const helm=mouseSteering();
     // Mouse and joystick are direct helm commands, not additive inputs.
     const steering=joystick.pointerId!==null?joystick:mouseHelm.pointerId!==null?helm:
-      (keyX||keyY)?{x:keyX,y:keyY}:cruiseEnabled?cruiseHeading:{x:0,y:0};
+      (keyX||keyY)?{x:keyX,y:keyY}:{x:0,y:0};
     const x=clamp(steering.x,-1,1),y=clamp(steering.y,-1,1);
     const magnitude=Math.hypot(x,y),hasInput=magnitude>.04;
     const boostFraction=updateBoost(dt,hasInput&&!player.airborne);
-    const quiet=(keys.has('shift')||pointerSilent)&&!player.boosting;
-    player.quiet=quiet;
-    const maxSpeed=(quiet?THRUST.quiet*(1+saved.upgrades.engine*THRUST.perMark):normalSpeedAt(saved.upgrades.engine))*lerp(1,boostMultiplier(),boostFraction);
+    // Stealth follows actual speed, not a latched silent mode or a modifier key.
+    const maxSpeed=normalSpeedAt(saved.upgrades.engine)*lerp(1,boostMultiplier(),boostFraction);
     const thrustPower=hasInput&&player.battery>.5?1:0;
     const divisor=Math.max(1,magnitude);
     const water=currentAt(player.x,player.y);
@@ -1249,11 +1255,9 @@
       player.facing=lerpAngle(player.facing,Math.atan2(player.vy,player.vx),Math.min(1,dt*5));
     }
     const speed=Math.hypot(player.vx,player.vy);
-    const noiseTarget=player.boosting?100:hasInput&&!quiet?45+speed*.2:quiet&&hasInput?8:0;
-    const noise=player.boosting?Math.max(82,noiseTarget/(1+saved.upgrades.quiet*.32)):
-      Math.min(95,noiseTarget)/(1+saved.upgrades.quiet*.32);
-    player.noise=lerp(player.noise,noise,1-Math.exp(-dt*(hasInput?2.8:1.6)));
-    if(!hasInput)player.noise=Math.max(0,player.noise-dt*4);
+    const noise=movementNoiseAt(player.airborne?0:speed,saved.upgrades.quiet,player.boosting);
+    // Acoustic transients from weapons fade naturally; coasting remains audible until it slows.
+    player.noise=lerp(player.noise,noise,1-Math.exp(-dt*2.8));
     const steps=Math.max(1,Math.ceil(speed*dt/7));
     let impactSpeed=0;
     for(let step=0;step<steps;step++){
@@ -1269,7 +1273,7 @@
     if(!running||paused)return;
     updateSalvageRegeneration(dt);autoCollectSalvage(dt);
     if(distance(player,HARBOUR)>=145&&!field.awaitingDock){dockVisitActive=false;field.awaitingDock=true;persist();}
-    const energyDrain=dt*((.018+(hasInput&&!player.airborne?(quiet?.028:.075):0))/(1+saved.upgrades.battery*.12)+(headlightsActive()?flashlightPowerRate():0));
+    const energyDrain=dt*((.018+(hasInput&&!player.airborne?(.075*Math.min(1,magnitude)):0))/(1+saved.upgrades.battery*.12)+(headlightsActive()?flashlightPowerRate():0));
     player.battery=clamp(player.battery-energyDrain,0,maxBattery());
     player.oxygen=clamp(player.oxygen-dt*(.22/(1+saved.upgrades.oxygen*.2)),0,maxOxygen());
     if(player.oxygen<=0){flashHullDamage();if(player.trip)player.trip.hullDamage+=dt*7;player.hull-=dt*7;if(player.hull<=0){defeat('The oxygen supply ran dry.');return;}}
@@ -2044,7 +2048,9 @@
       const text=mark?ammo+'/'+cap:'LOCKED';$(label).textContent=text;$(pc).textContent=mark?text:'UNFITTED';
       $(button).setAttribute('aria-disabled',String(!mark||!ammo||!running||paused));
       $(button).setAttribute('aria-label',WEAPONS[id].name+' · '+(mark?ammo+' of '+cap+' rounds. Buy ammunition at dock for '+WEAPON_AMMO_PRICES[id]+' credits per round.':'Not fitted. Buy at dock.'));
-      $(button).classList.toggle('cooling',cd>0);$(button).style.setProperty('--ring',100*(1-cd/WEAPONS[id].cooldown));
+      $(button).classList.toggle('equipment-locked',!mark);$(button).classList.toggle('empty',Boolean(mark&&!ammo));
+      $(button).classList.toggle('cooling',cd>0);$(button).style.setProperty('--ring',mark?100*clamp(1-cd/WEAPONS[id].cooldown,0,1):0);
+      $(button).style.setProperty('--stock',cap?100*ammo/cap:0);$(button).title=$(button).getAttribute('aria-label');
     }
   }
   function bindWeaponInputs(){
@@ -2132,7 +2138,7 @@
     $('mineBar').style.width=(minesReady?player.mineAmmo/mineCapacity()*100:0)+'%';
     $('mineReadout').classList.toggle('empty',!minesReady||player.mineAmmo<=0);
     for(const id of ['mobileMine']){
-      const b=$(id);b.classList.toggle('empty',!minesReady||player.mineAmmo<=0);b.classList.toggle('cooling',mineCooling);
+      const b=$(id);b.classList.toggle('equipment-locked',!minesReady);b.style.setProperty('--stock',minesReady?100*player.mineAmmo/mineCapacity():0);b.classList.toggle('empty',!minesReady||player.mineAmmo<=0);b.classList.toggle('cooling',mineCooling);
       b.setAttribute('aria-disabled',String(!minesReady||player.mineAmmo<=0||mineCooling||paused||!running));
       b.setAttribute('aria-label',minesReady?'Deploy sea mine. '+player.mineAmmo+' of '+mineCapacity()+' remaining. '+mineStatus:'Buy Mk I sea mines at the dock');
     }
@@ -2154,16 +2160,9 @@
     if(running&&!paused&&close){
       prompt.textContent=(touchControls?'HOLD USE · ':'[ E ] ')+(close.type==='station'?'DOCK & UPGRADE':close.type==='recorder'?'RECOVER BLACK BOX':close.type==='air'?'CLAIM SUPPLY CACHE':close.type==='recovery'?'RECOVER LOST CARGO':distance(player,close)>=60?'MAGNET '+close.type.toUpperCase()+' · '+magnetPower()+' POWER':'SALVAGE '+close.type.toUpperCase());prompt.classList.remove('hidden');
     } else prompt.classList.add('hidden');
-    $('mobileSilent').classList.toggle('active',pointerSilent);
-    $('mobileSilent').setAttribute('aria-pressed',String(pointerSilent));
     $('mobileInteract').classList.toggle('available',Boolean(running&&!paused&&close));
     $('mobileRepair').setAttribute('aria-disabled',String(paused||!running||player.cargo.scrap<2||player.hull>=maxHull()));
-    $('lightsLabel').textContent=!player.lights?'OFF':headlightsActive()?'ON':'EMPTY';
-    $('mobileLights').classList.toggle('active',headlightsActive());
-    $('mobileLights').setAttribute('aria-pressed',String(player.lights));
-    $('mobileLights').title='Flashlight Mk '+roman(saved.upgrades.flashlight)+' · '+(flashlightSpec().length/10)+' m reach';
-    $('mobileLights').setAttribute('aria-label',!player.lights?'Turn flashlight on':headlightsActive()?'Turn flashlight off':'Flashlight has no battery power');
-    const cruiseButton=$('mobileCruise');cruiseButton.classList.toggle('active',cruiseEnabled);cruiseButton.setAttribute('aria-pressed',String(cruiseEnabled));$('cruiseLabel').textContent=cruiseEnabled?'ON':'OFF';
+    refreshFlashlightControl();
     updateLivingHUD();drawRadar();
   }
   let focusMode=false;
@@ -2192,7 +2191,7 @@
     $('pauseTitle').textContent='EXPEDITION PAUSED';window.AbyssAudio?.unlock();
     paused=false;resetPilotInput();canvas.focus({preventScroll:true});
     $('pauseOverlay').classList.add('hidden');$('menuOverlay').classList.add('hidden');
-    $('notification').classList.add('hidden');syncPauseButtons();updateUI();
+    $('notification').classList.add('hidden');syncPauseButtons();updateUI();audioFrame();
   }
   function updateMainMenu(){
     $('saveStatus').textContent=storageHealthy?(storageRecovery?'RECOVERED CAMPAIGN BACKUP':'SLOT '+window.AbyssSlots.active+' · '+campaignTitle.toUpperCase()+' · SAVED ON THIS DEVICE'):'STORAGE UNAVAILABLE · PROGRESS WILL NOT BE SAVED';
@@ -2217,7 +2216,7 @@
   function showPause(){
     if(!running||!$('menuOverlay').classList.contains('hidden'))return;
     $('pauseTitle').textContent='EXPEDITION PAUSED';
-    paused=true;resetPilotInput();persist();window.AbyssAudio?.suspend();
+    paused=true;resetPilotInput();persist();window.AbyssAudio?.setScene('pause');
     $('pauseStats').textContent='DEPTH '+depthOf(player.y)+'m  ·  HULL '+Math.round(player.hull/maxHull()*100)+'%  ·  RECORDERS '+player.cargo.recorders.length+' ABOARD';
     $('pauseOverlay').classList.remove('hidden');
     $('notification').classList.add('hidden');syncPauseButtons();updateUI();
@@ -2249,9 +2248,9 @@
     const body=`<div class="briefing"><p>You pilot the <strong>NEREID MK-II</strong>. Explore five unlockable levels with 2, 3, 4, 5 and 6 recorders. Bank every recorder in a level to unlock the next. Change levels at the hub; cleared levels remain available.</p><ul>
       <li><strong>PC helm:</strong> hold the left mouse button over the water and move the cursor. The sub points and travels towards it, easing off when close. Release to coast to a stop. <kbd>WASD</kbd> / arrow keys still work.</li>
       <li><strong>Mobile:</strong> touch and drag anywhere over the water that is not a button. A minimal transparent joystick appears only after dragging and disappears on release. The left-side CRUISE button retains your heading after release; the large left USE button salvages while you steer.</li>
-      <li><kbd>Space</kbd> / hold <strong>BOOST</strong>: requires Mk I magnetic thrusters. Mk I / II / III / IV offer 3 / 4 / 5 / 6 seconds of boost and progressively faster boosted speeds. Costs battery and boost charge. Charge recovers after 1.5 seconds; a fully emptied meter locks until full. Release to rearm. Boost is loud and overrides quiet running. Battery upgrades reduce its power drain and speed up recharge.</li>
+      <li><kbd>Space</kbd> / hold <strong>BOOST</strong>: requires Mk I magnetic thrusters. Mk I / II / III / IV offer 3 / 4 / 5 / 6 seconds of boost and progressively faster boosted speeds. Costs battery and boost charge. Charge recovers after 1.5 seconds; a fully emptied meter locks until full. Release to rearm. Boost is loud even with passive Silent Drive insulation. Battery upgrades reduce its power drain and speed up recharge.</li>
       <li><kbd>Q</kbd> / <strong>PING</strong>: a sonar wave sweeps the entire current screen. Salvage, recorders, caches, predators, rocks, wrecks, vents and walls appear as fading echoes <strong>when the wave reaches them</strong>, even with lights off. It uses power, alerts reached predators and has a visible cooldown. It does not light up the water permanently.</li>
-      <li><kbd>E</kbd> / <strong>USE</strong>: recover crystals, recorders and caches, or dock to bank cargo, refill systems and upgrade. Scrap collects automatically within 6 m, extending to 10 / 14 / 18 / 22 m with the Salvage Magnet. Remote pickups require visibility, a clear path and power. <kbd>R</kbd> repairs 30 hull for 2 scrap. <kbd>L</kbd> toggles lights. <kbd>Shift</kbd> / <strong>SILENT</strong> reduces speed and noise.</li>
+      <li><kbd>E</kbd> / <strong>USE</strong>: recover crystals, recorders and caches, or dock to bank cargo, refill systems and upgrade. Scrap collects automatically within 6 m, extending to 10 / 14 / 18 / 22 m with the Salvage Magnet. Remote pickups require visibility, a clear path and power. <kbd>R</kbd> repairs 30 hull for 2 scrap. <kbd>L</kbd> toggles lights on PC; on touch, use the FLASHLIGHT switch in the top sliders/telemetry panel. Small joystick drags or holding the mouse near the submarine give slower, quieter movement. Silent Drive insulation works passively. Releasing the helm stops thrust; there is no cruise or silent toggle.</li>
       <li>The water darkens gradually to total darkness at <strong>1,000 m</strong>. Only your forward lamp and temporary sonar echoes reveal the surroundings. Vessel name, class and pressure limit are pinned to the top of the screen, alongside depth and systems. The pressure tab turns red beyond your rating.</li>
       <li><kbd>F</kbd> / <strong>MINE</strong>: drop one proximity mine astern while steering or boosting. It arms after 0.65 seconds, then damages predators within its blast radius without harming your submarine. Mines remain until triggered, docking resets the field, or this expedition ends. The launcher cycles for 1.1 seconds; hold does not auto-fire. If the stern is obstructed, no ammo is spent.</li>
       <li><strong>Harbour and surface:</strong> the marked approach protects against predators, not low oxygen, power loss or rocks. USE / E secures the sub in its berth. Build upward speed to breach the surface; boost makes a higher leap. Momentum and gravity carry the arc, with no thrust in the air. Splashdowns do not damage the hull. Upgrade tiles show your fitted mark and turn gold at maximum tier.</li>
@@ -2265,7 +2264,7 @@
       <li><strong>Abandoned contact mines:</strong> rusty horned spheres sway on chains. Touching one detonates it, harming nearby predators and the submarine. Your own deployed mines remain safe to the ship. Sonar reveals the tether and the chart remembers the hazard. Cleared contact mines never return, even after docking. The harbour, central route, fixed deposits, recorder approaches and recovery pods are kept clear.</li>
       <li><strong>Wildlife:</strong> Silver Darts, Sunstripe Reeflets, Ribbonfins and Violet Glassfish form harmless schools. Gentle piloting parts the school; boost, nearby predators and passing sonar scatter it before it regroups. Fish cannot be collected and do not clutter the chart. Anemones, fan corals, crabs and tube colonies react to lights, movement and currents.</li>
       <li><strong>Vent fields:</strong> rising bubbles and a rumble warn for three seconds before a three-second plume. Active vents push the ship and predators upward. Sunbreak Shelf bubble seeps are harmless; hotter vents in later levels damage the ship while inside. Wait for a quiet phase or take a different route. The chart records discovered vents, not their live phase. New scenery never defeats darkness.</li>
-      <li><strong>Direct-fire weapons:</strong> hold <kbd>Z</kbd> / RAIL for railgun bolts; tap <kbd>X</kbd> / TORP for one explosive torpedo. Both fire along the bow, stop at rock and need Mk I fitted at the dock. Each upgrade increases damage and magazine capacity. All rounds are bought in the dock Ammunition tab: rail 6 CR, torpedo 24 CR, mine 18 CR each. Docking, upgrades, waiting, loading and respawning never grant ammunition.</li>
+      <li><strong>Direct-fire weapons:</strong> hold <kbd>Z</kbd> / the top weapon icon for railgun bolts; tap <kbd>X</kbd> / the middle weapon icon for one explosive torpedo. The left-edge weapon column is railgun, torpedo, then mine. Inner rings show ammunition; outer rings show firing cooldowns. Exact stocks are in telemetry (the sliders icon). Both fire along the bow, stop at rock and need Mk I fitted at the dock. Each upgrade increases damage and magazine capacity. All rounds are bought in the dock Ammunition tab: rail 6 CR, torpedo 24 CR, mine 18 CR each. Docking, upgrades, waiting, loading and respawning never grant ammunition.</li>
       <li><strong>Environmental sound:</strong> nearby chains, vents, kelp, school movement, wreck groans and harbour machinery use the ambience slider. Explosions, docking clamps and interaction sounds use effects. Mute and both volume controls remain in SOUND SETTINGS; visible hazard warnings work without audio.</li>
       <li><kbd>Esc</kbd> / <strong>PAUSE</strong> freezes the dive. MENU saves it across sessions; QUIT abandons the dive and leaves a recovery pod. CAMPAIGN SLOTS keeps up to three independent games. New Game selects an empty slot; only confirmed deletion removes an occupied slot. Reloading preserves the last successful active-dive snapshot. Continue restores paused; the ocean does not advance while you are away. Clearing browser data still removes local saves.</li>
     </ul></div>`;
@@ -2341,7 +2340,7 @@
     window.addEventListener('pagehide',backgroundPause);
     canvas.addEventListener('pointerdown',e=>{
       if(e.pointerType==='touch'||e.button!==0||mouseHelm.pointerId!==null||!running||paused)return;
-      e.preventDefault();resetJoystick(true);canvas.focus({preventScroll:true});
+      e.preventDefault();resetJoystick();canvas.focus({preventScroll:true});
       mouseHelm.pointerId=e.pointerId;mouseHelm.clientX=e.clientX;mouseHelm.clientY=e.clientY;
       canvas.setPointerCapture(e.pointerId);canvas.classList.add('mouse-piloting');
     });
@@ -2377,17 +2376,10 @@
       if(e.pointerId!==joystick.pointerId)return;
       e.preventDefault();steerJoystick(e);
     });
-    const releaseStick=e=>{if(e.pointerId===joystick.pointerId){e.preventDefault();resetJoystick(e.type!=='pointerup');}};
+    const releaseStick=e=>{if(e.pointerId===joystick.pointerId){e.preventDefault();resetJoystick();}};
     canvas.addEventListener('pointerup',releaseStick);canvas.addEventListener('pointercancel',releaseStick);
     canvas.addEventListener('lostpointercapture',releaseStick);
     window.addEventListener('pointerup',releaseStick);window.addEventListener('pointercancel',releaseStick);
-    $('mobileCruise').addEventListener('click',()=>{
-      if(!running||paused)return;
-      cruiseEnabled=!cruiseEnabled;
-      if(cruiseEnabled){cruiseHeading.x=joystick.x;cruiseHeading.y=joystick.y;}
-      else{cruiseHeading.x=0;cruiseHeading.y=0;}
-      updateUI();
-    });
     $('mobileSonar').addEventListener('click',scan);
     // Pointerdown fires with a second finger already steering. Suppress the
     // subsequent pointer click so a single tap never spends two rounds.
@@ -2414,8 +2406,7 @@
     useBtn.addEventListener('lostpointercapture',stopUse);
     // Space/Enter-generated click, as opposed to a pointer click, remains accessible.
     useBtn.addEventListener('click',e=>{if(e.detail===0)interact();});
-    $('mobileRepair').addEventListener('click',repair);$('mobileLights').addEventListener('click',toggleLights);
-    $('mobileSilent').addEventListener('click',()=>{pointerSilent=!pointerSilent;updateUI();});
+    $('mobileRepair').addEventListener('click',repair);
     window.addEventListener('resize',()=>{resetPilotInput();resize();updateUI();});
     if(window.visualViewport)window.visualViewport.addEventListener('resize',resize);
     setupInstall();
@@ -2432,17 +2423,14 @@
     joystick.x=dx/(d||1)*throttle;joystick.y=dy/(d||1)*throttle;
     // A plain tap never reveals a stick or changes heading.
     if(d>=deadzone)$('mobileJoystick').classList.add('engaged');
-    if(cruiseEnabled&&throttle>0){cruiseHeading.x=joystick.x;cruiseHeading.y=joystick.y;}
     $('joystickThumb').style.transform=`translate3d(${dx/(d||1)*amount*joystick.radius}px,${dy/(d||1)*amount*joystick.radius}px,0)`;
   }
-  function resetJoystick(cancelCruise=false){
+  function resetJoystick(){
     const id=joystick.pointerId;joystick.pointerId=null;joystick.x=0;joystick.y=0;
     if(id!==null&&canvas.hasPointerCapture(id))canvas.releasePointerCapture(id);
     $('mobileJoystick').classList.remove('engaged');
     $('joystickThumb').style.transform='translate3d(0,0,0)';
-    if(cancelCruise){cruiseEnabled=false;cruiseHeading.x=0;cruiseHeading.y=0;}
-    const button=$('mobileCruise');button.classList.toggle('active',cruiseEnabled);
-    button.setAttribute('aria-pressed',String(cruiseEnabled));$('cruiseLabel').textContent=cruiseEnabled?'ON':'OFF';
+
   }
   function setupInstall(){
     // GitHub Pages (HTTPS) supports installation and the offline service worker.
@@ -2461,7 +2449,7 @@
     });
     window.addEventListener('appinstalled',()=>{installPrompt=null;installButton.classList.add('hidden');});
   }
-  // === Salvage & Supply / atomic active-expedition snapshots ===
+  // === Delta Helm / atomic active-expedition snapshots ===
   function validateActiveDive(value){
     if(!value||value.schema!==1||!LEVELS.some(l=>l.id===value.levelId)||!Number.isInteger(value.seed)||!Number.isInteger(value.cycle)||!Number.isFinite(value.clock)||value.clock<0)return null;
     const p=value.player,l=LEVELS.find(l=>l.id===value.levelId),bottom=120+l.depth*10;
@@ -2508,7 +2496,7 @@
     surveyThreats=Array.isArray(snapshot.threatContacts)?snapshot.threatContacts.filter(c=>Number.isFinite(c.until)&&c.until>clock):[];
     dockVisitActive=snapshot.dockVisitActive===true;eventLines=Array.isArray(snapshot.events)?snapshot.events.slice(0,3):[];
     loadedActive=null;buildingWorld=false;running=true;paused=true;showingDock=false;
-    resetPilotInput();pointerSilent=Boolean(player.quiet);player.boosting=false;
+    resetPilotInput();delete player.quiet;player.boosting=false;
     camera={x:player.x-viewport.w/2,y:player.y-viewport.h*.52};
     ['menuOverlay','modalOverlay'].forEach(id=>$(id).classList.add('hidden'));
     enterMobileCockpit();showPause();$('pauseTitle').textContent='EXPEDITION RESTORED';
@@ -2638,7 +2626,7 @@
     ctx.restore();
   }
 
-  // === Salvage & Supply: independent seeded encounters, never resource rerolls ===
+  // === Delta Helm: independent seeded encounters, never resource rerolls ===
   const WILD = Object.freeze({mineCounts:[8,16,28,42,58],ventCounts:[5,9,15,21,28],schoolCounts:[12,22,36,48,62],
     mineRadius:16,blastRadius:118,mineHullDamage:[24,32,40,48,56],mineEnemyDamage:[110,140,180,230,280],
     maxActiveSchools:12,maxFishPerSchool:14});
@@ -3046,8 +3034,8 @@
   function openExplorerDialog(id){
     if(document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open]'))return false;
     explorerReturnPause=paused;explorerReturnFocus=document.activeElement;
-    paused=true;resetPilotInput();persist();window.AbyssAudio?.suspend();
-    $(id).showModal();syncPauseButtons();return true;
+    paused=true;resetPilotInput();persist();
+    $(id).showModal();syncPauseButtons();audioFrame();return true;
   }
   function closeExplorerDialog(id){
     if(!$(id).open)return;
@@ -3174,6 +3162,15 @@
   }
 
   // === Compact HUD, full telemetry on demand, and accessible sound controls ===
+  function refreshFlashlightControl(){
+    const button=$('telemetryLightsBtn');
+    if(!button||!player)return;
+    const status=!player.lights?'OFF':headlightsActive()?'ON':'NO POWER';
+    button.textContent='FLASHLIGHT '+status+' · MK '+roman(saved.upgrades.flashlight);
+    button.classList.toggle('active',player.lights);button.setAttribute('aria-pressed',String(player.lights));
+    button.setAttribute('aria-label','Turn flashlight '+(player.lights?'off':'on'));
+    button.title='Flashlight Mk '+roman(saved.upgrades.flashlight)+' · '+(flashlightSpec().length/10)+' m reach · '+(flashlightPowerRate()*60).toFixed(1)+' power/min';
+  }
   function openTelemetry(){
     if(!running||!openExplorerDialog('telemetryDialog'))return;
     const rows=[['PRESSURE LIMIT',safeDepth().toLocaleString('en-GB')+' m'],['CURRENT DEPTH',depthOf(player.y).toLocaleString('en-GB')+' m'],
@@ -3184,7 +3181,7 @@
       ['RAILGUN',saved.upgrades.railgun?player.weaponAmmo.railgun+' / '+WEAPONS.railgun.capacity[saved.upgrades.railgun]:'NOT FITTED'],['TORPEDOES',saved.upgrades.torpedo?player.weaponAmmo.torpedo+' / '+WEAPONS.torpedo.capacity[saved.upgrades.torpedo]:'NOT FITTED'],['MINE AMMUNITION',player.mineAmmo+' / '+mineCapacity()],['CARGO',player.cargo.scrap+' SCRAP · '+player.cargo.crystal+' CRYSTALS'],
       ['RECORDERS',player.cargo.recorders.length+' ABOARD · '+saved.secured.length+'/'+RECORDERS_TOTAL+' BANKED']];
     $('telemetryBody').innerHTML='<div class="telemetry-grid">'+rows.map(([label,value])=>'<div><span>'+label+'</span><strong>'+value+'</strong></div>').join('')+'</div><p class="telemetry-target">'+$('targetInfo').textContent+'</p><p class="telemetry-save">'+(storageHealthy?'ACTIVE DIVE SAVED · RESUMES PAUSED':'STORAGE WARNING · THIS DIVE COULD NOT BE SAVED')+'</p>';
-    $('telemetryClose').focus({preventScroll:true});
+    refreshFlashlightControl();$('telemetryClose').focus({preventScroll:true});
   }
   function refreshAudioSettings(){
     const audio=window.AbyssAudio,settings=audio?.settings()||{effects:.5,ambience:.35,muted:true};
@@ -3200,6 +3197,7 @@
   function bindLivingUI(){
     bindSurvey();
     $('telemetryBtn').addEventListener('click',openTelemetry);
+    $('telemetryLightsBtn').addEventListener('click',()=>toggleLights(true));
     $('telemetryClose').addEventListener('click',()=>closeExplorerDialog('telemetryDialog'));
     $('telemetryDialog').addEventListener('cancel',e=>{e.preventDefault();closeExplorerDialog('telemetryDialog');});
     $('telemetryAudioBtn').addEventListener('click',()=>{closeExplorerDialog('telemetryDialog');openAudio();});
@@ -3212,7 +3210,7 @@
       if(!status?.available){$('audioState').textContent='Audio is not available in this browser. All visual warnings still work.';return;}
       if(status.muted){$('audioState').textContent='Sound is muted. Enable sound to hear the preview.';return;}
       if(status.state!=='running'){$('audioState').textContent='Audio has not started. Check browser sound permissions and try again.';return;}
-      audio.event('sonar');$('audioState').textContent='Sonar preview played at your effects volume.';
+      audio.event('sonar',0,1,true);$('audioState').textContent='Sonar preview played at your effects volume.';
     });
     const activate=()=>{if(!document.hidden)window.AbyssAudio?.unlock();};
     document.addEventListener('pointerdown',activate,{capture:true,passive:true});document.addEventListener('keydown',activate,{capture:true});
@@ -3233,14 +3231,14 @@
   function audioFrame(){
     const audio=window.AbyssAudio;if(!audio)return;
     if(document.hidden){if(audio.status().state==='running')audio.suspend();return;}
-    const interfaceMode=!$('menuOverlay').classList.contains('hidden')?'menu':showingDock?'dock':'none';
+    const interfaceMode=!$('menuOverlay').classList.contains('hidden')?'menu':showingDock?'dock':paused?'pause':'none';
     audio.setScene(interfaceMode);
     if(interfaceMode!=='none')return;
     if($('audioDialog').open)return; // Allow explicit paused preview.
-    if(!running||paused){if(audio.status().state==='running')audio.suspend();return;}
+    if(!running||paused)return;
     const threats=scene.predators.filter(e=>predatorAlive(e)&&e.aggression>.15&&distance(e,player)<300&&!inHarbour(player));
     const nearest=threats.sort((a,b)=>distance(a,player)-distance(b,player))[0];
-    audio.tick({speed:Math.hypot(player.vx,player.vy),depth:depthOf(player.y),boost:player.boosting,quiet:player.quiet,airborne:player.airborne,harbour:inHarbour(player),pressure:depthOf(player.y)/safeDepth(),threat:Boolean(nearest),pan:nearest?clamp((nearest.x-player.x)/200,-1,1):0});
+    audio.tick({speed:Math.hypot(player.vx,player.vy),depth:depthOf(player.y),boost:player.boosting,airborne:player.airborne,harbour:inHarbour(player),pressure:depthOf(player.y)/safeDepth(),threat:Boolean(nearest),pan:nearest?clamp((nearest.x-player.x)/200,-1,1):0});
   }
 
   function frame(now){
@@ -3266,9 +3264,10 @@
   },3500);
 
   // Tiny inspection hook for automated smoke tests.
-  window.AbyssDiagnostics={state:()=>({slot:window.AbyssSlots.active,campaignTitle,weaponAmmo:{...player.weaponAmmo},weaponCooldown:{...player.weaponCooldown},damageFlashing:player.damageFlashUntil>clock,projectiles:scene.projectiles?.length||0,airborne:Boolean(player.airborne),dockSafe:inHarbour(player),surfaceY:SURFACE.y,splashCount:surfaceEffects.length,version:BUILD.version,versionName:BUILD.name,buildId:BUILD.id,shield:player.shield,shieldCapacity:shieldCapacity(),shieldDelay:player.shieldDelay,magnetRange:magnetRange(),magnetPower:magnetPower(),disruptorMark:saved.upgrades.disruptor,scanPowerCost:scanPowerCost(),upgradeOpen:$('upgradeDialog').open,storageHealthy,campaignId,levelId:LEVEL_ID,levelName:currentLevel().name,crystals:saved.crystals,totalRecorders:totalRecorders(),achievements:ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length,recoveryPods:field.recoveries.length,levelComplete:levelComplete(LEVEL_ID),boostCapacity:boostCapacity(),boostUnlocked:boostUnlocked(),boostMultiplier:boostMultiplier(),boostSeconds:boostCapacity()/BOOST.drain,joystickVisible:$('mobileJoystick').classList.contains('engaged'),zoom:viewport.zoom,flashlightMark:saved.upgrades.flashlight,flashlightLength:flashlightSpec().length,flashlightAngle:flashlightSpec().halfAngle*360/Math.PI,flashlightPowerRate:flashlightPowerRate(),worldWidth:widthAt(player.y)*2,populationCycle:field.cycle,mineAmmo:player.mineAmmo,mineCapacity:mineCapacity(),minePower:saved.upgrades.minePower,mineCapacityMark:saved.upgrades.mineCapacity,mineDamage:mineDamage(),mineCooldown:player.mineCooldown,deployedMines:scene.mines.length,kills:player.kills,normalSpeed:normalSpeedAt(saved.upgrades.engine),maxNormalSpeed:normalSpeedAt(THRUST.maxMark),ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),inputMode:touchControls?'touch':'desktop',vesselLabel:vesselLabel(),boost:player.boost,boosting:player.boosting,boostLocked:player.boostLocked,boostNeedsRelease:player.boostNeedsRelease,boostRechargeDelay:player.boostRechargeDelay,boostPowerRate:boostPowerRate(),boostRechargeRate:boostRechargeRate(),scanCooldown:player.scanCooldown,sonarCost:sonarCost(),mouseHeld:mouseHelm.pointerId!==null,boostHeld,facing:player.facing,hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,hasSavedDive:Boolean(loadedActive),lastSaveWall,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier==='common').length,reaperCount:scene.predators.filter(e=>e.tier==='reaper').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
+  window.AbyssDiagnostics={state:()=>({slot:window.AbyssSlots.active,campaignTitle,weaponAmmo:{...player.weaponAmmo},weaponCooldown:{...player.weaponCooldown},damageFlashing:player.damageFlashUntil>clock,projectiles:scene.projectiles?.length||0,airborne:Boolean(player.airborne),dockSafe:inHarbour(player),surfaceY:SURFACE.y,splashCount:surfaceEffects.length,version:BUILD.version,versionName:BUILD.name,buildId:BUILD.id,shield:player.shield,shieldCapacity:shieldCapacity(),shieldDelay:player.shieldDelay,magnetRange:magnetRange(),magnetPower:magnetPower(),disruptorMark:saved.upgrades.disruptor,scanPowerCost:scanPowerCost(),upgradeOpen:$('upgradeDialog').open,storageHealthy,campaignId,levelId:LEVEL_ID,levelName:currentLevel().name,crystals:saved.crystals,totalRecorders:totalRecorders(),achievements:ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length,recoveryPods:field.recoveries.length,levelComplete:levelComplete(LEVEL_ID),boostCapacity:boostCapacity(),boostUnlocked:boostUnlocked(),boostMultiplier:boostMultiplier(),boostSeconds:boostCapacity()/BOOST.drain,joystickVisible:$('mobileJoystick').classList.contains('engaged'),zoom:viewport.zoom,flashlightMark:saved.upgrades.flashlight,flashlightLength:flashlightSpec().length,flashlightAngle:flashlightSpec().halfAngle*360/Math.PI,flashlightPowerRate:flashlightPowerRate(),worldWidth:widthAt(player.y)*2,populationCycle:field.cycle,mineAmmo:player.mineAmmo,mineCapacity:mineCapacity(),minePower:saved.upgrades.minePower,mineCapacityMark:saved.upgrades.mineCapacity,mineDamage:mineDamage(),mineCooldown:player.mineCooldown,deployedMines:scene.mines.length,kills:player.kills,normalSpeed:normalSpeedAt(saved.upgrades.engine),maxNormalSpeed:normalSpeedAt(THRUST.maxMark),ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),inputMode:touchControls?'touch':'desktop',vesselLabel:vesselLabel(),boost:player.boost,boosting:player.boosting,boostLocked:player.boostLocked,boostNeedsRelease:player.boostNeedsRelease,boostRechargeDelay:player.boostRechargeDelay,boostPowerRate:boostPowerRate(),boostRechargeRate:boostRechargeRate(),scanCooldown:player.scanCooldown,sonarCost:sonarCost(),mouseHeld:mouseHelm.pointerId!==null,boostHeld,facing:player.facing,hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,hasSavedDive:Boolean(loadedActive),lastSaveWall,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier==='common').length,reaperCount:scene.predators.filter(e=>e.tier==='reaper').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,noise:player.noise})};
   if(location.search.includes('testmode=1')||window.ABYSS_TEST_MODE===true){
     window.AbyssDiagnostics.audioFrame=audioFrame;
+    window.AbyssDiagnostics.movementNoiseAt=movementNoiseAt;
     window.AbyssDiagnostics.weaponStock=values=>{for(const id of Object.keys(WEAPONS)){if(Number.isFinite(values[id]))saved.weaponAmmo[id]=player.weaponAmmo[id]=clamp(Math.floor(values[id]),0,WEAPONS[id].capacity[saved.upgrades[id]]);}updateUI();persist();};
     window.AbyssDiagnostics.fire=kind=>{const before=paused;paused=false;const ok=fireWeapon(kind);paused=before;render();return ok;};
     window.AbyssDiagnostics.damage=(amount=10)=>{takeDamage(amount,'Test impact',true);render();};
@@ -3303,14 +3302,14 @@
     window.AbyssDiagnostics.simulationFixture=({depth=500,facing=Math.PI/2,lights=false,battery=maxBattery(),boost=null,upgrades={},items=[],predators=[],rocks=[],wrecks=[],vents=[],mines=[],mineAmmo=null}={})=>{
       environmentEnabled=false;wildEnabled=false;resetPilotInput();Object.assign(saved.upgrades,upgrades);beamTexture=buildBeamTexture();
       const y=120+depth*10,x=centerAt(y);
-      player={...player,x,y,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing,lights,battery,boost:boost??boostCapacity(),hull:maxHull(),oxygen:maxOxygen(),noise:0,quiet:false,boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,damageCooldown:0,scanCooldown:0,mineAmmo:mineAmmo??(saved.upgrades.minePower?mineCapacity():0),mineCooldown:0,weaponAmmo:{...saved.weaponAmmo},weaponCooldown:{railgun:0,torpedo:0},damageFlashUntil:0,nextDamageFlash:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,autoSalvageCooldown:0,trip:{deepest:0,hullDamage:0},cargo:{scrap:0,crystal:0,recorders:[]}};
+      player={...player,x,y,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing,lights,battery,boost:boost??boostCapacity(),hull:maxHull(),oxygen:maxOxygen(),noise:0,boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,damageCooldown:0,scanCooldown:0,mineAmmo:mineAmmo??(saved.upgrades.minePower?mineCapacity():0),mineCooldown:0,weaponAmmo:{...saved.weaponAmmo},weaponCooldown:{railgun:0,torpedo:0},damageFlashUntil:0,nextDamageFlash:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,autoSalvageCooldown:0,trip:{deepest:0,hullDamage:0},cargo:{scrap:0,crystal:0,recorders:[]}};
       saved.mineAmmo=player.mineAmmo;
       scene={items:items.map((i,n)=>makeItem(x+i.dx,y+i.dy,i.type||'scrap',{id:n,index:i.index??0,...i})),
         rocks:rocks.map(r=>{const k={x:x+r.dx,y:y+r.dy,radius:30,rot:0,seed:.4,spikes:8,...r};return {...k,vertices:rockPolygon(k)};}),
         predators:predators.map(e=>createPredator({tier:'common',vx:0,vy:0,phase:0,aggression:0,lastHit:-10,alertUntil:0,forgetUntil:0,revealUntil:0,...e,x:x+e.dx,y:y+e.dy,homeX:x+e.dx,homeY:y+e.dy})),
         wrecks:wrecks.map(w=>({...w,x:x+w.dx,y:y+w.dy})),vents:vents.map(v=>({phase:0,...v,x:x+v.dx,y:y+v.dy})),dust:[],blasts:[],projectiles:[],
         mines:mines.map(m=>({id:idCounter++,mark:1,damage:60,birth:0,armedAt:0,detonated:false,revealUntil:0,...m,x:x+m.dx,y:y+m.dy}))};
-      running=true;paused=true;clock=0;surfaceEffects=[];sonarWaves=[];sonarTerrainEchoes=[];pointerSilent=false;toastUntil=0;$('notification').classList.add('hidden');
+      running=true;paused=true;clock=0;surfaceEffects=[];sonarWaves=[];sonarTerrainEchoes=[];toastUntil=0;$('notification').classList.add('hidden');
       camera={x:x-viewport.w/2,y:y-viewport.h*.52};
       for(const id of ['menuOverlay','pauseOverlay','modalOverlay'])$(id).classList.add('hidden');
       updateUI();render();return {x,y,camera:{...camera},viewport:{...viewport}};
