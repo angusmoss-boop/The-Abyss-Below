@@ -1,0 +1,141 @@
+{
+  "build": "0.13.0-harbour-rising-1",
+  "completed_at": "2026-10-27T17:25:23.263948+00:00",
+  "results": [
+    {
+      "suite": "harbour-surface-tiers",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "-u",
+        "tests/v0130_harbour_test.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 14.48
+    },
+    {
+      "suite": "v012-save-compatibility",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "-u",
+        "tests/v0130_save_test.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 11.42
+    },
+    {
+      "suite": "campaign",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "-u",
+        "tests/v0130_campaign_test.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 26.95
+    },
+    {
+      "suite": "world-achievements",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "-u",
+        "tests/v0130_world_achievements_test.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 33.1
+    },
+    {
+      "suite": "migration",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "-u",
+        "tests/v0130_migration_test.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 10.45
+    },
+    {
+      "suite": "responsive-hub",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "-u",
+        "tests/v0130_ui_test.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 22.73
+    },
+    {
+      "suite": "touch-desktop",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "-u",
+        "tests/v0130_touch_test.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 21.12
+    },
+    {
+      "suite": "ship-systems",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "-u",
+        "tests/v0130_systems_test.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 10.25
+    },
+    {
+      "suite": "gameplay-regression",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "-u",
+        "tests/v0130_regression_test.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 12.23
+    },
+    {
+      "suite": "release-integrity",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "-u",
+        "tests/v0130_release_test.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 1.19
+    },
+    {
+      "suite": "version-checker",
+      "command": [
+        "node",
+        "tests/v0130_sync_test.mjs"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.13
+    },
+    {
+      "suite": "worker-lifecycle",
+      "command": [
+        "node",
+        "tests/v0130_worker_test.mjs"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "seconds": 0.13
+    }
+  ],
+  "limitations": [
+    "Chromium production asset harness; no physical phone or complete human balance playthrough.",
+    "Most suites use synthetic equipment/coordinates for isolated assertions.",
+    "Network, cache and deployment boundaries in the Node suites are mocked. See live-pwa.json for the separate real-network attempt."
+  ]
+}

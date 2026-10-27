@@ -1,0 +1,2 @@
+PASS actual v0.12 runtime fixture: all five levels, selected level, resource positions/depletion, recorder progress, campaign ID, credits, crystals, stats, achievements, upgrades, ammunition and predator damage are unchanged
+PASS airborne reload/quit/defeat: finite cargo recovers underwater exactly once, no lost crystals, no duplicate banked currency and no resource respawn
