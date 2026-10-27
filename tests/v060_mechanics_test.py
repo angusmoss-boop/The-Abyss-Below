@@ -178,7 +178,7 @@ def run():
     step(page,7)
     assert not detail(page)['sonarWaves'] and state(page)['scanCooldown']==0
     assert page.evaluate(PIXEL_MAX)['max']==0,'Expired sonar must leave the lights-off world pitch black'
-    assert page.locator('#sonarButtonLabel').inner_text()=='PING'
+    assert page.locator('#sonarButtonLabel').inner_text()=='READY'
     fixture(page,depth=1100,battery=3)
     page.evaluate('AbyssDiagnostics.ping()');assert not detail(page)['sonarWaves']
     assert state(page)['battery']==3

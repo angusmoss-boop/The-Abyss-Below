@@ -12,8 +12,8 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def open_game(browser, width, height):
-    page = browser.new_page(viewport={"width": width, "height": height})
+def open_game(browser, width, height, mobile=False):
+    page = browser.new_page(viewport={"width": width, "height": height}, is_mobile=mobile, has_touch=mobile)
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.set_content((ROOT / "index.html").read_text(encoding="utf-8"))
@@ -55,13 +55,13 @@ def run():
         assert not errors, f"Desktop JS errors: {errors}"
         desktop.close()
 
-        mobile, errors = open_game(browser, 390, 844)
+        mobile, errors = open_game(browser, 390, 844, mobile=True)
         mobile.locator("#startBtn").click()
         assert mobile.locator(".mobile-controls").is_visible()
         mobile.locator("#mobileSilent").click()
         assert "active" in (mobile.locator("#mobileSilent").get_attribute("class") or "")
         mobile.locator("#mobileLights").click()
-        assert mobile.locator("#lightsLabel").inner_text() == "LIGHTS OFF"
+        assert mobile.locator("#lightsLabel").inner_text() == "OFF"
         mobile.locator("#mobileSonar").click()
         assert mobile.evaluate("AbyssDiagnostics.state().battery") < 100
         assert not errors, f"Mobile JS errors: {errors}"

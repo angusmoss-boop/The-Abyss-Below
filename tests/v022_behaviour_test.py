@@ -21,8 +21,8 @@ try:
       assert state['running'] and state['focusMode'],(width,height,state)
       joy=page.locator('#mobileJoystick').bounding_box();use=page.locator('#mobileInteract').bounding_box();actions=page.locator('#mobileSonar').bounding_box();
       assert use['x']+use['width']+8 < joy['x'],(width,height,use,joy)
-      # v0.7: wide USE in both orientations makes room for the independent mine button.
-      assert use['width']>=actions['width']*1.9 and use['height']>actions['height'],(width,height,use,actions)
+      # v0.8: circular USE is larger than every secondary action in either orientation.
+      assert use['width']>actions['width'] and use['height']>actions['height'] and abs(use['width']-use['height'])<1,(width,height,use,actions)
       assert page.locator('#mobileJoystick').is_visible()
       page.screenshot(path=str(ROOT/f'v0.2.2-{width}x{height}-fullscreen.png'))
       if width==390:

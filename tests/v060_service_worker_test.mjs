@@ -38,19 +38,19 @@ async function dispatch(name,request){
 }
 await caches.open('abyss-below-shell-v0.6.0');await caches.open('other-app-cache');
 await dispatch('install');assert.ok(skipped);
-const cache=await caches.open('abyss-below-shell-v0.7.0');
+const cache=await caches.open('abyss-below-shell-v0.8.0');
 for(const asset of ['styles.css','game.js','manifest.webmanifest']){
-  const target=asset+'?v=0.7.0';assert.ok(await cache.match(target));
+  const target=asset+'?v=0.8.0';assert.ok(await cache.match(target));
   assert.ok(fs.readFileSync(path.join(root,'index.html'),'utf8').includes(target));
 }
 await dispatch('activate');assert.ok(claimed);
 assert.ok(!stores.has('abyss-below-shell-v0.6.0'));assert.ok(stores.has('other-app-cache'));
-const request={method:'GET',url:base+'game.js?v=0.7.0',mode:'same-origin'};
+const request={method:'GET',url:base+'game.js?v=0.8.0',mode:'same-origin'};
 assert.equal(await (await dispatch('fetch',request)).text(),'fresh network data');
 offline=true;
 assert.equal(await (await dispatch('fetch',request)).text(),'fresh network data');
 const fallback=await dispatch('fetch',{method:'GET',url:base+'missing-page',mode:'navigate'});
-assert.ok((await fallback.text()).includes('EXPEDITION BUILD v0.7.0'));
+assert.ok((await fallback.text()).includes('EXPEDITION BUILD v0.8.0'));
 assert.equal((await dispatch('fetch',{method:'GET',url:base+'missing.png',mode:'same-origin'})).type,'error');
 assert.equal(await dispatch('fetch',{method:'POST',url:base+'game.js'}),undefined);
 assert.equal(await dispatch('fetch',{method:'GET',url:'https://other.test/data'}),undefined);

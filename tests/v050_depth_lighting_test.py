@@ -98,7 +98,7 @@ def run():
         stats = page.evaluate(PIXELS, {'depth': 1100, 'lights': True, 'battery': 0, 'quietScene': True})
         assert stats['max'] == 0
         assert not page.evaluate('AbyssDiagnostics.state().headlightsActive')
-        assert page.locator('#lightsLabel').inner_text() == 'NO POWER'
+        assert page.locator('#lightsLabel').inner_text() == 'EMPTY'
         print('PASS: depleted battery extinguishes the flashlight and updates its label')
 
         # Rebuild a real scene, with salvage inside the long beam and an alerted predator behind.
@@ -151,7 +151,7 @@ def run():
             assert stats['max'] == 0, (width, height, stats)
             assert page.locator('#mobileLights').is_visible()
             assert page.locator('#mobileJoystick').is_visible()
-            assert page.locator('#focusDepth').inner_text() == '1000m'
+            assert page.locator('#depthStat').inner_text() == '1000'
             page.evaluate('AbyssDiagnostics.lightingFixture({depth:1000,freeze:false,lights:true,facing:Math.PI/2})')
             page.locator('#mobileLights').click()
             assert not page.evaluate('AbyssDiagnostics.state().headlightsActive')
