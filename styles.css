@@ -213,3 +213,43 @@ body.game-focus .notification{top:calc(131px + env(safe-area-inset-top,0px))}
   body.game-focus .mobile-actions #mobileBoost{grid-row:3;grid-column:1/-1;width:100%;min-height:30px}
   body.game-focus .interaction-prompt{bottom:145px}
 }
+
+
+/* v0.7.0: compact ordnance readout and independent mine input beside USE. */
+.mine-meter{display:grid;grid-template-columns:1fr auto;gap:3px 5px;width:100%;margin:6px 0 0;padding:6px 0 0;border:0;border-top:1px solid #60778280;background:transparent;color:#f4d39c;text-align:left;font:700 9px ui-monospace,monospace;letter-spacing:.3px;cursor:pointer;pointer-events:auto;touch-action:manipulation}
+.mine-meter strong{font-size:9px}.mine-meter small{grid-column:1/-1;font-size:7px;color:#a9b5b7}
+.mine-meter:hover{color:#fff2c8}.mine-meter.empty{color:#a1a6aa}.mine-meter.cooling{color:#bda282}
+#mobileMine{border-color:#c69b65b0;background:#493827e8;color:#ffe0ac}
+#mobileMine.empty{background:#162c37e8;color:#8b9aa2;border-color:#556672}
+#mobileMine.cooling{color:#bb9f76}#mobileMine:active{background:#8c5b32;color:#fff2d0}
+.ordnance-upgrade{border-color:#776043;background:#2b291f45}.upgrade-preview{color:#f2c887!important;font-weight:700}
+body.game-focus .notification{top:calc(166px + env(safe-area-inset-top,0px))}
+@media(max-width:850px){
+ .mobile-actions{grid-template-columns:repeat(3,47px);grid-template-rows:62px 42px 38px;gap:5px}
+ .mobile-actions .use-action{grid-column:1/3;grid-row:1}
+ .mobile-actions #mobileMine{grid-column:3;grid-row:1;min-height:62px;font-size:9px}
+ .mobile-actions #mobileMine .action-glyph{font-size:24px}
+ .mobile-actions #mobileSonar{grid-column:1;grid-row:2}
+ .mobile-actions #mobileSilent{grid-column:2;grid-row:2}
+ .mobile-actions #mobileLights{grid-column:3;grid-row:2}
+ .mobile-actions #mobileRepair{grid-column:1;grid-row:3;min-height:38px}
+ .mobile-actions #mobileBoost{grid-column:2/4;grid-row:3;min-height:38px;width:100%;font-size:9px}
+ .interaction-prompt,body.game-focus .interaction-prompt{bottom:180px}
+}
+@media(max-width:380px){
+ .mobile-actions{grid-template-columns:repeat(3,43px);grid-template-rows:58px 40px 38px;gap:4px}
+ .mobile-actions #mobileMine,.mobile-actions .use-action{min-height:58px}
+}
+@media(orientation:landscape) and (max-height:510px){
+ body.game-focus .mobile-actions{grid-template-columns:repeat(3,43px);grid-template-rows:44px 40px 32px;gap:4px}
+ body.game-focus .mobile-actions .use-action{grid-column:1/3;grid-row:1;min-height:44px;flex-direction:row;gap:6px;font-size:13px}
+ body.game-focus .mobile-actions #mobileMine{grid-column:3;grid-row:1;min-height:44px}
+ body.game-focus .mobile-actions #mobileMine .action-glyph{font-size:17px}
+ body.game-focus .mobile-actions #mobileSonar{grid-column:1;grid-row:2;min-height:40px}
+ body.game-focus .mobile-actions #mobileSilent{grid-column:2;grid-row:2;min-height:40px}
+ body.game-focus .mobile-actions #mobileLights{grid-column:3;grid-row:2;min-height:40px}
+ body.game-focus .mobile-actions #mobileRepair{grid-column:1;grid-row:3;min-height:32px}
+ body.game-focus .mobile-actions #mobileBoost{grid-column:2/4;grid-row:3;min-height:32px;width:100%}
+ body.game-focus .interaction-prompt{bottom:146px}
+ body.game-focus .notification{top:72px;left:51%;max-width:43%}
+}

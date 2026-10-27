@@ -1,6 +1,6 @@
 # The Abyss Below: implemented design
 
-## Current release: v0.6.0, Silent Echoes
+## Current release: v0.7.0, Teeth & Traps
 
 The core loop is dive, locate salvage and lost recorders, manage oxygen/power/hull, evade predators, return to bank resources and upgrade. Permanent progress is stored locally; active dives are not persisted across a page reload.
 
@@ -34,8 +34,9 @@ Base ping: 12 battery, 5.5-second cooldown, 4.5-second echo persistence. Sonar u
 |---|---:|---:|---:|
 | Tier | 1 | 2 | 3 |
 | World count | 46 | 11 | 5 |
-| Chase speed | 80 | 134 | 196 |
-| Patrol speed | 21 | 31 | 39 |
+| Max health | 100 | 200 | 400 |
+| Chase speed | 96 | 158 | 245.28 |
+| Patrol speed | 25 | 36 | 46 |
 | Detection cap | 245 | 370 | 440 |
 | Awareness multiplier | 1 | 1.52 | 1.85 |
 | Pursuit leash | 345 | 505 | 610 |
@@ -45,9 +46,23 @@ Base ping: 12 battery, 5.5-second cooldown, 4.5-second echo persistence. Sonar u
 
 Stalkers spawn below 400 m. Reapers spawn at homes beginning around 810 m, with only five spread through deeper water. Reaper movement is restricted to at least 800 m so chasing cannot pull them into the upper trench. Every tier loses interest beyond a finite leash. Lights, noise and sonar affect awareness.
 
+## Mine ordnance and health
+
+The reaper chase speed and Mk IV engine speed share `normalSpeedAt(THRUST.maxMark)`, avoiding independent balance values drifting apart. Damage/awareness, spawn counts, pursuit leashes and depth restrictions are otherwise unchanged. Health is initialised from tier data for every generated predator. Surviving enemies retain damage until a new world is created; dead enemies are removed before attack resolution and are marked dead for any existing sonar contact references.
+
+Warhead marks I-IV deal 60/110/180/240 damage and cost 100/180/320/520 incremental credits. Ammo rack marks I-IV hold 2/4/6/8 mines; the Mk I rack is standard equipment, with later marks costing 90/160/280 credits. Warheads start unfitted. Buying Mk I unlocks the weapon and fills the standard rack at the dock. Capacity and power are independent persistent upgrade fields.
+
+Deployment is a single F press, HUD-button click or mobile pointerdown. Repeated keydown and the synthetic pointer click do not fire additional rounds. Running, unpaused play; fitted warheads; ammo; cooldown; station exclusion; and an unobstructed stern are all required. Placement checks the actual rock polygons and trench bounds, trying 54, 46 and 38 units astern before refusing without consuming ammo. Mine markers have a fixed position and retain the warhead tier/damage at deployment.
+
+Arming takes 0.65 seconds; launcher cooldown is 1.1 seconds. Proximity is swept across the armed portion of each predator's simulation frame, with a 52-unit trigger radius. Blast damage is applied once to each live predator within 108 units at the detected contact time. Submarine, items, rocks and other mines are unaffected. A surviving damaged hunter becomes alerted; a killed one cannot bite later in the same frame. Mines have no time-based expiry and persist during the current expedition, including dock visits. Blast graphics expire after 0.65 seconds.
+
+Health bars, physical mine art and blast particles are drawn beneath the darkness mask. Sonar scans include mines, render their temporary outlines, and show health bars with revealed predators. Dead contacts and detonated mine references cannot render again. Deployed mines appear on the instrument radar, but they do not illuminate the ocean.
+
+Resupply only occurs on a fresh surface launch, docking, or a purchase while physically docked. Time, menus, ordinary supply caches, repairs and other power systems have no ammo-refill path. Pause freezes all simulation timers. Mines are deliberately finite trip resources, not a regenerating attack.
+
 ## Save and interface contracts
 
-Keep the `the-abyss-below-v01` save key. Current fields remain credits, XP, best depth, secured recorder IDs and upgrade levels. Boost, active sonar, enemy positions and current cargo are runtime-only, just like the existing active dive.
+Keep the `the-abyss-below-v01` save key. Current fields remain credits, XP, best depth, secured recorder IDs and upgrade levels. The new `minePower` (0-4, default 0) and `mineCapacity` (1-4, default 1) fields migrate independently without replacing banked progress. Invalid new-field values fall back safely. The free starter rack does not count as earned progress on the title screen. Boost, active sonar, enemy positions/health, planted mines, current ammo and cargo are runtime-only, just like the existing active dive.
 
 Pause, modal dialogs, title-menu suspension, focus loss and visibility loss clear held helm/boost/use input. While paused, boost charge, cooldowns and other simulation timers do not advance. Resume never synthesises a still-held action. New Game is explicitly confirmed; Quit preserves banked progress but abandons current cargo.
 
@@ -57,4 +72,4 @@ Discovered maps, wreck interiors, currents, modular system damage, environmental
 
 ## Acceptance and remaining uncertainty
 
-Automated tests exercise mouse capture, touch input, boost arithmetic and lockout, collision at boosted speed, sonar arrival/expiry and rendered darkness, save compatibility, menu flows, upgrade progression and creature parameters. Real-device Android installation/performance, mobile ergonomics over a long session and whole-campaign economy/difficulty remain manual playtest work. The local real-HTTP offline integration test is blocked in this execution environment; a mocked worker-lifecycle test covers cache logic separately.
+Automated tests exercise mouse capture, touch input, boost arithmetic and lockout, collision at boosted speed, sonar arrival/expiry and rendered darkness, save compatibility, menu flows, upgrade progression and creature parameters. Additional checks cover mine arming/proximity, swept contact, all twelve damage/health combinations, area radius, friendly-fire immunity, independent purchase paths, limited ammunition, dock-only refills and actual four-pointer mobile input. Real-device Android installation/performance, mobile ergonomics over a long session and whole-campaign economy/difficulty remain manual playtest work. The local real-HTTP offline integration test is blocked in this execution environment; a mocked worker-lifecycle test covers cache logic separately.

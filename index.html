@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#06121d" />
   <meta name="description" content="The Abyss Below: a submarine exploration and survival game." />
   <title>The Abyss Below | Deepwater Expedition</title>
-  <link rel="manifest" href="manifest.webmanifest?v=0.6.0" />
+  <link rel="manifest" href="manifest.webmanifest?v=0.7.0" />
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="stylesheet" href="styles.css?v=0.6.0" />
+  <link rel="stylesheet" href="styles.css?v=0.7.0" />
 </head>
 <body>
   <div class="app">
@@ -28,12 +28,13 @@
           <div class="metric right"><div class="metric-label">DIVE STATUS</div><div class="metric-value status-safe" id="statusStat">SAFE</div></div>
         </div>
         <section class="viewport" aria-label="Submarine expedition game">
-          <canvas id="gameCanvas" tabindex="0" aria-label="Hold left mouse button to pilot. Space boosts, Q scans, E collects, Escape pauses."></canvas>
+          <canvas id="gameCanvas" tabindex="0" aria-label="Hold left mouse button to pilot. Space boosts, F deploys a mine, Q scans, E collects, Escape pauses."></canvas>
           <div class="viewport-topline"><span id="coordsText">SECTOR 01 · SURFACE APPROACH</span><span id="sonarText">SONAR READY</span></div>
           <div id="boostMeter" class="boost-meter" aria-label="Boost charge">
             <div class="boost-meter-head"><span>BOOST <kbd>SPACE</kbd></span><strong id="boostValue">100%</strong></div>
             <div class="boost-track"><div id="boostBar"></div></div>
             <span id="boostStatus">READY</span>
+            <button id="mineDeployBtn" class="mine-meter" title="Deploy mine (F)"><span>MINES <kbd>F</kbd></span><strong id="mineAmmoValue">NOT FITTED</strong><small id="mineState">BUY AT DOCK</small></button>
           </div>
           <div class="focus-hud" aria-label="Live submarine systems">
             <div class="hud-stat"><span>DEPTH</span><strong id="focusDepth">0m</strong></div>
@@ -64,6 +65,7 @@
               <button id="mobileSilent" aria-label="Toggle quiet running" title="Toggle quiet running"><span class="action-glyph">◌</span><span>SILENT</span></button>
               <button id="mobileRepair" aria-label="Repair hull" title="Repair hull"><span class="action-glyph">✚</span><span>REPAIR</span></button>
               <button id="mobileLights" class="wide" aria-label="Toggle lights" title="Toggle lights"><span class="action-glyph">☀</span><span id="lightsLabel">LIGHTS ON</span></button>
+              <button id="mobileMine" class="mine-action" aria-label="Deploy sea mine" title="Deploy sea mine"><span class="action-glyph" aria-hidden="true">✹</span><span id="mobileMineLabel">MINES</span></button>
               <button id="mobileBoost" class="boost-toggle" aria-label="Hold to boost" title="Hold for a power-consuming speed boost"><span aria-hidden="true">⇈</span> <span id="mobileBoostLabel">BOOST 100%</span></button>
             </div>
           </div>
@@ -74,7 +76,7 @@
           <div class="system"><div class="system-head"><span>BATTERY</span><strong id="batteryValue">100%</strong></div><div class="gauge"><div id="batteryBar" class="gauge-fill battery"></div></div></div>
           <div class="system"><div class="system-head"><span>ENGINE NOISE</span><strong id="noiseValue">0%</strong></div><div class="gauge"><div id="noiseBar" class="gauge-fill noise"></div></div></div>
         </div>
-        <div class="bottom-hint"><span>HOLD MOUSE / WASD <b>PILOT</b></span><span>SPACE <b>BOOST</b></span><span>Q <b>SONAR</b></span><span>E <b>INTERACT / DOCK</b></span><span>SHIFT <b>QUIET RUN</b></span><span>R <b>REPAIR</b></span><span>L <b>LIGHTS</b></span></div>
+        <div class="bottom-hint"><span>HOLD MOUSE / WASD <b>PILOT</b></span><span>SPACE <b>BOOST</b></span><span>F <b>MINE</b></span><span>Q <b>SONAR</b></span><span>E <b>INTERACT / DOCK</b></span><span>SHIFT <b>QUIET RUN</b></span><span>R <b>REPAIR</b></span><span>L <b>LIGHTS</b></span></div>
       </div>
       <aside class="sidebar">
         <div class="section-tag">OPERATIONS CONSOLE <span class="tag-live">● LIVE</span></div>
@@ -85,9 +87,9 @@
         <button id="dockBtn" class="dock-btn" disabled>◈ RETURN TO STATION TO UPGRADE</button>
       </aside>
     </main>
-    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.6.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
+    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.7.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
   </div>
-  <div class="overlay" id="menuOverlay"><div class="menu-card"><div class="menu-kicker">TRANSMISSION // 0001</div><div class="menu-icon">⌁</div><h1>THE ABYSS<br><span>BELOW</span></h1><p>Something went silent beneath the continental shelf. Six recorders remain, scattered as deep as 1,500 metres. Your oxygen is finite. Your vessel is not invincible. The deeper you go, the more the darkness notices you.</p><div class="menu-feature-list"><span>◈ PROCEDURAL TRENCH</span><span>◈ SURVIVAL SYSTEMS</span><span>◈ THREE PREDATOR TIERS</span><span>◈ UPGRADABLE SUB</span></div><button id="startBtn" class="primary-btn">BEGIN EXPEDITION <span>→</span></button><button id="newGameBtn" class="menu-secondary-btn">✦ NEW GAME</button><p id="menuProgress" class="menu-progress" aria-live="polite"></p><button id="instructionsBtn" class="text-btn">VIEW PILOT BRIEFING</button><button id="installBtn" class="install-btn hidden">⬇ INSTALL ON PHONE</button><div class="menu-bottom">NEREID EXPLORATION PROGRAM · CLASSIFIED</div></div></div>
+  <div class="overlay" id="menuOverlay"><div class="menu-card"><div class="menu-kicker">TRANSMISSION // 0001</div><div class="menu-icon">⌁</div><h1>THE ABYSS<br><span>BELOW</span></h1><p>Something went silent beneath the continental shelf. Six recorders remain, scattered as deep as 1,500 metres. Your oxygen is finite. Your vessel is not invincible. The deeper you go, the more the darkness notices you.</p><div class="menu-feature-list"><span>◈ PROCEDURAL TRENCH</span><span>◈ SURVIVAL SYSTEMS</span><span>◈ MINES &amp; PREDATORS</span><span>◈ UPGRADABLE SUB</span></div><button id="startBtn" class="primary-btn">BEGIN EXPEDITION <span>→</span></button><button id="newGameBtn" class="menu-secondary-btn">✦ NEW GAME</button><p id="menuProgress" class="menu-progress" aria-live="polite"></p><button id="instructionsBtn" class="text-btn">VIEW PILOT BRIEFING</button><button id="installBtn" class="install-btn hidden">⬇ INSTALL ON PHONE</button><div class="menu-bottom">NEREID EXPLORATION PROGRAM · CLASSIFIED</div></div></div>
   <div class="overlay pause-overlay hidden" id="pauseOverlay" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
     <div class="pause-card">
       <div class="pause-emblem" aria-hidden="true">Ⅱ</div>
@@ -103,6 +105,6 @@
     </div>
   </div>
   <div class="overlay hidden" id="modalOverlay"><div class="dialog-card"><div class="dialog-top"><div id="modalKicker" class="menu-kicker">FIELD BRIEFING</div><button id="modalClose" class="close-btn">✕</button></div><h2 id="modalTitle">PILOT BRIEFING</h2><div id="modalBody"></div><div id="modalFooter"></div></div></div>
-  <script src="game.js?v=0.6.0" defer></script>
+  <script src="game.js?v=0.7.0" defer></script>
 </body>
 </html>

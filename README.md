@@ -1,14 +1,14 @@
 # The Abyss Below
 
-## v0.6.0: Silent Echoes
+## v0.7.0: Teeth & Traps
 
 A standalone, dependency-free browser/PWA submarine expedition game. Pilot the NEREID through a 1,800 m trench, bank salvage, upgrade the vessel and recover six lost recorders.
 
 ### Update an existing GitHub Pages game
 
 1. Bank your active dive at the surface before refreshing. Only permanent banked progress survives a reload.
-2. Extract the v0.6.0 update ZIP. Copy its contents into the existing repository root, replacing files with the same names. Do not upload the ZIP itself or put the files in a nested folder.
-3. Commit the changes, let GitHub Pages finish deploying, then reopen the game online. Check **EXPEDITION BUILD v0.6.0** in the console footer. On mobile, use EXIT to leave the expanded cockpit and view the footer.
+2. Extract the v0.7.0 update ZIP. Copy its contents into the existing repository root, replacing files with the same names. Do not upload the ZIP itself or put the files in a nested folder.
+3. Commit the changes, let GitHub Pages finish deploying, then reopen the game online. Check **EXPEDITION BUILD v0.7.0** in the console footer. On mobile, use EXIT to leave the expanded cockpit and view the footer.
 
 Keep the same site origin and browser profile to retain local saved credits, upgrades, rank, secured recorders and best depth. Do not clear site storage or select NEW GAME to install an update. The save key remains `the-abyss-below-v01`.
 
@@ -20,6 +20,7 @@ The complete-source ZIP is a full copy. The update ZIP contains changed code, do
 |---|---|---|
 | Pilot | Hold left click over water, move the cursor; or WASD / arrow keys | Drag right-hand analogue joystick |
 | Boost | Hold Space while piloting | Hold left-side BOOST while steering or cruising |
+| Deploy sea mine | F, or the MINES HUD button | Tap MINE while steering or boosting |
 | Sonar | Q | PING |
 | Salvage / dock | E | Hold USE, including while moving |
 | Quiet running | Hold Shift | Toggle SILENT |
@@ -44,15 +45,36 @@ Sonar is a deliberate exception for instrument echoes, not a permanent room ligh
 
 Base sonar costs **12 energy** and has a **5.5-second cooldown**. Each upgrade reduces cost by 2, reduces cooldown by 0.35 seconds, extends echo persistence by 0.45 seconds and expands coverage beyond the visible screen. On exceptionally large displays, cooldown cannot finish before that scan's wave has finished travelling. Reached predators may hear the ping. Their AI alert timer is separate from the finite echo visibility timer.
 
-### Predator tiers
+### Predators and sea mines
 
-| Tier | Predator | Count per trench | Chase speed (world units/s) | Damage | Region |
-|---|---|---:|---:|---:|---|
-| 1 | Drifter | 46 | 80 | 13 | Throughout the trench |
-| 2 | Abyss stalker | 11 | 134 | 27 | Spawns below 400 m |
-| 3 | Crimson reaper | 5 | 196 | 42 | Below 800 m only |
+All three predator tiers are faster. Each now has persistent health for the current dive, with tier-coloured health bars. Bars obey the flashlight/darkness mask and can be read in temporary sonar echoes; a hidden enemy does not gain a free floating health marker. Dead predators are removed from movement, attacks, radar and in-flight sonar contacts. They do not respawn during the same dive, including after a visit to the dock; starting a new expedition regenerates the world.
 
-The reaper has a crimson armoured silhouette, paired pale eyes and greater awareness. All tiers have finite pursuit ranges. Boost, engine upgrades, distance and quieter running offer different escape options; campaign balance still needs real playtesting.
+| Tier | Predator | Count per trench | Health | Chase speed (world units/s) | Attack damage | Region |
+|---|---|---:|---:|---:|---:|---|
+| 1 | Drifter | 46 | 100 | 96 | 13 | Throughout the trench |
+| 2 | Abyss stalker | 11 | 200 | 158 | 27 | Spawns below 400 m |
+| 3 | Crimson reaper | 5 | 400 | 245.28 | 42 | Below 800 m only |
+
+The reaper's chase speed is calculated from the same constant as **Mk IV magnetic thrusters**: `146 * (1 + 4 * 0.17) = 245.28`. In a settled, straight open-water chase, ordinary Mk IV thrust cannot increase the gap. Boost can, and mines can kill pursuers. The existing finite pursuit leashes and reaper's 800 m boundary still apply; speed equality does not remove those escape rules.
+
+At the surface, press **E / USE** to dock, then buy **SEA MINE WARHEADS Mk I** for **100 credits**. The standard Mk I rack already has two slots. Mines are unlocked only after the warhead purchase. Warhead power and ammo capacity are separate upgrade trees:
+
+| Mark | Mine damage | Warhead purchase price | Ammo capacity | Rack upgrade price |
+|---|---:|---:|---:|---:|
+| I | 60 | 100 CR | 2 | Standard equipment |
+| II | 110 | 180 CR | 4 | 90 CR |
+| III | 180 | 320 CR | 6 | 160 CR |
+| IV | 240 | 520 CR | 8 | 280 CR |
+
+Prices are incremental purchases, not cumulative totals. Buying one tree does not advance the other. With full health, a reaper takes seven Mk I, four Mk II, three Mk III or two Mk IV direct mine blasts. A Mk IV mine can destroy a full-health drifter or stalker in one hit. One blast can damage multiple predators within range.
+
+Press **F** once, click the MINES HUD readout, or tap the left-side **MINE** button to leave one mine behind the sub. It arms after **0.65 seconds**, triggers when a predator comes within **52 world units**, and deals full warhead damage to predators within **108 world units** of the blast. It does not harm your submarine, collect salvage, destroy terrain or set off other mines. The launcher cycles for **1.1 seconds**; holding F does not auto-fire. A clear stern position is required, and rejected shots do not consume ammo. Dock safety prevents deployment in the station's immediate area.
+
+Planted mines stay in place until triggered or the expedition ends. Their damage is fixed when planted, so a subsequent dock upgrade cannot upgrade mines already in the water. Surviving predators keep the damage they have taken; health does not regenerate. Kills do not currently award bonus currency or XP.
+
+**Ammo refills for free only at the surface dock**, including a new vessel's launch from the dock. Time, air caches, repairs, sonar, capacitor recharge and opening/resuming menus never refill it. Dock purchases happen while docked and resupply the rack. A current dive, deployed mines, current ammo and enemy health are not saved across a reload.
+
+On phones, USE stays a large two-column button, with MINE beside it. Sonar, quiet running and lights are on the next row; repair and hold-BOOST below. Steering remains on the right. The compact layout is tested in both orientations, including simultaneous steering, boosting, mine deployment and salvage.
 
 ### Pressure and progress
 
@@ -76,6 +98,7 @@ Browser tests require Python, Playwright and Chromium. Install Playwright and it
 ```sh
 node --check game.js
 node tests/v060_service_worker_test.mjs
+python tests/v070_mines_test.py
 python tests/v060_mechanics_test.py
 python tests/v050_depth_lighting_test.py
 python tests/v040_menu_visual_test.py
@@ -89,4 +112,4 @@ python tests/v050_pwa_cache_test.py
 
 The last command is a real HTTP/offline integration test, updated to the current release version despite its historical filename. It was **blocked by the execution environment** during this release. The Node worker test checks a mocked worker lifecycle, not an installed PWA.
 
-See **VERIFICATION-v0.6.0.md** for actual results and limitations. Test-only fixture mutation APIs are available only when explicitly using `?testmode=1` or `window.ABYSS_TEST_MODE = true`.
+See **VERIFICATION-v0.7.0.md** for actual results and limitations. Test-only fixture mutation APIs are available only when explicitly using `?testmode=1` or `window.ABYSS_TEST_MODE = true`.

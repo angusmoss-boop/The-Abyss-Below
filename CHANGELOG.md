@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.7.0 · Teeth & Traps (27 October 2026)
+
+- Increased chase/patrol speeds across all three tiers. Drifters chase at 96, stalkers at 158 and reapers at 245.28 world units per second. Reaper chase speed now shares the Mk IV normal-thruster calculation; normal top-tier thrust cannot pull away in a settled straight chase, while boost can.
+- Added 100 / 200 / 400 predator health. Hits persist within a dive. Dead enemies are removed before attack resolution and excluded from radar and pending sonar echoes. Tier-coloured health bars obey normal lighting and timed sonar visibility.
+- Added stationary proximity sea mines: F, clickable MINES HUD, and an independent mobile MINE button. Mines drop astern, arm after 0.65 seconds, trigger at 52 units and damage predators within 108 units. Swept checks prevent fast cross-frame contacts being missed. A mine damages each target once and does not harm the submarine.
+- Added independent dock warhead and ammo-rack upgrades. Warheads Mk I-IV: 60 / 110 / 180 / 240 damage, costing 100 / 180 / 320 / 520 credits. Racks Mk I-IV: 2 / 4 / 6 / 8 ammo; the standard two-slot rack is fitted, later upgrades cost 90 / 160 / 280 credits. Buy Mk I warheads to unlock firing.
+- Ammo refills only while docked or launching a fresh vessel at the surface. No timer, supply cache, field repair, sonar, boost or menu/resume refill. Planted mines keep their original warhead damage and persist until triggered or the dive ends.
+- Added 1.1-second launcher cycling, held-key repeat protection, station safety, blocked-stern rejection without ammo loss, area-hit feedback, blast effects and sonar-visible mine markers.
+- Compacted mobile controls into a three-column left cluster: large USE with MINE beside it, steering remaining on the right. Tested actual simultaneous steering, boost, mine deployment and salvage in narrow portrait and landscape layouts.
+- Preserved existing banked progress and added safe defaults for missing/invalid ordnance fields. No change to the six-recorder campaign, pressure progression, darkness or menu flow.
+- Bumped runtime URL/cache version to v0.7.0. Nine Chromium browser suites, JS syntax and the mocked service-worker lifecycle pass. Actual HTTP/offline testing remains blocked by the environment; Android hardware/performance and full-campaign balance are not verified. See VERIFICATION-v0.7.0.md.
+
 ## v0.6.0 · Silent Echoes (27 October 2026)
 
 - Added desktop hold-left-click/drag piloting. Screen-space mouse targets follow the camera correctly, turn the bow and flashlight, and ease thrust near the cursor. Releasing outside the canvas, cancelling, pausing, opening a dialog or losing focus clears held input. Keyboard and mobile joystick/cruise remain available.

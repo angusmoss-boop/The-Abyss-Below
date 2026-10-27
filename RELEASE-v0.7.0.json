@@ -1,0 +1,27 @@
+{
+  "version": "0.7.0",
+  "base_version": "0.6.0",
+  "runtime_sha256": {
+    "game.js": "fdfc56b2694c66856a9b89ab05e0031d12794c6ffc2bec2aedc1b7aaf8e90128",
+    "index.html": "02eac7e1e4198634163dc303853a24a5a33f64cab4ccee281e37653505ae12d8",
+    "styles.css": "18bdee8ee1552049b705a790a9e550b536eb3d1aef94a0948e88a82e6c9651aa",
+    "service-worker.js": "349ab4ab1b36fa4a704dcb5d90b9a948b5d62ac56f40b01940e0bec90fe145c0",
+    "manifest.webmanifest": "02ae4faeec5656f3d0067f32396e1fb87058c75ad7cfe4fc5982964d236083e4"
+  },
+  "update_files": [
+    "CHANGELOG.md",
+    "GAME_DESIGN.md",
+    "README.md",
+    "VERIFICATION-v0.7.0.md",
+    "game.js",
+    "index.html",
+    "service-worker.js",
+    "styles.css",
+    "tests/smoke_test.py",
+    "tests/v022_behaviour_test.py",
+    "tests/v050_pwa_cache_test.py",
+    "tests/v060_service_worker_test.mjs",
+    "tests/v070_mines_test.py",
+    "RELEASE-v0.7.0.json"
+  ]
+}
