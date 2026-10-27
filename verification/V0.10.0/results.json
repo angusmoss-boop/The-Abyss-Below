@@ -1,0 +1,65 @@
+{
+  "build": "0.10.0-persistent-depths-1",
+  "completed_at": "2026-10-27T10:33:00.702645+00:00",
+  "results": [
+    {
+      "suite": "release",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "tests/v0100_release_test.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "suite": "campaign",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "tests/v0100_campaign_test.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "suite": "touch",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "tests/v0100_touch_test.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "suite": "regression",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "tests/v0100_regression_test.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "suite": "sync",
+      "command": [
+        "node",
+        "tests/v0100_sync_test.mjs"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "suite": "worker",
+      "command": [
+        "node",
+        "tests/v0100_worker_test.mjs"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    }
+  ],
+  "limitations": [
+    "Browser renderer exercised via in-memory production assets, not a hosted navigation.",
+    "Network/service-worker boundaries are mocked; no live offline/update integration claim.",
+    "Physical Android/iOS and full-campaign balance playthrough not tested."
+  ]
+}

@@ -1,0 +1,6 @@
+PASS 11 touch viewports: no idle/fixed joystick, full-size circular left actions, unclipped HUD, unchanged .70 world zoom
+PASS 5 desktop sizes: keyboard reference only, no touch controls, 1.00 zoom in console/expanded view
+PASS floating helm anchors on right/left/upper water; tap alone hidden; drag moves; release hides and clears
+PASS multi-touch steering + boost + mine + salvage; action taps never own helm; extra water touch cannot steal; cancellation resets
+PASS locked boost feedback; pause, orientation, blur and pointer-mode cleanup
+PASS unchanged click-held desktop steering and Space boost
