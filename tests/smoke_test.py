@@ -37,7 +37,7 @@ def run():
         # Verify banking/upgrade station can be entered and exited.
         desktop.keyboard.press("e")
         assert desktop.locator("#modalTitle").inner_text() == "SUBMARINE UPGRADES"
-        assert desktop.locator("[data-upgrade]").count() == 8
+        assert desktop.locator("[data-upgrade]").count() == 9
         desktop.locator("#launchAgain").click()
         assert desktop.locator("#modalOverlay").is_hidden()
 

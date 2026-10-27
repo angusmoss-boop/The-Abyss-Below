@@ -43,7 +43,7 @@ def run():
     assert all(e['health']==e['maxHealth']==tiers[e['tier']]['health'] for e in d['predators'])
     assert [tiers[t]['speed'] for t in ['common','apex']]==[96,158]
     assert tiers['reaper']['speed']==s['maxNormalSpeed']==146*(1+4*.17)
-    assert (s['commonCount'],s['apexCount'],s['reaperCount'])==(46,11,5)
+    assert (s['commonCount'],s['apexCount'],s['reaperCount'])==(138,33,15)
     print('PASS: old-save migration, existing progression, 100/200/400 HP, faster tiers and exact Mk IV/reaper speed parity')
 
     fixture(page,depth=1000,upgrades={'engine':4},predators=[{'dx':0,'dy':-180,'tier':'reaper','aggression':1,'alertUntil':999}])

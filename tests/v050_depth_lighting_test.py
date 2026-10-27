@@ -55,8 +55,8 @@ PIXELS = '''config => {
         if(data[i+3]!==255)nonOpaque++;
         if(!bright)continue;
         lit++;
-        const dx=(px+.5)/info.viewport.dpr+info.camera.x-info.x;
-        const dy=(py+.5)/info.viewport.dpr+info.camera.y-info.y;
+        const dx=(px+.5)/(info.viewport.dpr*info.viewport.zoom)+info.camera.x-info.x;
+        const dy=(py+.5)/(info.viewport.dpr*info.viewport.zoom)+info.camera.y-info.y;
         const along=dx*cos+dy*sin-beam.bowOffset;
         const side=-dx*sin+dy*cos;
         // Two CSS pixels account for bilinear filtering at the rotated texture boundary.

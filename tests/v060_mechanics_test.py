@@ -64,13 +64,13 @@ def run():
     context,page,errors=launch(browser)
     # Spawn ratios and attributes are deliberately explicit, rather than RNG-dependent.
     full=detail(page);s=state(page);tiers=page.evaluate('AbyssDiagnostics.tiers()')
-    assert (s['commonCount'],s['apexCount'],s['reaperCount'])==(46,11,5),s
+    assert (s['commonCount'],s['apexCount'],s['reaperCount'])==(138,33,15),s
     assert all(800<=(e['homeY']-120)/10<=1800 for e in full['predators'] if e['tier']=='reaper')
     assert tiers['reaper']['speed']>tiers['apex']['speed']>tiers['common']['speed']
     assert tiers['reaper']['damage']>tiers['apex']['damage']>tiers['common']['damage']
     assert s['secured']==2 and s['credits']==650
     assert s['vesselLabel']=='NEREID // MK-II · LIMIT 1,530m'
-    print('PASS: 46/11/5 spawn rarity; reapers below 800m; speed/damage ordering; banked save and rated nameplate')
+    print('PASS: 138/33/15 spawn rarity; reapers below 800m; speed/damage ordering; banked save and rated nameplate')
 
     # Fixed-step velocity and expenditure, no browser timing dependency.
     fixture(page,depth=400)
@@ -171,7 +171,9 @@ def run():
     step(page,.8);d=detail(page)
     assert all(i['revealUntil']>d['clock'] for i in d['items'])
     assert all(x['revealUntil']>d['clock'] for kind in ['rocks','wrecks','vents','predators'] for x in d[kind])
-    assert d['sonarTerrainEchoes']
+    # In the wider v0.9 trench, walls may lie beyond the current viewport/scan.
+    # Nearby wall arrival is covered explicitly by v090_exploration_test.py.
+    assert all(e['revealUntil']>d['clock'] for e in d['sonarTerrainEchoes'])
     assert page.evaluate(PIXEL_MAX)['lit']>300,'Echoes must be visible above total blackout'
     # Pixel inspection is a real rendered frame, not a text-only state assertion.
     page.screenshot(path=str(OUT/'desktop-1100m-sonar.png'))
