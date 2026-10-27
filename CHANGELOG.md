@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.5.0 · The Lightless Deep (27 October 2026)
+
+- Replaced stepped depth colours with continuous ambient attenuation using fractional metres. Ambient light is exactly zero at and below 1,000 m.
+- Added a final world darkness mask, with a finite, forward-facing flashlight cone as its only deep-water visibility source. Soft cone edges and distance falloff share a precomputed texture with the visible beam.
+- Masked all scenery, item glows, enemy eyes, vents, sonar rings, submarine details and wake; retained instruments and the objective pointer above the mask. Faded the decorative screen scanlines with ambient light too.
+- Extended item/enemy drawing checks to include the full beam footprint, avoiding the old 155-unit salvage cutoff inside the light.
+- Made flashlight illumination depend on battery power. Empty batteries show NO POWER and no longer count as lit lamps for predator detection.
+- Reused offscreen buffers and copied backing pixels 1:1 to prevent resampling seams at fractional viewport sizes. No runtime dependency or image download added.
+- Fixed mobile action button hit-testing in landscape/wider layouts; the old pointer-events rule only applied at a narrower breakpoint.
+- Preserved save format/key, six-recorder mission, hull progression, collision mechanics and pause/title/New Game behaviour.
+- Bumped runtime asset URLs and offline cache to v0.5.0, correcting the earlier worker's mismatched v0.3.0 asset query strings.
+- Added pixel-level lighting regressions and an optional real HTTP/offline integration test. Seven browser suites pass; the local HTTP integration attempt is blocked by the build environment. See VERIFICATION-v0.5.0.md.
+
 ## v0.4.0 · NEREID Refit and Navigation (27 October 2026)
 
 - Replaced the basic submarine silhouette with a sleek rendered MK-II: gradient ceramic-titanium hull, curved glass canopy, swept stern fins, twin propellers, navigation lights, metallic ribs and animated bubble wake. Original hull physics retained.

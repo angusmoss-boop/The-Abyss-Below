@@ -1,5 +1,5 @@
 # THE ABYSS BELOW
-### Deepwater Expedition · v0.4.0
+### Deepwater Expedition · v0.5.0
 
 A single-player submarine survival game built with vanilla HTML, CSS and JavaScript. The game adds analogue touchscreen steering and installable fullscreen/offline Progressive Web App (PWA) support.
 
@@ -24,7 +24,19 @@ After publishing to HTTPS GitHub Pages, open the site in your mobile browser.
 
 Joystick releases to neutral. Your submarine slows rather than snapping to a stop because it has momentum. Cruise mode holds your **last steering vector**, not collision avoidance. It turns off automatically if you pause, switch apps, open a dialog or start a new dive. Watch your oxygen, battery and rocks!
 
-## New in v0.4.0 · Sleek vessel and proper menus
+## New in v0.5.0 · The Lightless Deep
+
+Ambient light fades continuously as the submarine descends, reaching **zero at 1,000 m** and staying there throughout the deeper trench. At those depths, the world is visible **only inside the powered flashlight beam**. Switching it off, or draining the battery completely, leaves the surroundings black.
+
+The forward beam follows the submarine's heading, has feathered sides and distance falloff, and reveals salvage and predators along its full reach. No circular reveal bubble is added around the vessel. Rock outlines, wrecks, glowing items, predator eyes, vents, particles, the submarine, its wake and in-world sonar rings are all covered by the same darkness pass. The depth display, gauges, controls, mission direction pointer, interaction prompts and separate radar remain readable instruments, not additional light sources.
+
+The light button still works on phones, and **L** toggles it on a keyboard. A depleted battery shows **NO POWER**. The landscape touch-button issue above the old mobile breakpoint has also been corrected. Menus, progression, movement and collision rules are retained.
+
+**Update from v0.4.0:** extract `the-abyss-below-v0.5.0-update.zip`, upload the files inside it to the existing repository root, replacing their older versions, and commit. Do not upload the ZIP itself. After deployment, reopen the same site/app online and check **v0.5.0** in the normal console footer. The save key is unchanged. Bank the current dive before refreshing; in-progress dives are still held only in memory. Do not clear site storage or choose New Game to install this update.
+
+The complete ZIP also contains browser tests, verification notes and actual browser screenshots in `screenshots/v0.5.0/`. Existing lighting and collision parameters are in `game.js`; `LIGHTING.blackoutDepth` controls the zero-ambient threshold.
+
+## Previous update: v0.4.0 · Sleek vessel and proper menus
 
 - Rebuilt the **NEREID MK-II** in-game submarine sprite with a streamlined metallic hull, curved blue canopy, swept fins, navigation lights, cyan accents, dual rear propellers, and thrust bubble effects. Existing collision boundaries and handling are unchanged.
 - **Pause → RESUME** continues the same run; **Pause → MENU** returns to the title and suspends the current dive within the open tab; **Pause → QUIT** asks for confirmation and abandons unbanked cargo (but keeps all banked permanent progress).
@@ -44,7 +56,7 @@ The new service worker caches core files for offline play after installation and
 
 **First publish:** create a public repo, upload root files, go to **Settings → Pages**, choose **Deploy from a branch**, `main`, `/ (root)` and Save.
 
-**Updating v0.1:** replace the three existing root game files, add `manifest.webmanifest`, `service-worker.js`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` to the same root, and commit. If using Android's GitHub web interface, enable Desktop site when GitHub hides the upload controls. You do not need to create another repository. GitHub may take a short while to refresh the site after committing. Open your published site and check the footer says **v0.4.0**.
+**Updating v0.1:** replace the three existing root game files, add `manifest.webmanifest`, `service-worker.js`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` to the same root, and commit. If using Android's GitHub web interface, enable Desktop site when GitHub hides the upload controls. You do not need to create another repository. GitHub may take a short while to refresh the site after committing. Open your published site and check the footer says **v0.5.0**.
 
 ## Mission and gameplay
 
@@ -57,6 +69,10 @@ Locate six gold/orange flight recorders at approximately 75, 260, 470, 725, 1,10
 No runtime libraries or external assets required. The entire app is static, compatible with GitHub Pages subdirectories because PWA paths are relative. Game code is `game.js`, mobile controls in `index.html`/`styles.css`, install config in `manifest.webmanifest`, and offline caching in `service-worker.js`.
 
 Optional tests: `pip install playwright pillow`, `python -m playwright install chromium`, `python tests/smoke_test.py` and `python tests/joystick_pwa_test.py`. The second checks movement and manifest icons in an in-memory browser. It does not prove installed Android fullscreen or actual offline behaviour; test that on Chrome after deployment. A read-only `window.AbyssDiagnostics.state()` hook is available for inspecting game state.
+
+### v0.5.0 verification
+
+Run `python tests/v050_depth_lighting_test.py` for pixel-level blackout, beam rotation, battery, mobile touch and resize checks. See `VERIFICATION-v0.5.0.md` for all executed checks and limitations. `tests/v050_pwa_cache_test.py` is an additional real HTTP/offline test to run where browser access to a local server is permitted; that integration check was blocked by this build environment.
 
 ## What comes next
 

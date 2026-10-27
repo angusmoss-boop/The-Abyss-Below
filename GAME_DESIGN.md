@@ -12,7 +12,7 @@
 6. **Bank and improve:** dock to convert salvage to credits and XP, refill systems and purchase upgrades.
 7. **Push deeper:** reach the next wreck using better equipment and smarter tactics.
 
-## Current play areas · v0.4.0
+## Current play areas · v0.5.0
 
 | Zone | Depth range (approx) | Milestone |
 |---|---:|---|
@@ -88,3 +88,14 @@ Each reinforced-hull upgrade adds 200 m to the rating and 28 maximum hull HP. Se
 - QUIT requires an explicit confirmation. Unbanked inventory is discarded; banked credits, upgrades, recorder progress and rank remain.
 - NEW GAME requires explicit confirmation and overwrites local saved progress with fresh defaults, then launches from surface.
 - Vessel sprite refit is visual only; engine, world collision capsule and upgrade balance are unchanged.
+
+## v0.5.0 · Depth and visibility
+
+- Fractional depth: `max(0, (player.y - 120) / 10)` metres.
+- Ambient fraction: `(1 - clamp(depth / 1000, 0, 1)) ** 1.35`. Representative values: surface 100%, 250 m 67.8%, 500 m 39.2%, 750 m 15.4%, 900 m 4.5%, 1,000 m and below 0%.
+- One darkness pass covers all world rendering. The world is fully black with lamps off at 1,000 m or deeper. Instrument overlays remain outside that pass.
+- A powered, directional cone starts 30 world units ahead of the vessel centre, reaches 320 world units further, and uses a 0.40-radian half-angle with feathered edges. The beam rotates with the ship's actual facing, not a screen-fixed direction.
+- The same pre-baked alpha texture shapes the beam and removes darkness. No omnidirectional proximity light or glowing-item exceptions.
+- Sonar still detects contacts and attracts predators. It updates the separate radar, but does not remove the darkness mask or reveal the surrounding world outside the flashlight.
+- Lamp selection is retained at zero power, but no light is produced until power is restored. Docking retains its existing full-refill behaviour.
+- This is a 2D cone visibility model, not terrain-occluded ray tracing. Real-device performance and deeper-trench difficulty still require playtesting.
