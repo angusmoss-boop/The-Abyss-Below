@@ -1,0 +1,218 @@
+{
+  "source": "Synthetic outfitted ship collecting actual generated resources through production USE and docking handlers; not a playthrough",
+  "achievements": [
+    {
+      "id": "first-signal",
+      "name": "First Transmission",
+      "description": "Bank your first flight recorder.",
+      "target": 1,
+      "kind": "recorders",
+      "icon": "01",
+      "progress": 20,
+      "earned": true
+    },
+    {
+      "id": "shelf",
+      "name": "Shelf Graduate",
+      "description": "Secure both Sunbreak Shelf recorders.",
+      "target": 1,
+      "kind": "level",
+      "level": 0,
+      "icon": "02",
+      "progress": 1,
+      "earned": true
+    },
+    {
+      "id": "rift",
+      "name": "Rift Runner",
+      "description": "Secure all three Glassbone Rift recorders.",
+      "target": 1,
+      "kind": "level",
+      "level": 1,
+      "icon": "03",
+      "progress": 1,
+      "earned": true
+    },
+    {
+      "id": "gardens",
+      "name": "Garden Keeper",
+      "description": "Secure all four Drowned Gardens recorders.",
+      "target": 1,
+      "kind": "level",
+      "level": 2,
+      "icon": "04",
+      "progress": 1,
+      "earned": true
+    },
+    {
+      "id": "cathedral",
+      "name": "Midnight Courier",
+      "description": "Secure all five Midnight Cathedral recorders.",
+      "target": 1,
+      "kind": "level",
+      "level": 3,
+      "icon": "05",
+      "progress": 1,
+      "earned": true
+    },
+    {
+      "id": "transmission",
+      "name": "The Signal Returns",
+      "description": "Complete all five levels and secure all 20 recorders.",
+      "target": 20,
+      "kind": "recorders",
+      "icon": "06",
+      "progress": 20,
+      "earned": true
+    },
+    {
+      "id": "pressure",
+      "name": "Pressure Tested",
+      "description": "Reach a depth of 1,000 metres.",
+      "target": 1000,
+      "kind": "depth",
+      "icon": "07",
+      "progress": 4,
+      "earned": false
+    },
+    {
+      "id": "bottom",
+      "name": "Rock Bottom",
+      "description": "Visit the seabed in all five levels.",
+      "target": 5,
+      "kind": "floors",
+      "icon": "08",
+      "progress": 0,
+      "earned": false
+    },
+    {
+      "id": "salvage",
+      "name": "Salvage Professional",
+      "description": "Deliver 200 scrap units to the hub across any number of dives.",
+      "target": 200,
+      "kind": "stat",
+      "stat": "bankedScrap",
+      "icon": "09",
+      "progress": 844,
+      "earned": true
+    },
+    {
+      "id": "crystals",
+      "name": "Crystal Archivist",
+      "description": "Deliver 100 crystals to the hub across any number of dives.",
+      "target": 100,
+      "kind": "stat",
+      "stat": "bankedCrystals",
+      "icon": "10",
+      "progress": 496,
+      "earned": true
+    },
+    {
+      "id": "sweep",
+      "name": "Clean Sweep",
+      "description": "Collect every fixed scrap and crystal deposit in any one level.",
+      "target": 1,
+      "kind": "sweeps",
+      "icon": "11",
+      "progress": 5,
+      "earned": true
+    },
+    {
+      "id": "survey",
+      "name": "Full Survey",
+      "description": "Collect every fixed scrap and crystal deposit in all five levels.",
+      "target": 5,
+      "kind": "sweeps",
+      "icon": "12",
+      "progress": 5,
+      "earned": true
+    },
+    {
+      "id": "first-blood",
+      "name": "First Blood",
+      "description": "Destroy your first predator.",
+      "target": 1,
+      "kind": "stat",
+      "stat": "kills",
+      "icon": "13",
+      "progress": 0,
+      "earned": false
+    },
+    {
+      "id": "reapers",
+      "name": "Apex Eraser",
+      "description": "Destroy 10 Crimson Reapers across repeated dives.",
+      "target": 10,
+      "kind": "stat",
+      "stat": "reaperKills",
+      "icon": "14",
+      "progress": 0,
+      "earned": false
+    },
+    {
+      "id": "demolition",
+      "name": "Demolition Crew",
+      "description": "Destroy 50 predators across the campaign.",
+      "target": 50,
+      "kind": "stat",
+      "stat": "kills",
+      "icon": "15",
+      "progress": 0,
+      "earned": false
+    },
+    {
+      "id": "echoes",
+      "name": "Echo Cartographer",
+      "description": "Send 50 successful sonar pulses.",
+      "target": 50,
+      "kind": "stat",
+      "stat": "sonarPings",
+      "icon": "16",
+      "progress": 0,
+      "earned": false
+    },
+    {
+      "id": "attraction",
+      "name": "Magnetic Attraction",
+      "description": "Make 50 remote resource pickups with the Salvage Magnet.",
+      "target": 50,
+      "kind": "stat",
+      "stat": "magnetPickups",
+      "icon": "17",
+      "progress": 0,
+      "earned": false
+    },
+    {
+      "id": "shield",
+      "name": "Shield Specialist",
+      "description": "Absorb 500 damage with the Kinetic Shield.",
+      "target": 500,
+      "kind": "stat",
+      "stat": "shieldAbsorbed",
+      "icon": "18",
+      "progress": 0,
+      "earned": false
+    },
+    {
+      "id": "getaway",
+      "name": "Clean Getaway",
+      "description": "Return with cargo from at least 200 m without taking hull damage during that trip.",
+      "target": 1,
+      "kind": "stat",
+      "stat": "cleanGetaways",
+      "icon": "19",
+      "progress": 0,
+      "earned": false
+    },
+    {
+      "id": "systems",
+      "name": "All Systems Go",
+      "description": "Fully upgrade all 12 ship systems.",
+      "target": 12,
+      "kind": "systems",
+      "icon": "20",
+      "progress": 12,
+      "earned": true
+    }
+  ]
+}

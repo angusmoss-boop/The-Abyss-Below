@@ -1,0 +1,1 @@
+PASS actual v0.11 profile migration; credits, XP, upgrades and owned ammo preserved; old trench IDs/locations/depletion and damage retained in level 5; old recorders retained; no skipped unlocks; one-time crystal top-up; reload idempotence; corrupted-primary backup recovery
