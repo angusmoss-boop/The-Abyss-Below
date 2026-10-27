@@ -1,4 +1,0 @@
-PASS boost locked at standard drive; all 4 speed/capacity/duration tiers; exhaustion/rearm; battery efficiency; Reaper speed
-PASS real dock Upgrades/Ammunition tabs; unlock without free rounds; buy/fill costs; empty new slots; no docking/relaunch/reload refills; affordability
-PASS fixed 234 placements; 8,640-credit floor economy; generous shallow supply; permanent scrap/crystals; dock-only enemy/cache refresh; repeat-visit guard; all tier bounties; reload persistence
-PASS v0.9 migration keeps exact seed/cycle/node IDs/coordinates/depletion and banked upgrades; empty purchased-ammo migration; corrupt-primary backup recovery; confirmed fresh campaign
