@@ -2,7 +2,7 @@
 from pathlib import Path
 import json,hashlib
 ROOT=Path(__file__).resolve().parents[1]
-FILES=['index.html','styles.css','game.js','version-sync.js','service-worker.js','manifest.webmanifest','icon-192.png','icon-512.png','icon-maskable-512.png']
-release={'schema':1,'version':'0.13.0','name':'Harbour Rising','buildId':'0.13.0-harbour-rising-1','assets':{p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in FILES}}
+FILES=['index.html','styles.css','audio.js','game.js','version-sync.js','service-worker.js','manifest.webmanifest','icon-192.png','icon-512.png','icon-maskable-512.png']
+release={'schema':1,'version':'0.14.0','name':'Living Depths','buildId':'0.14.0-living-depths-1','assets':{p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in FILES}}
 (ROOT/'version.json').write_text(json.dumps(release,indent=2)+'\n')
 print('Release manifest:', release['buildId'])
