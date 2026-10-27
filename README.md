@@ -1,5 +1,5 @@
 # THE ABYSS BELOW
-### Deepwater Expedition · v0.2.1
+### Deepwater Expedition · v0.2.2
 
 A single-player submarine survival game built with vanilla HTML, CSS and JavaScript. The v0.2 update adds analogue touchscreen steering and installable fullscreen/offline Progressive Web App (PWA) support.
 
@@ -33,7 +33,7 @@ The new service worker caches core files for offline play after installation and
 
 **First publish:** create a public repo, upload root files, go to **Settings → Pages**, choose **Deploy from a branch**, `main`, `/ (root)` and Save.
 
-**Updating v0.1:** replace the three existing root game files, add `manifest.webmanifest`, `service-worker.js`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` to the same root, and commit. If using Android's GitHub web interface, enable Desktop site when GitHub hides the upload controls. You do not need to create another repository. GitHub may take a short while to refresh the site after committing. Open your published site and check the footer says **v0.2.1**.
+**Updating v0.1:** replace the three existing root game files, add `manifest.webmanifest`, `service-worker.js`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` to the same root, and commit. If using Android's GitHub web interface, enable Desktop site when GitHub hides the upload controls. You do not need to create another repository. GitHub may take a short while to refresh the site after committing. Open your published site and check the footer says **v0.2.2**.
 
 ## Mission and gameplay
 
@@ -52,7 +52,7 @@ Optional tests: `pip install playwright pillow`, `python -m playwright install c
 More creatures, salvage variety, navigation tools, and distinct depth biomes. No updates to the mission/progression rules were made in this release.
 
 
-## Mobile v0.2.1: fullscreen cockpit
+## Mobile v0.2.2: fullscreen cockpit
 
 On a phone, **BEGIN EXPEDITION** enters the expanded play view automatically. Use the
 **EXIT** button at the top right to return to the complete mission/radar/upgrade
@@ -61,14 +61,22 @@ also attempt its native Fullscreen API when you press this button; in browsers
 that disallow it, immersive view still fills the available webpage area. Install
 via Chrome's **Install app** for a display without the usual address bar.
 
-A high-contrast joystick is at the bottom left, and compact sonar/use/silent/
-repair/lights controls are at the bottom right. Toggle **CRUISE** for hands-free
+A high-contrast joystick is at the bottom right, and compact sonar/use/silent/
+repair/lights controls are at the bottom left. USE is enlarged and can be held while moving. Toggle **CRUISE** for hands-free
 thrust after steering. CSS and JS carry versioned URLs so new uploads do not
 accidentally reuse old files from browser caches; offline app caching also uses
 a new release key.
 
 When updating GitHub Pages from a phone, upload the files **inside** the update
 ZIP to the repository root, replacing the old versions; do not upload the ZIP
-itself. Confirm the version in the regular console footer is v0.2.1. If your
+itself. Confirm the version in the regular console footer is v0.2.2. If your
 installed home-screen app is showing an old layout, close/reopen it after the
 Pages deployment completes and clear the site's cache if necessary.
+
+## v0.2.2 gameplay and mobile layout
+
+- **Actions are on the left; joystick and cruise are on the right.** The **USE** button is now large and at the top of the left-hand action cluster.
+- **Hold USE while steering** with another finger. Salvage is checked every 120 ms, so you can coast into range and automatically pick up items. You can also tap USE to pick up an item immediately. Docking still opens the upgrade panel and stops the dive as before. Pickup distance is now 60 world units.
+- **Predator disengagement:** chasing predators break pursuit when you are over 345 world units from them, lose their sonar alert, and won't immediately reacquire while returning to patrol. Quiet running still helps avoid detection; staying close or pinging sonar still attracts enemies.
+- **Rocks use their actual rendered polygon outlines** with a submarine capsule hitbox, multiple small movement steps, tangential sliding, and a generated traversable corridor. Tight gaps that visually fit the vessel are more reliable. Collisions at higher speed can still damage the hull.
+- The old save key, mission objectives, app icon, installation and full-screen mode are unchanged. Update files in the existing GitHub repository; the versioned asset URLs and new PWA cache name help phones fetch the new version without reinstalling.

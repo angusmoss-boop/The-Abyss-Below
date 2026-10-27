@@ -50,6 +50,10 @@
   const safeDepth = () => 130 + saved.upgrades.hull*80;
   const sonarRange = () => 230 + saved.upgrades.sonar*55;
   const sonarCost = () => Math.max(4,12-saved.upgrades.sonar*2);
+  const SHIP_RADIUS = 10.5; // Three small circles form a narrow capsule that matches the submarine silhouette.
+  const SHIP_OFFSETS = [-15,0,15];
+  const PREDATOR_DETECTION_CAP = 245;
+  const PREDATOR_LEASH = 345;
   let scene = {rocks:[],items:[],predators:[],vents:[],dust:[],wrecks:[]};
   let player = null;
   const keys = new Set();
@@ -64,8 +68,82 @@
   let previousTime=0, clock=0, uiTimer=0, lastZone='';
   let toastUntil=0, eventLines=[], sonarWaves=[];
   let pointerSilent = false, victoryShown = false;
+  let useHeld = false, useHoldTimer = 0, usePointerId = null;
   let idCounter = 0;
   function makeItem(x,y,type,extra={}) {return {id:idCounter++,x,y,type,collected:false,revealUntil:0,...extra};}
+  function rockPolygon(rock) {
+    const verts=[],cos=Math.cos(rock.rot),sin=Math.sin(rock.rot);
+    for(let i=0;i<rock.spikes;i++){
+      const a=i/rock.spikes*TAU, radius=rock.radius*(.78+Math.sin(i*10+rock.seed*99)*.19);
+      const x=Math.cos(a)*radius,y=Math.sin(a)*radius;
+      verts.push({x:rock.x+x*cos-y*sin,y:rock.y+x*sin+y*cos});
+    }
+    return verts;
+  }
+  function segmentClosest(px,py,a,b) {
+    const dx=b.x-a.x,dy=b.y-a.y;
+    const t=clamp(((px-a.x)*dx+(py-a.y)*dy)/(dx*dx+dy*dy||1),0,1);
+    return {x:a.x+t*dx,y:a.y+t*dy};
+  }
+  function insidePolygon(x,y,verts) {
+    let inside=false;
+    for(let i=0,j=verts.length-1;i<verts.length;j=i++){
+      const a=verts[i],b=verts[j];
+      if((a.y>y)!==(b.y>y) && x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x)inside=!inside;
+    }
+    return inside;
+  }
+  // Resolve collision along the visible rock outline, retaining tangential momentum.
+  // Iterating handles corners and adjacent rocks; substeps avoid skipping thin obstacles.
+  function resolveWorldCollision() {
+    let impactSpeed=0;
+    const cos=Math.cos(player.facing),sin=Math.sin(player.facing);
+    for(let iteration=0;iteration<4;iteration++){
+      let moved=false;
+      for(const offset of SHIP_OFFSETS){
+        let sx=player.x+offset*cos,sy=player.y+offset*sin;
+        for(const side of [-1,1]){
+          // Rock walls vary with depth, so sample at the actual capsule point.
+          const edge=side<0?leftAt(sy)+SHIP_RADIUS:rightAt(sy)-SHIP_RADIUS;
+          const overlap=side<0?edge-sx:sx-edge;
+          if(overlap>0){
+            const nx=-side,amount=overlap+.02;
+            player.x+=nx*amount;
+            const inward=player.vx*nx;
+            if(inward<0){impactSpeed=Math.max(impactSpeed,-inward);player.vx-=inward*nx;}
+            sx=player.x+offset*cos;
+            moved=true;
+          }
+        }
+        for(const rock of scene.rocks){
+          sx=player.x+offset*cos;sy=player.y+offset*sin;
+          if(Math.abs(sx-rock.x)>rock.radius+SHIP_RADIUS+4||Math.abs(sy-rock.y)>rock.radius+SHIP_RADIUS+4)continue;
+          const vertices=rock.vertices;
+          let point=null,distSq=Infinity;
+          for(let i=0;i<vertices.length;i++){
+            const cp=segmentClosest(sx,sy,vertices[i],vertices[(i+1)%vertices.length]);
+            const ds=(cp.x-sx)**2+(cp.y-sy)**2;
+            if(ds<distSq){distSq=ds;point=cp;}
+          }
+          const inside=insidePolygon(sx,sy,vertices),dist=Math.sqrt(distSq);
+          if(!inside&&dist>=SHIP_RADIUS)continue;
+          // Outside: away from polygon; inside: through the nearest polygon boundary.
+          let nx=(inside?point.x-sx:sx-point.x),ny=(inside?point.y-sy:sy-point.y);
+          const norm=Math.hypot(nx,ny);
+          if(norm<.0001){nx=sx-rock.x;ny=sy-rock.y;const d=Math.hypot(nx,ny)||1;nx/=d;ny/=d;}
+          else{nx/=norm;ny/=norm;}
+          const penetration=inside?dist+SHIP_RADIUS:SHIP_RADIUS-dist;
+          player.x+=nx*(penetration+.02);player.y+=ny*(penetration+.02);
+          const inward=player.vx*nx+player.vy*ny;
+          if(inward<0){impactSpeed=Math.max(impactSpeed,-inward);player.vx-=inward*nx;player.vy-=inward*ny;}
+          moved=true;
+        }
+      }
+      player.y=clamp(player.y,58,4820);
+      if(!moved)break;
+    }
+    return impactSpeed;
+  }
   function createWorld() {
     idCounter = 0;
     const r = randGen((Math.random()*0xffffffff)>>>0);
@@ -81,7 +159,13 @@
       const x=lerp(leftAt(y)+25,rightAt(y)-25,r());
       const radius=20+r()*52;
       if (scene.wrecks.some(w=>Math.hypot(x-w.x,y-w.y)<150))continue;
-      scene.rocks.push({x,y,radius,rot:r()*TAU,seed:r(),spikes:6+Math.floor(r()*4)});
+      // Keep a winding lane with enough space for the entire sub to traverse.
+      // Other routes remain more dangerous, but the level is never sealed by boulders.
+      const laneX=centerAt(y)+Math.sin(y*.004)*90;
+      if(Math.abs(x-laneX)<radius+46)continue;
+      const rock={x,y,radius,rot:r()*TAU,seed:r(),spikes:6+Math.floor(r()*4)};
+      rock.vertices=rockPolygon(rock);
+      scene.rocks.push(rock);
     }
     for(let i=0;i<104;i++) {
       const y=245+r()*4300;
@@ -92,7 +176,7 @@
     }
     for(let i=0;i<12;i++) {
       const y=490+i*335+r()*90;
-      scene.predators.push({x:centerAt(y)+(r()-.5)*370,y,homeX:centerAt(y)+(r()-.5)*300,homeY:y,vx:0,vy:0,phase:r()*TAU,aggression:0,lastHit:-10,alertUntil:0});
+      scene.predators.push({x:centerAt(y)+(r()-.5)*370,y,homeX:centerAt(y)+(r()-.5)*300,homeY:y,vx:0,vy:0,phase:r()*TAU,aggression:0,lastHit:-10,alertUntil:0,forgetUntil:0});
     }
     for(let i=0;i<22;i++) {
       const y=150+r()*4600;
@@ -106,7 +190,7 @@
   function newDive() {
     createWorld();
     player={x:600,y:160,vx:0,vy:0,facing:-Math.PI/2,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,quiet:false,damageCooldown:0,scanCooldown:0,cargo:{scrap:0,crystal:0,recorders:[]},lastRepair:-100};
-    sonarWaves=[];clock=0;lastZone='';eventLines=[];victoryShown=saved.secured.length===3;pointerSilent=false;resetJoystick(true);keys.clear();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
+    sonarWaves=[];clock=0;lastZone='';eventLines=[];useHeld=false;useHoldTimer=0;usePointerId=null;victoryShown=saved.secured.length===3;pointerSilent=false;resetJoystick(true);keys.clear();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
     addEvent('Dive systems initialised.');
     addEvent('Three recorders lost below.');
     running=true;paused=false;showingDock=false;
@@ -121,17 +205,17 @@
     if(!player)return null;
     const station = {x:600,y:160};
     if(distance(player,station)<128 && depthOf(player.y)<30)return {type:'station',x:station.x,y:station.y};
-    let candidate=null,range=45;
+    let candidate=null,range=60; // Responsive salvage pick-up while gliding past an item.
     for (const item of scene.items) if(!item.collected) {
       const d=distance(player,item);
       if(d<range) {range=d;candidate=item;}
     }
     return candidate;
   }
-  function interact() {
+  function interact(silentMiss=false) {
     if(!running||paused)return;
     const item=nearestInteractable();
-    if(!item) {announce('NOTHING IN SALVAGE RANGE',1.25);return;}
+    if(!item) {if(!silentMiss)announce('NOTHING IN SALVAGE RANGE',1.25);return;}
     if(item.type==='station') {depositAndDock();return;}
     item.collected=true;
     if(item.type==='scrap') {player.cargo.scrap++;addEvent('Scrap recovered (+1)');announce('SALVAGE +1 SCRAP',1.8);}
@@ -176,7 +260,7 @@
     showDock();
   }
   function openDialog(kicker,title,body,footer='') {
-    paused=true;resetJoystick(true);
+    paused=true;useHeld=false;usePointerId=null;resetJoystick(true);
     $('modalKicker').textContent=kicker;$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modalFooter').innerHTML=footer;
     $('modalOverlay').classList.remove('hidden');$('pauseBtn').textContent='▶ RESUME';
   }
@@ -248,20 +332,16 @@
     const noiseTarget=hasInput&&!quiet?45+speed*.2:quiet&&hasInput?8:0;
     player.noise=lerp(player.noise,Math.min(95,noiseTarget)/(1+saved.upgrades.quiet*.32),1-Math.exp(-dt*(hasInput?2.8:1.6)));
     if(!hasInput)player.noise=Math.max(0,player.noise-dt*4);
-    player.x+=player.vx*dt;player.y+=player.vy*dt;
-    player.y=clamp(player.y,58,4820);
-    const yBound=player.y;
-    if(player.x<leftAt(yBound)+26){player.x=leftAt(yBound)+26;player.vx=Math.max(0,player.vx);takeDamage(2,'Collision with trench wall');}
-    if(player.x>rightAt(yBound)-26){player.x=rightAt(yBound)-26;player.vx=Math.min(0,player.vx);takeDamage(2,'Collision with trench wall');}
-    for(const rock of scene.rocks) {
-      const d=distance(player,rock),limit=rock.radius*.86+19;
-      if(d<limit&&d>0.001) {
-        const nx=(player.x-rock.x)/d,ny=(player.y-rock.y)/d;
-        player.x=rock.x+nx*limit;player.y=rock.y+ny*limit;
-        if(speed>25)takeDamage(Math.min(10,2+speed*.04),'Rock impact');
-        player.vx*=.2;player.vy*=.2;
-      }
+    const steps=Math.max(1,Math.ceil(speed*dt/7));
+    let impactSpeed=0;
+    for(let step=0;step<steps;step++){
+      player.x+=player.vx*dt/steps;
+      player.y+=player.vy*dt/steps;
+      impactSpeed=Math.max(impactSpeed,resolveWorldCollision());
     }
+    if(impactSpeed>43)takeDamage(Math.min(7,1+impactSpeed*.025),'Rock impact');
+    // Hold USE with a second finger while steering: collect immediately on entering range.
+    if(useHeld){useHoldTimer-=dt;if(useHoldTimer<=0){interact(true);useHoldTimer=.12;}}
     const energyDrain=dt*(.018+(player.lights?.027:0)+(hasInput?(quiet?.028:.075):0))/(1+saved.upgrades.battery*.12);
     player.battery=clamp(player.battery-energyDrain,0,maxBattery());
     player.oxygen=clamp(player.oxygen-dt*(.22/(1+saved.upgrades.oxygen*.2)),0,maxOxygen());
@@ -276,9 +356,23 @@
     if(zone.name!==lastZone){if(lastZone)addEvent('Entered '+zone.name);lastZone=zone.name;}
     for(const enemy of scene.predators){
       const d=distance(player,enemy);
-      const detectable=75+player.noise*2.8+(player.lights?40:0);
-      if(d<detectable||enemy.alertUntil>clock&&d<sonarRange()+50){enemy.aggression=clamp(enemy.aggression+dt*.8,0,1);enemy.alertUntil=Math.max(enemy.alertUntil,clock+1.5);}
-      else if(enemy.alertUntil<clock)enemy.aggression=clamp(enemy.aggression-dt*.34,0,1);
+      // A genuine pursuit leash: loud engines or an earlier sonar ping cannot
+      // make a predator follow the player across the whole trench.
+      if(d>PREDATOR_LEASH){
+        if(enemy.aggression>.15)addEvent('Predator contact lost');
+        enemy.aggression=0;
+        enemy.alertUntil=0;
+        enemy.forgetUntil=clock+2.5;
+      }else{
+        const detectable=Math.min(PREDATOR_DETECTION_CAP,75+player.noise*2.8+(player.lights?40:0));
+        const hearsSonar=enemy.alertUntil>clock&&d<sonarRange()+50;
+        if(clock>=enemy.forgetUntil&&(d<detectable||hearsSonar)){
+          enemy.aggression=clamp(enemy.aggression+dt*.85,0,1);
+          enemy.alertUntil=Math.max(enemy.alertUntil,clock+1.4);
+        }else if(enemy.alertUntil<=clock||clock<enemy.forgetUntil){
+          enemy.aggression=clamp(enemy.aggression-dt*.7,0,1);
+        }
+      }
       const chase=enemy.aggression>.13;
       const tx=chase?player.x:enemy.homeX+Math.sin(clock*.33+enemy.phase)*85;
       const ty=chase?player.y:enemy.homeY+Math.cos(clock*.27+enemy.phase)*65;
@@ -288,7 +382,7 @@
       enemy.vy=lerp(enemy.vy,(ty-enemy.y)/ed*es,1-Math.exp(-dt*2));
       enemy.x=clamp(enemy.x+enemy.vx*dt,leftAt(enemy.y)+34,rightAt(enemy.y)-34);
       enemy.y+=enemy.vy*dt;
-      if(distance(player,enemy)<35&&clock-enemy.lastHit>1.7){enemy.lastHit=clock;takeDamage(13,'Predator attack');player.vx+=(player.x-enemy.x)*2;player.vy+=(player.y-enemy.y)*2;}
+      if(chase&&distance(player,enemy)<35&&clock-enemy.lastHit>1.7){enemy.lastHit=clock;takeDamage(13,'Predator attack');player.vx+=(player.x-enemy.x)*2;player.vy+=(player.y-enemy.y)*2;}
     }
     sonarWaves=sonarWaves.filter(w=>clock-w.birth<1.2);
     camera.x=lerp(camera.x,player.x-viewport.w/2,Math.min(1,dt*3.4));
@@ -538,7 +632,7 @@
       document.exitFullscreen().catch(()=>{});
     }
   }
-  function togglePause(){if(!running)return;if(!$('modalOverlay').classList.contains('hidden')){closeDialog();return;}paused=!paused;if(paused)resetJoystick(true);$('pauseBtn').textContent=paused?'▶ RESUME':'Ⅱ PAUSE';if(paused)announce('GAME PAUSED',3600);else $('notification').classList.add('hidden');}
+  function togglePause(){if(!running)return;if(!$('modalOverlay').classList.contains('hidden')){closeDialog();return;}paused=!paused;if(paused){useHeld=false;usePointerId=null;resetJoystick(true);}$('pauseBtn').textContent=paused?'▶ RESUME':'Ⅱ PAUSE';if(paused)announce('GAME PAUSED',3600);else $('notification').classList.add('hidden');}
   function briefing(){
     const body=`<div class="briefing"><p>You pilot the <strong>NEREID MK-I</strong>, a salvage submarine. Retrieve three <strong>golden flight recorders</strong> from wrecks in the trench and dock at the surface to save them.</p><ul><li><kbd>W A S D</kbd> or <kbd>↑ ← ↓ →</kbd> moves the sub. On phones, <strong>drag the joystick</strong> in any direction. Tilt slightly for gentle thrust or to the edge for full speed. Toggle <strong>CRUISE</strong> to keep going after letting go. Turn cruise off to stop thrust.</li><li><kbd>Q</kbd> uses active sonar to reveal salvage and threats. Sonar <strong>consumes energy and attracts predators</strong>.</li><li><kbd>E</kbd> recovers nearby scrap, crystals, oxygen caches and recorders. At the station, it banks cargo and opens upgrades.</li><li><kbd>Shift</kbd> moves slowly and quietly to avoid attracting predators. On phones, toggle <strong>SILENT</strong>.</li><li><kbd>R</kbd> repairs 30 hull for two scrap. <kbd>L</kbd> toggles external lamps to conserve energy.</li><li><kbd>Esc</kbd> pauses. Always return to the surface to bank progress, refill oxygen, recharge and upgrade the ship.</li></ul><p><strong>Warning:</strong> Diving beneath your depth rating gradually damages the hull. Ship upgrades let you venture deeper. Damage or suffocation costs unbanked cargo, not your permanent progress.</p></div>`;
     openDialog('OPERATIONS MANUAL // NEREID','PILOT BRIEFING',body,'<div class="dialog-actions"><button id="briefDone" class="alt-btn">UNDERSTOOD</button></div>');
@@ -571,8 +665,8 @@
       if(k==='q')scan();else if(k==='e')interact();else if(k==='r')repair();else if(k==='l')toggleLights();else if(k==='escape')togglePause();
     });
     window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-    window.addEventListener('blur',()=>{keys.clear();resetJoystick(true);});
-    document.addEventListener('visibilitychange',()=>{if(document.hidden){keys.clear();resetJoystick(true);}});
+    window.addEventListener('blur',()=>{keys.clear();useHeld=false;usePointerId=null;resetJoystick(true);});
+    document.addEventListener('visibilitychange',()=>{if(document.hidden){keys.clear();useHeld=false;usePointerId=null;resetJoystick(true);}});
     const stick=$('mobileJoystick');
     stick.addEventListener('pointerdown',e=>{
       if(joystick.pointerId!==null||!running||paused)return;
@@ -599,7 +693,26 @@
       else{cruiseHeading.x=0;cruiseHeading.y=0;}
       updateUI();
     });
-    $('mobileSonar').addEventListener('click',scan);$('mobileInteract').addEventListener('click',interact);$('mobileRepair').addEventListener('click',repair);$('mobileLights').addEventListener('click',toggleLights);
+    $('mobileSonar').addEventListener('click',scan);
+    const useBtn=$('mobileInteract');
+    useBtn.addEventListener('pointerdown',e=>{
+      if(!running||paused||usePointerId!==null)return;
+      e.preventDefault(); // Multi-touch: do not wait for a synthetic click after joystick movement.
+      usePointerId=e.pointerId;useHeld=true;useHoldTimer=.12;
+      useBtn.setPointerCapture(e.pointerId);
+      useBtn.classList.add('held');
+      interact(true);
+    });
+    const stopUse=e=>{
+      if(e.pointerId!==usePointerId)return;
+      useHeld=false;usePointerId=null;useBtn.classList.remove('held');
+    };
+    useBtn.addEventListener('pointerup',stopUse);
+    useBtn.addEventListener('pointercancel',stopUse);
+    useBtn.addEventListener('lostpointercapture',stopUse);
+    // Space/Enter-generated click, as opposed to a pointer click, remains accessible.
+    useBtn.addEventListener('click',e=>{if(e.detail===0)interact();});
+    $('mobileRepair').addEventListener('click',repair);$('mobileLights').addEventListener('click',toggleLights);
     $('mobileSilent').addEventListener('click',()=>{pointerSilent=!pointerSilent;updateUI();});
     window.addEventListener('resize',()=>{resize();updateUI();});
     if(window.visualViewport)window.visualViewport.addEventListener('resize',resize);
@@ -661,6 +774,16 @@
   player={x:600,y:160,vx:0,vy:0,facing:0,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),lights:true,noise:0,cargo:{scrap:0,crystal:0,recorders:[]},scanCooldown:0,damageCooldown:0};
   camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
   updateUI();requestAnimationFrame(frame);
-  // Tiny inspection hook for automated smoke tests. Does not mutate gameplay.
-  window.AbyssDiagnostics={state:()=>({focusMode,running,paused,depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
+  // Tiny inspection hook for automated smoke tests.
+  window.AbyssDiagnostics={state:()=>({focusMode,running,paused,depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
+  if(location.search.includes('testmode=1')||window.ABYSS_TEST_MODE===true){
+    window.AbyssDiagnostics.fixture=({x=600,y=700,rocks=[],predators=[],items=[]}={})=>{
+      player.x=x;player.y=y;player.vx=0;player.vy=0;player.facing=0;player.noise=0;
+      scene.rocks=rocks.map(rock=>({...rock,vertices:rockPolygon(rock)}));
+      scene.predators=predators.map(enemy=>({...enemy,vx:0,vy:0,homeX:enemy.x,homeY:enemy.y,phase:0,aggression:enemy.aggression??0,alertUntil:enemy.alertUntil??0,forgetUntil:0,lastHit:-10}));
+      scene.items=items.map((i,index)=>makeItem(i.x,i.y,i.type||'scrap',{id:index}));
+      return true;
+    };
+    window.AbyssDiagnostics.debug=()=>({player:{...player},predators:scene.predators.map(e=>({...e})),items:scene.items.map(i=>({...i}))});
+  }
 })();

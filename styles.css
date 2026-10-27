@@ -101,3 +101,34 @@ body.game-focus .vignette-label{display:none}
  .notification{top:96px;min-width:0;max-width:80%;padding:8px 12px;font-size:10px}
 }
 @media(max-width:340px){body.game-focus .hud-stat{flex-basis:48px;width:48px}}
+
+/* v0.2.2: left actions, right joystick, high-priority hold-to-salvage button. */
+@media(max-width:850px){
+  .mobile-controls{flex-direction:row;align-items:flex-end}
+  .mobile-actions{order:0;grid-template-columns:repeat(2,47px);grid-template-rows:62px 42px 42px;gap:5px;align-self:flex-end}
+  .mobile-actions button{min-height:42px;min-width:47px;font-size:9px}
+  .mobile-actions .use-action{grid-column:1 / -1;grid-row:1;min-height:62px;flex-direction:row;gap:8px;background:#175568eb;border:2px solid #9dfbe9;color:#effffb;font-size:17px;letter-spacing:1px;box-shadow:0 0 16px #32d3cd48,0 3px 12px #00121eaa}
+  .mobile-actions .use-action .action-glyph{font-size:25px}
+  .mobile-actions .use-action.held{background:#318784f2;box-shadow:0 0 24px #61f7dcb0}
+  .mobile-actions #mobileSonar{grid-column:1;grid-row:2}
+  .mobile-actions #mobileSilent{grid-column:2;grid-row:2}
+  .mobile-actions #mobileRepair{grid-column:1;grid-row:3}
+  .mobile-actions #mobileLights{grid-column:2;grid-row:3;min-height:42px;flex-direction:column;gap:0}
+  .mobile-actions #mobileLights .action-glyph{font-size:15px}
+  .joystick-stack{order:1;flex-shrink:0;align-items:center}
+  .interaction-prompt{bottom:181px;pointer-events:none}
+}
+@media(max-width:380px){
+  .mobile-actions{grid-template-columns:repeat(2,43px);grid-template-rows:58px 40px 40px;gap:4px}
+  .mobile-actions button{min-width:43px;min-height:40px}
+  .mobile-actions .use-action{min-height:58px;font-size:15px}
+}
+@media (orientation:landscape) and (max-height:510px){
+  body.game-focus .mobile-actions{grid-template-columns:repeat(3,43px);grid-template-rows:repeat(2,43px);gap:4px}
+  body.game-focus .mobile-actions .use-action{grid-column:1;grid-row:1/-1;min-width:45px;min-height:90px;flex-direction:column;gap:5px;font-size:12px}
+  body.game-focus .mobile-actions #mobileSonar{grid-column:2;grid-row:1}
+  body.game-focus .mobile-actions #mobileSilent{grid-column:3;grid-row:1}
+  body.game-focus .mobile-actions #mobileRepair{grid-column:2;grid-row:2}
+  body.game-focus .mobile-actions #mobileLights{grid-column:3;grid-row:2;min-height:43px}
+  body.game-focus .interaction-prompt{bottom:108px}
+}

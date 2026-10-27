@@ -1,3 +1,13 @@
+# Changelog
+
+## v0.2.2 · Predator disengagement, smoother collisions, multitouch USE
+
+- Predators abandon pursuit beyond a hard leash, forget sonar alerts, and resume patrol; temporary recovery prevents instant reacquisition.
+- Rock collisions use polygon outlines matching visible rock art and a narrow three-circle sub hull; substep resolution reduces tunnelling, and sliding retains tangential velocity. World generation preserves a navigable winding route.
+- Pickup reach increased and holding USE auto-salvages while passing an item, including while joystick is held with another finger.
+- Mobile action buttons moved left, joystick/cruise moved right, and USE button enlarged with a highlighted press state.
+- Version-tagged assets and offline shell updated to v0.2.2; existing saved credits/upgrades/secured recorders remain compatible.
+
 # The Abyss Below — Changelog
 
 ## v0.2.1 — 27 October 2026 · Mobile cockpit polish
