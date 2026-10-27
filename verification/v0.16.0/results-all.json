@@ -1,0 +1,227 @@
+{
+  "build": "0.16.0-arsenal-archives-1",
+  "results": [
+    {
+      "suite": "combat-touch",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 6.82,
+      "command": [
+        "tests/v0160_combat_touch_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:17:56.236887+00:00"
+    },
+    {
+      "suite": "campaign-slots",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 12.72,
+      "command": [
+        "tests/v0160_slots_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:18:02.142299+00:00"
+    },
+    {
+      "suite": "weapons-damage",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 13.49,
+      "command": [
+        "tests/v0160_weapons_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:18:02.915350+00:00"
+    },
+    {
+      "suite": "music",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 7.58,
+      "command": [
+        "tests/v0160_music_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:18:03.814196+00:00"
+    },
+    {
+      "suite": "wild-mechanics",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 36.6,
+      "command": [
+        "tests/v0160_wild_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:18:38.738724+00:00"
+    },
+    {
+      "suite": "wild-migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 4.32,
+      "command": [
+        "tests/v0160_wild_migration_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:18:07.239893+00:00"
+    },
+    {
+      "suite": "audio-signal",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 9.86,
+      "command": [
+        "tests/v0160_audio_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:18:13.672463+00:00"
+    },
+    {
+      "suite": "regression",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 15.54,
+      "command": [
+        "tests/v0160_regression_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:18:22.775688+00:00"
+    },
+    {
+      "suite": "systems",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 15.45,
+      "command": [
+        "tests/v0160_systems_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:18:29.120871+00:00"
+    },
+    {
+      "suite": "resume",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 17.47,
+      "command": [
+        "tests/v0160_resume_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:18:40.248492+00:00"
+    },
+    {
+      "suite": "survey",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 20.06,
+      "command": [
+        "tests/v0160_survey_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:18:49.183886+00:00"
+    },
+    {
+      "suite": "harbour",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 21.67,
+      "command": [
+        "tests/v0160_harbour_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:19:00.407917+00:00"
+    },
+    {
+      "suite": "geometry",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 14.09,
+      "command": [
+        "tests/v0160_world_achievements_test.py",
+        "--geometry-only"
+      ],
+      "completed_utc": "2026-10-27T21:18:54.335157+00:00"
+    },
+    {
+      "suite": "achievements",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 14.05,
+      "command": [
+        "tests/v0160_world_achievements_test.py",
+        "--achievements-only"
+      ],
+      "completed_utc": "2026-10-27T21:19:03.229904+00:00"
+    },
+    {
+      "suite": "migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 4.48,
+      "command": [
+        "tests/v0160_migration_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:18:58.812407+00:00"
+    },
+    {
+      "suite": "ui",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 34.02,
+      "command": [
+        "tests/v0160_ui_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:19:32.828799+00:00"
+    },
+    {
+      "suite": "touch",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 31.64,
+      "command": [
+        "tests/v0160_touch_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:19:32.047936+00:00"
+    },
+    {
+      "suite": "explorer-ui",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 25.88,
+      "command": [
+        "tests/v0160_explorer_ui_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:19:29.111305+00:00"
+    },
+    {
+      "suite": "release",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 1.62,
+      "command": [
+        "tests/v0160_release_test.py"
+      ],
+      "completed_utc": "2026-10-27T21:19:30.735375+00:00"
+    },
+    {
+      "suite": "sync",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.16,
+      "command": [
+        "tests/v0160_sync_test.mjs"
+      ],
+      "completed_utc": "2026-10-27T21:19:30.898542+00:00"
+    },
+    {
+      "suite": "worker",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.11,
+      "command": [
+        "tests/v0160_worker_test.mjs"
+      ],
+      "completed_utc": "2026-10-27T21:19:31.009536+00:00"
+    }
+  ],
+  "runtime_hashes": {
+    "campaign-slots.js": "318c14d3ddffde03d60fd122481ef6699029bfadf1a30f45748e4e9a662f902b",
+    "index.html": "029f8dab48d9f64d3c8708216ce481514daac4f3c03b33f662c320c5d0c1d151",
+    "styles.css": "1f0060e55bd12ac0497d6137df576121eeb94dbae65a21e68b2daa700616dc71",
+    "audio.js": "997d4c72295abada8d28e5194ae2af20fd26634d18a813c3afea822374f72df0",
+    "game.js": "a790ef3bd3e8ab9bab8dcf14cd7443da9b76b53f994d50fa6fe1d4d637f78085",
+    "version-sync.js": "2d0894e079a40d3894228ab9f6a86eec721b12bacfe233eee6105b73383f54e9",
+    "service-worker.js": "ca4fe0659d2e07f59e4753dbadf2331ad4ac2437ace246c382572870b4553b33",
+    "version.json": "0d02c6242d9b389e906984872b4288a4ed9ce6bcf52f29c1f9e8c787e1ee4597"
+  }
+}

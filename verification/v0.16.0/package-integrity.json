@@ -1,0 +1,22 @@
+{
+  "build_id": "0.16.0-arsenal-archives-1",
+  "timestamp_utc": "2026-10-27T21:24:30.823502+00:00",
+  "runtime_assets": [
+    "index.html",
+    "styles.css",
+    "campaign-slots.js",
+    "audio.js",
+    "game.js",
+    "version-sync.js",
+    "service-worker.js",
+    "manifest.webmanifest",
+    "icon-192.png",
+    "icon-512.png",
+    "icon-maskable-512.png"
+  ],
+  "complete": "PASS",
+  "overlay": "PASS",
+  "base_archive": "the-abyss-below-v0.15.0-complete.zip",
+  "suites_passed": 21,
+  "live_offline": "BLOCKED"
+}

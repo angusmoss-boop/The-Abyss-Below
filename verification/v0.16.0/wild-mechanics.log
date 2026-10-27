@@ -1,0 +1,8 @@
+PASS 25 seeded maps: correct encounter counts, clear harbour/objective/resource approaches, unobstructed sway; independent wildlife RNG never alters terrain, stocks or upgrades
+PASS swept hull contact detonates once, including a high-speed crossing; starting hull survives an isolated level-1 mine
+PASS shields absorb mine damage first; overflow reaches hull; a recent impact does not silently cancel contact mine damage; paid ammunition unchanged
+PASS predators trigger derelicts, drop recoverable salvage once; destroyed mines stay cleared across reload, dock respawn and relaunch
+PASS remote environmental kills retain drops but do not award harbour-camping achievements or increase vessel noise
+PASS new scenery cannot bypass 1,000 m darkness; sonar arrival reveals hazards/tethers and briefly silhouettes/scatters fish, but never detonates mines or fills the map with wildlife
+PASS vent quiet/warning/eruption/settling sequence; warning causes no force, active plume lifts vessel and predator; early seeps do no damage; hot plume damage is rate limited
+PASS four species, 6–14 members, cohesion/separation and solid-rock avoidance; sonar/boost/predator reactions; reactive seabed life; no wildlife rewards, collision damage or map spam; active-school cap
