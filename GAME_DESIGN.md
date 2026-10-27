@@ -1,6 +1,6 @@
 # The Abyss Below: implemented design
 
-## Current release: v0.7.0, Teeth & Traps
+## Current release: v0.8.0, Glass Cockpit
 
 The core loop is dive, locate salvage and lost recorders, manage oxygen/power/hull, evade predators, return to bank resources and upgrade. Permanent progress is stored locally; active dives are not persisted across a page reload.
 
@@ -8,7 +8,7 @@ The core loop is dive, locate salvage and lost recorders, manage oxygen/power/hu
 
 The trench extends to 1,800 m, with fixed recorder depths of 75, 260, 470, 725, 1,100 and 1,500 m. Seven sectors change the depth readout. Rocks and salvage vary per dive; protected routes and open wreck lanes reduce blocked-objective risk.
 
-Hull begins at 100 HP and a 130 m safe depth. Seven upgrades add 28 HP and 200 m each, ending at 296 HP and a 1,530 m limit. Going deeper than the current rating causes escalating continuous pressure damage. The live rating appears alongside the NEREID name above the submarine.
+Hull begins at 100 HP and a 130 m safe depth. Seven upgrades add 28 HP and 200 m each, ending at 296 HP and a 1,530 m limit. Going deeper than the current rating causes escalating continuous pressure damage. The live rating appears in a top reference card alongside the NEREID name and MK II model. The floating vessel nameplate is removed.
 
 ## Steering, boost and collisions
 
@@ -22,7 +22,7 @@ The existing three-circle capsule and polygon edge solver remain authoritative. 
 
 Ambient lighting is continuous in fractional depth and exactly zero at and below 1,000 m. A cached, soft-edged cone texture controls lamp scatter and the final darkness mask. No per-frame pixel loops are used.
 
-Rendering order: world objects and vessel, darkness mask, temporary sonar echoes, then instrument annotations. Sonar never modifies ambient light or permanently unmasks scenery. Without a powered lamp or a current sonar echo, the world remains black below 1,000 m; HUD instruments and the ship nameplate remain visible.
+Rendering order: world objects and vessel, darkness mask, temporary sonar echoes, then instrument annotations. Sonar never modifies ambient light or permanently unmasks scenery. Without a powered lamp or a current sonar echo, the world remains black below 1,000 m; top HUD instruments remain visible, but no label follows the submarine through the darkness.
 
 A ping snapshots its origin and initial contacts. Its radius reaches every corner of the current viewport plus margin and upgraded reach. The front advances at 520 world units per second. Contact crossing considers previous and current distances so moving predators cannot be revealed instantly at launch. Each hit receives its own expiration time. Static outlines, coloured salvage glyphs and tier-labelled creature outlines are used instead of illuminating the whole scene. Wall geometry is sampled into finite-lived outline segments. Enemy reveal timers are distinct from awareness timers.
 
@@ -52,13 +52,25 @@ The reaper chase speed and Mk IV engine speed share `normalSpeedAt(THRUST.maxMar
 
 Warhead marks I-IV deal 60/110/180/240 damage and cost 100/180/320/520 incremental credits. Ammo rack marks I-IV hold 2/4/6/8 mines; the Mk I rack is standard equipment, with later marks costing 90/160/280 credits. Warheads start unfitted. Buying Mk I unlocks the weapon and fills the standard rack at the dock. Capacity and power are independent persistent upgrade fields.
 
-Deployment is a single F press, HUD-button click or mobile pointerdown. Repeated keydown and the synthetic pointer click do not fire additional rounds. Running, unpaused play; fitted warheads; ammo; cooldown; station exclusion; and an unobstructed stern are all required. Placement checks the actual rock polygons and trench bounds, trying 54, 46 and 38 units astern before refusing without consuming ammo. Mine markers have a fixed position and retain the warhead tier/damage at deployment.
+Deployment is a single F press or mobile MINE pointerdown. The top ammo display is read-only. Repeated keydown and the synthetic pointer click do not fire additional rounds. Running, unpaused play; fitted warheads; ammo; cooldown; station exclusion; and an unobstructed stern are all required. Placement checks the actual rock polygons and trench bounds, trying 54, 46 and 38 units astern before refusing without consuming ammo. Mine markers have a fixed position and retain the warhead tier/damage at deployment.
 
 Arming takes 0.65 seconds; launcher cooldown is 1.1 seconds. Proximity is swept across the armed portion of each predator's simulation frame, with a 52-unit trigger radius. Blast damage is applied once to each live predator within 108 units at the detected contact time. Submarine, items, rocks and other mines are unaffected. A surviving damaged hunter becomes alerted; a killed one cannot bite later in the same frame. Mines have no time-based expiry and persist during the current expedition, including dock visits. Blast graphics expire after 0.65 seconds.
 
 Health bars, physical mine art and blast particles are drawn beneath the darkness mask. Sonar scans include mines, render their temporary outlines, and show health bars with revealed predators. Dead contacts and detonated mine references cannot render again. Deployed mines appear on the instrument radar, but they do not illuminate the ocean.
 
 Resupply only occurs on a fresh surface launch, docking, or a purchase while physically docked. Time, menus, ordinary supply caches, repairs and other power systems have no ammo-refill path. Pause freezes all simulation timers. Mines are deliberately finite trip resources, not a regenerating attack.
+
+## Glass cockpit / input surfaces
+
+The DOM HUD is the sole source of vessel identity and systems. The first row contains NEREID, MK II and the dynamic hull pressure limit plus navigation controls. The next rows expose depth, hull, oxygen, power, noise, sonar cooldown/readiness, boost charge and mine rounds/mark. Sector and hazard state remain visible in a slim contextual row. Card alerts include colour plus numeric/text state; there is no reliance on colour alone. The MK II vessel model does not represent an upgrade tier.
+
+Mobile actions use eight circular hit areas. Portrait diameters are USE 86 px, BOOST 70 px, secondaries 50 px; narrow phones use 80 / 64 / 46 px. Low landscape uses 72 / 60 / 44 px. Six secondaries are SONAR, MINE, REPAIR, SILENT, LIGHTS and CRUISE. All remain in the left half at tested sizes; the right contains only a 104-120 px analogue joystick (108 px in low landscape). The primary and secondary rows never overlap. Independent pointer capture for use, boost and helm remains unchanged.
+
+The browser primary `(pointer: coarse)` media query selects the touch surface. Mouse-first desktops show only a non-interactive bottom keybind legend, regardless of window width; touch-first tablets retain controls even above 850 px. Switching primary pointer capability clears old held inputs before layout changes. The same instrument DOM is retained across normal/focus modes, avoiding duplicate IDs and stale hidden readings.
+
+Boost and sonar buttons carry SVG progress rings. Sonar uses the actual wave cooldown duration, including large screens, rather than an assumed constant. Pressed, active, cooling, unavailable and context-available states are visible. Pause and expand remain accessible above the HUD; briefing is also available through the existing menu/console. Safe-area insets protect edge controls, reduced-motion preferences remove ornamental transitions, and keyboard focus remains visible.
+
+A ResizeObserver updates CSS offsets only when HUD/control geometry changes, placing notifications below the HUD and prompts above controls. Very narrow landscape phones place the prompt in the clear central bottom area. The world renderer no longer draws the vessel label after the darkness mask. Collision, movement, battery/boost arithmetic, weapons, predator AI and progression are unchanged.
 
 ## Save and interface contracts
 
@@ -72,4 +84,4 @@ Discovered maps, wreck interiors, currents, modular system damage, environmental
 
 ## Acceptance and remaining uncertainty
 
-Automated tests exercise mouse capture, touch input, boost arithmetic and lockout, collision at boosted speed, sonar arrival/expiry and rendered darkness, save compatibility, menu flows, upgrade progression and creature parameters. Additional checks cover mine arming/proximity, swept contact, all twelve damage/health combinations, area radius, friendly-fire immunity, independent purchase paths, limited ammunition, dock-only refills and actual four-pointer mobile input. Real-device Android installation/performance, mobile ergonomics over a long session and whole-campaign economy/difficulty remain manual playtest work. The local real-HTTP offline integration test is blocked in this execution environment; a mocked worker-lifecycle test covers cache logic separately.
+The v0.8.0 suite adds 11 touch sizes and five desktop sizes, circular geometry and hit tests, warning-text fit at 1,500 m with no power, input-mode/orientation changes, live status/rings and a black-canvas test proving the nameplate is gone. Automated regressions also exercise mouse capture, touch input, boost arithmetic and lockout, collision at boosted speed, sonar arrival/expiry and rendered darkness, save compatibility, menu flows, upgrade progression and creature parameters. Additional checks cover mine arming/proximity, swept contact, all twelve damage/health combinations, area radius, friendly-fire immunity, independent purchase paths, limited ammunition, dock-only refills and actual four-pointer mobile input. Real-device Android installation/performance, mobile ergonomics over a long session and whole-campaign economy/difficulty remain manual playtest work. The local real-HTTP offline integration test is blocked in this execution environment; a mocked worker-lifecycle test covers cache logic separately.

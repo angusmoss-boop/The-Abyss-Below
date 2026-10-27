@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.8.0 · Glass Cockpit (27 October 2026)
+
+- Rebuilt all eight mobile gameplay actions as circular controls: largest USE, next-largest BOOST and six smaller action buttons. Kept all actions bottom left; moved CRUISE from the joystick to the left-hand bank. Only the redesigned analogue helm remains on the right.
+- Added inline vector icons, layered translucent navy surfaces, restrained cyan/amber accents, live boost/sonar perimeter rings, ammo counts, toggle states and visible active/cooling/unavailable feedback. USE highlights when an interaction is available.
+- Added responsive portrait, landscape and small-landscape arrangements. Secondary targets are at least 44 CSS pixels in tested viewports, while primary controls remain larger. Preserved independent pointer capture and simultaneous steering, boost, mine deployment and salvage.
+- Replaced duplicated console/mobile metrics with one top cockpit: vessel name, MK II model, live pressure limit, depth, hull, oxygen, power, noise, sonar, boost, mine ammo, sector and warning status. Wide panels put eight system tabs in a row; narrower panels wrap them. Removed the floating vessel nameplate from the world canvas. Pressure alerts now highlight the top reference/depth cards.
+- Replaced desktop touch pads with a bottom mouse/keyboard reference strip, in normal and immersive views. Selected controls by primary pointer capability, not a width breakpoint. Top HUD values are read-only, including the former clickable mine display; F remains the desktop deployment key.
+- Kept safe-area spacing, visible focus outlines, state labels and reduced-motion support. Geometry-driven toast/prompt offsets avoid the HUD and control banks. Corrected deep numeric and low-power label fit on 320-pixel screens.
+- Updated help, design documentation, regression UI expectations, asset URLs and the service-worker cache to v0.8.0. No save-key, progression or gameplay-balance change.
+- Ten Chromium browser suites pass (the expanded cockpit suite was executed in four groups), plus syntax and mocked service-worker lifecycle checks. Real HTTP/offline integration remains blocked by ERR_BLOCKED_BY_ADMINISTRATOR. Real-device touch ergonomics, Android/iOS performance and installation remain unverified. See VERIFICATION-v0.8.0.md.
+
 ## v0.7.0 · Teeth & Traps (27 October 2026)
 
 - Increased chase/patrol speeds across all three tiers. Drifters chase at 96, stalkers at 158 and reapers at 245.28 world units per second. Reaper chase speed now shares the Mk IV normal-thruster calculation; normal top-tier thrust cannot pull away in a settled straight chase, while boost can.

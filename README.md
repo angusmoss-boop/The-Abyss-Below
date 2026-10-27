@@ -1,18 +1,28 @@
 # The Abyss Below
 
-## v0.7.0: Teeth & Traps
+## v0.8.0: Glass Cockpit
 
 A standalone, dependency-free browser/PWA submarine expedition game. Pilot the NEREID through a 1,800 m trench, bank salvage, upgrade the vessel and recover six lost recorders.
 
 ### Update an existing GitHub Pages game
 
 1. Bank your active dive at the surface before refreshing. Only permanent banked progress survives a reload.
-2. Extract the v0.7.0 update ZIP. Copy its contents into the existing repository root, replacing files with the same names. Do not upload the ZIP itself or put the files in a nested folder.
-3. Commit the changes, let GitHub Pages finish deploying, then reopen the game online. Check **EXPEDITION BUILD v0.7.0** in the console footer. On mobile, use EXIT to leave the expanded cockpit and view the footer.
+2. Extract the v0.8.0 update ZIP. Copy its contents into the existing repository root, replacing files with the same names. Do not upload the ZIP itself or put the files in a nested folder.
+3. Commit the changes, let GitHub Pages finish deploying, then reopen the game online. Check **EXPEDITION BUILD v0.8.0** in the console footer. On mobile, use the top expand/collapse icon to leave the immersive cockpit and view the footer.
 
 Keep the same site origin and browser profile to retain local saved credits, upgrades, rank, secured recorders and best depth. Do not clear site storage or select NEW GAME to install an update. The save key remains `the-abyss-below-v01`.
 
 The complete-source ZIP is a full copy. The update ZIP contains changed code, documentation and tests; existing icon assets remain unchanged. This package has not been pushed to your repository automatically.
+
+### Glass cockpit overhaul
+
+A single top-of-screen instrument layout is shared by both platforms, in normal console view and immersive play. The first row shows vessel name, model and current pressure limit, followed by view/pause controls. Depth, hull, oxygen, power and noise sit below, alongside sonar readiness, boost charge and mine ammunition. Sector and current warnings use a slim status line. Wide panels fit eight system cards into one row; narrow panels wrap them without hiding noise or covering the navigation controls.
+
+On touch devices, all gameplay actions are circles at bottom left. USE is largest, BOOST next, and the six secondary actions are smaller. The right side contains only the analogue helm. Boost and sonar have live perimeter progress rings; mines show remaining/max rounds; toggles show their state. Portrait and landscape have different arrangements, with a compact left-hand bank for small landscape phones. Clear space between circles remains transparent to the ocean.
+
+On desktop, touch controls disappear. A bottom reference strip lists mouse/WASD, E, Space, Q, F, R, L, Shift and Esc, including in immersive mode. The top mine display is now read-only; deploy with F instead of clicking that display. Control selection follows the browser's primary pointer capability, not screen width, so a narrow desktop window does not turn into a phone controller. A live pointer-capability change clears held input before switching surfaces.
+
+Toasts and interaction prompts use the measured HUD/control geometry. System values and pressure warnings update from the same game state; decorative controls do not affect submarine handling, weapon damage, predator balance or save data. No extra runtime assets, fonts or third-party packages are required.
 
 ### Controls
 
@@ -20,8 +30,8 @@ The complete-source ZIP is a full copy. The update ZIP contains changed code, do
 |---|---|---|
 | Pilot | Hold left click over water, move the cursor; or WASD / arrow keys | Drag right-hand analogue joystick |
 | Boost | Hold Space while piloting | Hold left-side BOOST while steering or cruising |
-| Deploy sea mine | F, or the MINES HUD button | Tap MINE while steering or boosting |
-| Sonar | Q | PING |
+| Deploy sea mine | F | Tap MINE while steering or boosting |
+| Sonar | Q | SONAR |
 | Salvage / dock | E | Hold USE, including while moving |
 | Quiet running | Hold Shift | Toggle SILENT |
 | Repair | R | REPAIR |
@@ -68,17 +78,17 @@ At the surface, press **E / USE** to dock, then buy **SEA MINE WARHEADS Mk I** f
 
 Prices are incremental purchases, not cumulative totals. Buying one tree does not advance the other. With full health, a reaper takes seven Mk I, four Mk II, three Mk III or two Mk IV direct mine blasts. A Mk IV mine can destroy a full-health drifter or stalker in one hit. One blast can damage multiple predators within range.
 
-Press **F** once, click the MINES HUD readout, or tap the left-side **MINE** button to leave one mine behind the sub. It arms after **0.65 seconds**, triggers when a predator comes within **52 world units**, and deals full warhead damage to predators within **108 world units** of the blast. It does not harm your submarine, collect salvage, destroy terrain or set off other mines. The launcher cycles for **1.1 seconds**; holding F does not auto-fire. A clear stern position is required, and rejected shots do not consume ammo. Dock safety prevents deployment in the station's immediate area.
+Press **F** once or tap the left-side circular **MINE** button to leave one mine behind the sub. It arms after **0.65 seconds**, triggers when a predator comes within **52 world units**, and deals full warhead damage to predators within **108 world units** of the blast. It does not harm your submarine, collect salvage, destroy terrain or set off other mines. The launcher cycles for **1.1 seconds**; holding F does not auto-fire. A clear stern position is required, and rejected shots do not consume ammo. Dock safety prevents deployment in the station's immediate area.
 
 Planted mines stay in place until triggered or the expedition ends. Their damage is fixed when planted, so a subsequent dock upgrade cannot upgrade mines already in the water. Surviving predators keep the damage they have taken; health does not regenerate. Kills do not currently award bonus currency or XP.
 
 **Ammo refills for free only at the surface dock**, including a new vessel's launch from the dock. Time, air caches, repairs, sonar, capacitor recharge and opening/resuming menus never refill it. Dock purchases happen while docked and resupply the rack. A current dive, deployed mines, current ammo and enemy health are not saved across a reload.
 
-On phones, USE stays a large two-column button, with MINE beside it. Sonar, quiet running and lights are on the next row; repair and hold-BOOST below. Steering remains on the right. The compact layout is tested in both orientations, including simultaneous steering, boosting, mine deployment and salvage.
+On phones, all eight action buttons are circular and stay at the bottom left. USE is the largest; BOOST is second largest. SONAR, MINE, REPAIR, SILENT, LIGHTS and CRUISE form the smaller bank. The analogue joystick stays on the right. Multi-touch steering, boost, mine deployment and salvage remain independent.
 
 ### Pressure and progress
 
-The tag over the vessel now includes its current limit, for example **NEREID // MK-II · LIMIT 530m**. It remains readable in the dark and turns red beyond the rating.
+Vessel name, class and safe pressure limit now occupy reference cards at the top, for example **NEREID | MK II | PRESSURE LIMIT 530 m**. There is no floating vessel nameplate. The pressure card remains readable in the dark and turns red beyond its rating. MK II is the vessel model, not a replacement for the independently upgraded hull or thrusters.
 
 Hull starts at 130 m. Seven upgrades add 200 m and 28 hull HP each, to a maximum rating of 1,530 m and 296 HP. Recorders remain at 75, 260, 470, 725, 1,100 and 1,500 m. The bottom of the world is 1,800 m and is deliberately beyond the maximum safe hull rating.
 
@@ -98,6 +108,7 @@ Browser tests require Python, Playwright and Chromium. Install Playwright and it
 ```sh
 node --check game.js
 node tests/v060_service_worker_test.mjs
+python tests/v080_cockpit_test.py
 python tests/v070_mines_test.py
 python tests/v060_mechanics_test.py
 python tests/v050_depth_lighting_test.py
@@ -112,4 +123,4 @@ python tests/v050_pwa_cache_test.py
 
 The last command is a real HTTP/offline integration test, updated to the current release version despite its historical filename. It was **blocked by the execution environment** during this release. The Node worker test checks a mocked worker lifecycle, not an installed PWA.
 
-See **VERIFICATION-v0.7.0.md** for actual results and limitations. Test-only fixture mutation APIs are available only when explicitly using `?testmode=1` or `window.ABYSS_TEST_MODE = true`.
+See **VERIFICATION-v0.8.0.md** for actual results and limitations. Test-only fixture mutation APIs are available only when explicitly using `?testmode=1` or `window.ABYSS_TEST_MODE = true`.

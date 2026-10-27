@@ -124,6 +124,8 @@
     const tier=PREDATOR_TIERS[data.tier]?data.tier:'common',maxHealth=PREDATOR_TIERS[tier].health;
     return {...data,tier,maxHealth,health:clamp(data.health??maxHealth,0,maxHealth),dead:false};
   }
+  const primaryPointer = window.matchMedia('(pointer: coarse)');
+  let touchControls = primaryPointer.matches;
   const vesselLabel = () => 'NEREID // MK-II · LIMIT '+safeDepth().toLocaleString('en-GB')+'m';
   const SHIP_RADIUS = 10.5; // Three small circles form a narrow capsule that matches the submarine silhouette.
   const SHIP_OFFSETS = [-15,0,15];
@@ -338,6 +340,7 @@
     }
     const duration=range/SONAR.waveSpeed;
     player.battery-=sonarCost();player.scanCooldown=Math.max(sonarCooldown(),duration+.4);
+    player.scanDuration=player.scanCooldown; // UI ring uses the actual screen-sized scan duration.
     player.noise=Math.min(100,player.noise+27);
     sonarWaves.push({...origin,birth:clock,radius:range,front:0,duration,echoSeconds:sonarEchoSeconds(),contacts});
     addEvent('Sonar sweeping · contacts appear on wave arrival');
@@ -471,7 +474,7 @@
   }
   function syncPauseButtons(){
     $('pauseBtn').textContent=paused?'▶ RESUME':'Ⅱ PAUSE';
-    $('focusPauseBtn').textContent=paused?'▶':'Ⅱ';
+    $('focusPauseBtn').innerHTML=paused?'<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z" fill="currentColor"/></svg>':`<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14M16 5v14" stroke-width="3"/></svg>`;
     $('focusPauseBtn').setAttribute('aria-label',paused?'Resume game':'Pause game');
   }
   function openDialog(kicker,title,body,footer='') {
@@ -768,7 +771,6 @@
     // instrument echo layer: silhouettes only, never an ambient-light reset.
     applyDepthDarkness(ambient);
     drawSonarEchoes();
-    drawVesselLabel();
     drawMouseTarget();
     drawEdgeArrows();
   }
@@ -1060,15 +1062,6 @@
     for(const wall of sonarTerrainEchoes)echo(wall,'wall');
     ctx.restore();
   }
-  function drawVesselLabel(){
-    if(!player||!running)return;
-    ctx.save();ctx.font='bold 9px monospace';ctx.textAlign='center';
-    const text=vesselLabel(),width=ctx.measureText(text).width+16;
-    const x=clamp(player.x-camera.x,width/2+4,viewport.w-width/2-4),y=player.y-camera.y-45;
-    ctx.fillStyle='#03131cdb';ctx.fillRect(x-width/2,y-11,width,18);
-    ctx.fillStyle=depthOf(player.y)>safeDepth()?'#ff9486':'#b6f6e9';
-    ctx.fillText(text,x,y+1);ctx.restore();
-  }
   function drawMouseTarget(){
     if(mouseHelm.pointerId===null||!running||paused)return;
     const rect=canvas.getBoundingClientRect(),x=(mouseHelm.clientX-rect.left)*viewport.w/(rect.width||1),y=(mouseHelm.clientY-rect.top)*viewport.h/(rect.height||1);
@@ -1113,20 +1106,29 @@
   function updateUI(){
     if(!player)return;
     const depth=depthOf(player.y),rating=safeDepth(),zone=zoneFor(depth);
-    $('depthStat').textContent=depth;$('ratingStat').textContent=rating;$('zoneStat').textContent=zone.name;
-    $('zoneStat').style.color=zone.color;
+    $('depthStat').textContent=depth;$('ratingStat').textContent=rating.toLocaleString('en-GB');
+    $('depthBar').style.width=clamp(depth/rating*100,0,100)+'%';
+    $('pressureTab').classList.toggle('alert',depth>rating);
+    $('depthTab').classList.toggle('alert',depth>rating);
+    $('pressureTab').setAttribute('aria-label','Safe pressure limit '+rating+' metres'+(depth>rating?', exceeded':''));
     const enemyClose=scene.predators.some(e=>e.aggression>.15&&distance(player,e)<240);
     const apexClose=scene.predators.some(e=>e.tier==='apex'&&e.aggression>.15&&distance(player,e)<300);
     const reaperClose=scene.predators.some(e=>e.tier==='reaper'&&e.aggression>.15&&distance(player,e)<360);
     const st=depth>rating?'PRESSURE ALERT':reaperClose?'REAPER CONTACT':apexClose?'APEX CONTACT':enemyClose?'PREDATOR ALERT':player.oxygen<20?'LOW OXYGEN':player.battery<15?'LOW POWER':'NOMINAL';
-    $('statusStat').textContent=st;$('statusStat').className='metric-value '+(st==='NOMINAL'?'status-safe':st==='PREDATOR ALERT'||st==='APEX CONTACT'||st==='REAPER CONTACT'||st==='PRESSURE ALERT'?'status-danger':'status-warning');
+    $('statusStat').textContent=st;$('statusStat').className=(st==='NOMINAL'?'status-safe':st==='PREDATOR ALERT'||st==='APEX CONTACT'||st==='REAPER CONTACT'||st==='PRESSURE ALERT'?'status-danger':'status-warning');
     $('signalText').textContent=st==='NOMINAL'?'VESSEL ONLINE':'VESSEL WARNING';
-    const setGauge=(kind,value,max)=>{const pct=clamp(value/max*100,0,100);$(kind+'Value').textContent=Math.round(pct)+'%';$(kind+'Bar').style.width=pct+'%';};
+    const setGauge=(kind,value,max)=>{const pct=clamp(value/max*100,0,100);$(kind+'Value').textContent=Math.round(pct)+'%';$(kind+'Bar').style.width=pct+'%';
+      $(kind+'Tab').classList.toggle('alert',kind==='noise'?pct>75:pct<(kind==='hull'?35:kind==='oxygen'?25:20));};
     setGauge('hull',player.hull,maxHull());setGauge('oxygen',player.oxygen,maxOxygen());setGauge('battery',player.battery,maxBattery());setGauge('noise',player.noise,100);
-    $('coordsText').textContent='SECTOR '+zone.code+' · '+zone.name;
+    $('coordsText').textContent=zone.code+' · '+zone.name;
     const sonarCooling=player.scanCooldown>0;
-    $('sonarText').textContent=sonarCooling?'SONAR COOLDOWN '+Math.ceil(player.scanCooldown)+'s':player.battery<sonarCost()?'SONAR · LOW POWER':'SONAR READY · Q';
-    $('sonarButtonLabel').textContent=sonarCooling?Math.ceil(player.scanCooldown)+'s':'PING';
+    $('sonarText').textContent=sonarCooling?Math.ceil(player.scanCooldown)+'s':player.battery<sonarCost()?'LOW':'READY';
+    const sonarPct=sonarCooling?clamp(1-player.scanCooldown/(player.scanDuration||sonarCooldown()),0,1)*100:100;
+    $('sonarBar').style.width=sonarPct+'%';
+    $('mobileSonar').style.setProperty('--ring',sonarPct);
+    $('sonarStatus').textContent=sonarCooling?'RECHARGING':player.battery<sonarCost()?'LOW POWER':sonarCost()+' POWER / PING';
+    $('sonarMeter').classList.toggle('cooling',sonarCooling);
+    $('sonarButtonLabel').textContent=sonarCooling?Math.ceil(player.scanCooldown)+'s':player.battery<sonarCost()?'LOW':'READY';
     $('mobileSonar').classList.toggle('cooling',sonarCooling);
     $('mobileSonar').setAttribute('aria-disabled',String(sonarCooling||player.battery<sonarCost()));
     $('mobileSonar').setAttribute('aria-label',sonarCooling?'Sonar recharging, '+Math.ceil(player.scanCooldown)+' seconds':'Ping sonar, costs '+sonarCost()+' power');
@@ -1136,16 +1138,20 @@
     $('boostValue').textContent=boostPct+'%';$('boostBar').style.width=boostPct+'%';
     $('boostMeter').classList.toggle('boost-active',Boolean(player.boosting));
     $('boostMeter').classList.toggle('boost-locked',Boolean(player.boostLocked));
-    $('mobileBoostLabel').textContent=player.boostLocked?'CHARGE '+boostPct+'%':'BOOST '+boostPct+'%';
+    $('mobileBoostLabel').textContent=boostPct+'%';
+    $('mobileBoost').style.setProperty('--ring',boostPct);
+    $('mobileBoost').setAttribute('aria-disabled',String(player.boostLocked||player.battery<=.5||paused||!running));
     $('mobileBoost').classList.toggle('active',Boolean(player.boosting));
     $('mobileBoost').classList.toggle('cooling',Boolean(player.boostLocked));
     $('mobileBoost').setAttribute('aria-label','Hold to boost, '+boostPct+' percent charge, '+boostStatus.toLowerCase());
     const minesReady=saved.upgrades.minePower>0,mineCooling=player.mineCooldown>0;
     const mineStatus=!minesReady?'NOT FITTED':player.mineAmmo<=0?'DOCK TO REFILL':mineCooling?'CYCLING':'READY';
-    $('mineAmmoValue').textContent=minesReady?player.mineAmmo+'/'+mineCapacity():'NOT FITTED';
+    $('mineAmmoValue').textContent=minesReady?player.mineAmmo+'/'+mineCapacity():'LOCKED';
     $('mineState').textContent=minesReady?'MK '+roman(saved.upgrades.minePower)+' · '+mineStatus:'BUY AT DOCK';
-    $('mobileMineLabel').textContent=minesReady?'MINE '+player.mineAmmo:'MINES';
-    for(const id of ['mobileMine','mineDeployBtn']){
+    $('mobileMineLabel').textContent=minesReady?player.mineAmmo+'/'+mineCapacity():'LOCKED';
+    $('mineBar').style.width=(minesReady?player.mineAmmo/mineCapacity()*100:0)+'%';
+    $('mineReadout').classList.toggle('empty',!minesReady||player.mineAmmo<=0);
+    for(const id of ['mobileMine']){
       const b=$(id);b.classList.toggle('empty',!minesReady||player.mineAmmo<=0);b.classList.toggle('cooling',mineCooling);
       b.setAttribute('aria-disabled',String(!minesReady||player.mineAmmo<=0||mineCooling||paused||!running));
       b.setAttribute('aria-label',minesReady?'Deploy sea mine. '+player.mineAmmo+' of '+mineCapacity()+' remaining. '+mineStatus:'Buy Mk I sea mines at the dock');
@@ -1166,15 +1172,17 @@
     $('dockBtn').disabled=!station;$('dockBtn').textContent=station?'◈ DOCK · BANK SALVAGE · UPGRADE':'◈ RETURN TO STATION TO UPGRADE';
     const close=nearestInteractable();const prompt=$('interactionPrompt');
     if(running&&!paused&&close){
-      prompt.textContent=close.type==='station'?'[ E / USE ] DOCK & UPGRADE':close.type==='recorder'?'[ E / USE ] RECOVER BLACK BOX':close.type==='air'?'[ E / USE ] CLAIM SUPPLY CACHE':'[ E / USE ] SALVAGE '+close.type.toUpperCase();prompt.classList.remove('hidden');
+      prompt.textContent=(touchControls?'HOLD USE · ':'[ E ] ')+(close.type==='station'?'DOCK & UPGRADE':close.type==='recorder'?'RECOVER BLACK BOX':close.type==='air'?'CLAIM SUPPLY CACHE':'SALVAGE '+close.type.toUpperCase());prompt.classList.remove('hidden');
     } else prompt.classList.add('hidden');
     $('mobileSilent').classList.toggle('active',pointerSilent);
-    $('lightsLabel').textContent=!player.lights?'LIGHTS OFF':headlightsActive()?'LIGHTS ON':'NO POWER';
+    $('mobileSilent').setAttribute('aria-pressed',String(pointerSilent));
+    $('mobileInteract').classList.toggle('available',Boolean(running&&!paused&&close));
+    $('mobileRepair').setAttribute('aria-disabled',String(paused||!running||player.cargo.scrap<2||player.hull>=maxHull()));
+    $('lightsLabel').textContent=!player.lights?'OFF':headlightsActive()?'ON':'EMPTY';
+    $('mobileLights').classList.toggle('active',headlightsActive());
     $('mobileLights').setAttribute('aria-pressed',String(player.lights));
     $('mobileLights').setAttribute('aria-label',!player.lights?'Turn flashlight on':headlightsActive()?'Turn flashlight off':'Flashlight has no battery power');
-    $('focusDepth').textContent=depth+'m';$('focusHull').textContent=Math.round(player.hull/maxHull()*100)+'%';$('focusOxygen').textContent=Math.round(player.oxygen/maxOxygen()*100)+'%';$('focusBattery').textContent=Math.round(player.battery/maxBattery()*100)+'%';$('focusNoise').textContent=Math.round(player.noise)+'%';
-    $('focusHull').classList.toggle('alert',player.hull/maxHull()<.35);$('focusOxygen').classList.toggle('alert',player.oxygen/maxOxygen()<.25);$('focusBattery').classList.toggle('alert',player.battery/maxBattery()<.2);
-    const cruiseButton=$('mobileCruise');cruiseButton.classList.toggle('active',cruiseEnabled);cruiseButton.setAttribute('aria-pressed',String(cruiseEnabled));cruiseButton.textContent=cruiseEnabled?'CRUISE ON':'CRUISE OFF';
+    const cruiseButton=$('mobileCruise');cruiseButton.classList.toggle('active',cruiseEnabled);cruiseButton.setAttribute('aria-pressed',String(cruiseEnabled));$('cruiseLabel').textContent=cruiseEnabled?'ON':'OFF';
     drawRadar();
   }
   let focusMode=false;
@@ -1182,7 +1190,8 @@
     focusMode=Boolean(on);
     document.body.classList.toggle('game-focus',focusMode);
     const toggle=$('focusToggleBtn');
-    toggle.innerHTML=focusMode?'↙ <span>EXIT</span>':'⛶ <span>FULLSCREEN</span>';
+    toggle.innerHTML=focusMode?`<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h5V3m8 0v5h5M8 21v-5H3m18 0h-5v5"/></svg>`:`<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5"/></svg>`;
+    toggle.title=focusMode?'Exit expanded play view':'Expand play view';
     toggle.setAttribute('aria-label',focusMode?'Exit expanded play view':'Expand play view');
     toggle.setAttribute('aria-pressed',String(focusMode));
     // Let mobile layout finish, then update both canvas backing dimensions and camera.
@@ -1245,7 +1254,7 @@
   }
   function launchDive(){newDive();enterMobileCockpit();}
   function enterMobileCockpit(){
-    if(window.matchMedia('(max-width: 850px)').matches){
+    if(touchControls){
       setFocusMode(true);
       if(document.fullscreenEnabled&&!document.fullscreenElement&&document.documentElement.requestFullscreen){
         document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{});
@@ -1255,11 +1264,11 @@
   function briefing(){
     const body=`<div class="briefing"><p>You pilot the <strong>NEREID MK-II</strong>. Recover six golden recorders at 75, 260, 470, 725, 1,100 and 1,500 m and bring them to the surface.</p><ul>
       <li><strong>PC helm:</strong> hold the left mouse button over the water and move the cursor. The sub points and travels towards it, easing off when close. Release to coast to a stop. <kbd>WASD</kbd> / arrow keys still work.</li>
-      <li><strong>Mobile:</strong> drag the right joystick. CRUISE retains your heading after release; the large left USE button salvages while you steer.</li>
+      <li><strong>Mobile:</strong> drag the right joystick. The left-side CRUISE button retains your heading after release; the large left USE button salvages while you steer.</li>
       <li><kbd>Space</kbd> / hold <strong>BOOST</strong>: 1.85× thrust speed for up to 4 seconds. Costs battery and boost charge. Charge recovers after 1.5 seconds; a fully emptied meter locks until full. Release to rearm. Boost is loud and overrides quiet running. Battery upgrades reduce its power drain and speed up recharge.</li>
       <li><kbd>Q</kbd> / <strong>PING</strong>: a sonar wave sweeps the entire current screen. Salvage, recorders, caches, predators, rocks, wrecks, vents and walls appear as fading echoes <strong>when the wave reaches them</strong>, even with lights off. It uses power, alerts reached predators and has a visible cooldown. It does not light up the water permanently.</li>
       <li><kbd>E</kbd> / <strong>USE</strong>: recover nearby objects or dock to bank cargo, refill systems and upgrade. <kbd>R</kbd> repairs 30 hull for 2 scrap. <kbd>L</kbd> toggles lights. <kbd>Shift</kbd> / <strong>SILENT</strong> reduces speed and noise.</li>
-      <li>The water darkens gradually to total darkness at <strong>1,000 m</strong>. Only your forward lamp and temporary sonar echoes reveal the surroundings. The pressure limit beside your name stays readable and turns red beyond your rating.</li>
+      <li>The water darkens gradually to total darkness at <strong>1,000 m</strong>. Only your forward lamp and temporary sonar echoes reveal the surroundings. Vessel name, class and pressure limit are pinned to the top of the screen, alongside depth and systems. The pressure tab turns red beyond your rating.</li>
       <li><kbd>F</kbd> / <strong>MINE</strong>: drop one proximity mine astern while steering or boosting. It arms after 0.65 seconds, then damages predators within its blast radius without harming your submarine. Mines remain until triggered or this expedition ends. The launcher cycles for 1.1 seconds; hold does not auto-fire. If the stern is obstructed, no ammo is spent.</li>
       <li><strong>Dock ordnance:</strong> buy Mk I warheads to unlock mines, then upgrade damage separately from the ammo rack. Warheads deal 60 / 110 / 180 / 240 damage; racks hold <strong>2 / 4 / 6 / 8 mines</strong>. The two-slot Mk I rack comes fitted. Only docking refills spent ammo, never caches, repairs, boost recharge, or time.</li>
       <li><strong>Three threat tiers:</strong> common blue drifters; rarer purple stalkers below 400 m; only five crimson reapers, all below 800 m. Drifters have 100 HP, stalkers 200 HP and reapers 400 HP. Reaper chase speed matches Mk IV magnetic thrusters exactly: normal thrust cannot pull away in open water. Boost to create distance, or leave mines in its path. All tiers retain finite pursuit ranges. Health bars respect darkness and sonar visibility.</li>
@@ -1268,7 +1277,25 @@
     openDialog('OPERATIONS MANUAL // NEREID','PILOT BRIEFING',body,'<div class="dialog-actions"><button id="briefDone" class="alt-btn">UNDERSTOOD</button></div>');
     $('briefDone').addEventListener('click',closeDialog);
   }
+  // Layout is measured only when its geometry changes, never in the render loop.
+  // This keeps toasts/prompts clear of wrapped HUD rows and both control banks.
+  function syncCockpitLayout(){
+    const host=canvas.parentElement,frame=host.getBoundingClientRect();
+    const hud=document.querySelector('.cockpit-hud').getBoundingClientRect();
+    host.style.setProperty('--hud-bottom',Math.ceil(hud.bottom-frame.top)+'px');
+    const controls=document.querySelector(touchControls?'.mobile-controls':'.desktop-keybinds').getBoundingClientRect();
+    host.style.setProperty('--control-clearance',Math.ceil(frame.bottom-controls.top+14)+'px');
+  }
+  function syncInputMode(){
+    touchControls=primaryPointer.matches;
+    document.body.classList.toggle('touch-ui',touchControls);
+    document.body.classList.toggle('desktop-ui',!touchControls);
+  }
   function bind() {
+    syncInputMode();
+    const cockpitObserver=new ResizeObserver(syncCockpitLayout);
+    for(const node of [canvas.parentElement,...document.querySelectorAll('.cockpit-hud,.mobile-controls,.desktop-keybinds')])cockpitObserver.observe(node);
+    primaryPointer.addEventListener('change',()=>{resetPilotInput();syncInputMode();resize();syncCockpitLayout();updateUI();});
     $('startBtn').addEventListener('click',()=>{
       if(running)resumeDive();else launchDive();
     });
@@ -1357,7 +1384,6 @@
       e.preventDefault();deployMine();
     });
     $('mobileMine').addEventListener('click',e=>{if(e.detail===0)deployMine();});
-    $('mineDeployBtn').addEventListener('click',deployMine);
     const useBtn=$('mobileInteract');
     useBtn.addEventListener('pointerdown',e=>{
       if(!running||paused||usePointerId!==null)return;
@@ -1408,7 +1434,7 @@
     const button=$('mobileCruise');
     button.classList.toggle('active',cruiseEnabled);
     button.setAttribute('aria-pressed',String(cruiseEnabled));
-    button.textContent=cruiseEnabled?'CRUISE ON':'CRUISE OFF';
+    $('cruiseLabel').textContent=cruiseEnabled?'ON':'OFF';
   }
   function setupInstall(){
     // GitHub Pages (HTTPS) supports installation and the offline service worker.
@@ -1442,7 +1468,7 @@
   camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
   updateMainMenu();updateUI();requestAnimationFrame(frame);
   // Tiny inspection hook for automated smoke tests.
-  window.AbyssDiagnostics={state:()=>({mineAmmo:player.mineAmmo,mineCapacity:mineCapacity(),minePower:saved.upgrades.minePower,mineCapacityMark:saved.upgrades.mineCapacity,mineDamage:mineDamage(),mineCooldown:player.mineCooldown,deployedMines:scene.mines.length,kills:player.kills,normalSpeed:normalSpeedAt(saved.upgrades.engine),maxNormalSpeed:normalSpeedAt(THRUST.maxMark),ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),vesselLabel:vesselLabel(),boost:player.boost,boosting:player.boosting,boostLocked:player.boostLocked,boostNeedsRelease:player.boostNeedsRelease,boostRechargeDelay:player.boostRechargeDelay,boostPowerRate:boostPowerRate(),boostRechargeRate:boostRechargeRate(),scanCooldown:player.scanCooldown,sonarCost:sonarCost(),mouseHeld:mouseHelm.pointerId!==null,boostHeld,facing:player.facing,hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier==='common').length,reaperCount:scene.predators.filter(e=>e.tier==='reaper').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
+  window.AbyssDiagnostics={state:()=>({mineAmmo:player.mineAmmo,mineCapacity:mineCapacity(),minePower:saved.upgrades.minePower,mineCapacityMark:saved.upgrades.mineCapacity,mineDamage:mineDamage(),mineCooldown:player.mineCooldown,deployedMines:scene.mines.length,kills:player.kills,normalSpeed:normalSpeedAt(saved.upgrades.engine),maxNormalSpeed:normalSpeedAt(THRUST.maxMark),ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),inputMode:touchControls?'touch':'desktop',vesselLabel:vesselLabel(),boost:player.boost,boosting:player.boosting,boostLocked:player.boostLocked,boostNeedsRelease:player.boostNeedsRelease,boostRechargeDelay:player.boostRechargeDelay,boostPowerRate:boostPowerRate(),boostRechargeRate:boostRechargeRate(),scanCooldown:player.scanCooldown,sonarCost:sonarCost(),mouseHeld:mouseHelm.pointerId!==null,boostHeld,facing:player.facing,hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier==='common').length,reaperCount:scene.predators.filter(e=>e.tier==='reaper').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
   if(location.search.includes('testmode=1')||window.ABYSS_TEST_MODE===true){
     window.AbyssDiagnostics.fixture=({x=600,y=700,rocks=[],predators=[],items=[]}={})=>{
       player.x=x;player.y=y;player.vx=0;player.vy=0;player.facing=0;player.noise=0;

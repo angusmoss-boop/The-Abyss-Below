@@ -1,0 +1,40 @@
+{
+  "version": "0.8.0",
+  "name": "Glass Cockpit",
+  "base_version": "0.7.0",
+  "save_key": "the-abyss-below-v01",
+  "runtime_sha256": {
+    "game.js": "23c0828eb3ecdf602e6fb29c081f2f0daf30191f8d7195acd80615695e22ce5b",
+    "styles.css": "1870aa2f46df96f3f70951550aef1a94aeccad0496e26659561856a26d87f09e",
+    "index.html": "4933dfa91887250171131bff7bf8d6357ab70dd9b421e267fd68b998c6798a9b",
+    "service-worker.js": "1d45a4e4f28ded659c8a7e3af99bab46629a0c5560d0f0c6c465b2f775f3eb25",
+    "manifest.webmanifest": "02ae4faeec5656f3d0067f32396e1fb87058c75ad7cfe4fc5982964d236083e4"
+  },
+  "update_files": [
+    "CHANGELOG.md",
+    "GAME_DESIGN.md",
+    "README.md",
+    "RELEASE-v0.8.0.json",
+    "VERIFICATION-v0.8.0.md",
+    "game.js",
+    "index.html",
+    "service-worker.js",
+    "styles.css",
+    "tests/smoke_test.py",
+    "tests/v022_behaviour_test.py",
+    "tests/v050_depth_lighting_test.py",
+    "tests/v050_pwa_cache_test.py",
+    "tests/v060_mechanics_test.py",
+    "tests/v060_service_worker_test.mjs",
+    "tests/v080_cockpit_test.py"
+  ],
+  "verification": {
+    "chromium_browser_suites_passed": 10,
+    "cockpit_touch_viewports": 11,
+    "cockpit_desktop_viewports": 5,
+    "mock_worker_lifecycle": "passed",
+    "real_offline_integration": "blocked: ERR_BLOCKED_BY_ADMINISTRATOR",
+    "real_phone_hardware": "not tested"
+  },
+  "deployment": "Not pushed automatically. Replace files in the existing repository root."
+}

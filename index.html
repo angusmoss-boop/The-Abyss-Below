@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#06121d" />
   <meta name="description" content="The Abyss Below: a submarine exploration and survival game." />
   <title>The Abyss Below | Deepwater Expedition</title>
-  <link rel="manifest" href="manifest.webmanifest?v=0.7.0" />
+  <link rel="manifest" href="manifest.webmanifest?v=0.8.0" />
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="stylesheet" href="styles.css?v=0.7.0" />
+  <link rel="stylesheet" href="styles.css?v=0.8.0" />
 </head>
 <body>
   <div class="app">
@@ -21,62 +21,70 @@
     </header>
     <main class="layout">
       <div class="play-column">
-        <div class="stats-line">
-          <div class="metric"><div class="metric-label">DEPTH</div><div class="metric-value"><span id="depthStat">0</span><small> m</small></div></div>
-          <div class="metric"><div class="metric-label">DEPTH RATING</div><div class="metric-value"><span id="ratingStat">130</span><small> m</small></div></div>
-          <div class="metric"><div class="metric-label">SECTOR</div><div class="metric-value metric-sector" id="zoneStat">THE SHALLOWS</div></div>
-          <div class="metric right"><div class="metric-label">DIVE STATUS</div><div class="metric-value status-safe" id="statusStat">SAFE</div></div>
-        </div>
         <section class="viewport" aria-label="Submarine expedition game">
           <canvas id="gameCanvas" tabindex="0" aria-label="Hold left mouse button to pilot. Space boosts, F deploys a mine, Q scans, E collects, Escape pauses."></canvas>
-          <div class="viewport-topline"><span id="coordsText">SECTOR 01 · SURFACE APPROACH</span><span id="sonarText">SONAR READY</span></div>
-          <div id="boostMeter" class="boost-meter" aria-label="Boost charge">
-            <div class="boost-meter-head"><span>BOOST <kbd>SPACE</kbd></span><strong id="boostValue">100%</strong></div>
-            <div class="boost-track"><div id="boostBar"></div></div>
-            <span id="boostStatus">READY</span>
-            <button id="mineDeployBtn" class="mine-meter" title="Deploy mine (F)"><span>MINES <kbd>F</kbd></span><strong id="mineAmmoValue">NOT FITTED</strong><small id="mineState">BUY AT DOCK</small></button>
-          </div>
-          <div class="focus-hud" aria-label="Live submarine systems">
-            <div class="hud-stat"><span>DEPTH</span><strong id="focusDepth">0m</strong></div>
-            <div class="hud-stat"><span>HULL</span><strong id="focusHull">100%</strong></div>
-            <div class="hud-stat"><span>O₂</span><strong id="focusOxygen">100%</strong></div>
-            <div class="hud-stat"><span>POWER</span><strong id="focusBattery">100%</strong></div>
-            <div class="hud-stat hud-noise"><span>NOISE</span><strong id="focusNoise">0%</strong></div>
-          </div>
-          <div class="game-view-tools">
-            <button id="focusToggleBtn" class="view-tool" aria-label="Expand play view" title="Expand play view">⛶ <span>FULLSCREEN</span></button>
-            <button id="focusHelpBtn" class="view-tool focus-only" aria-label="Pilot instructions" title="Pilot instructions">?</button>
-            <button id="focusPauseBtn" class="view-tool focus-only" aria-label="Pause game" title="Pause game">Ⅱ</button>
+          <div class="cockpit-hud" aria-label="Vessel instruments">
+            <div class="cockpit-identity">
+              <div class="reference-tab vessel-tab"><span>VESSEL</span><strong id="vesselName">NEREID</strong></div>
+              <div class="reference-tab model-tab"><span>CLASS</span><strong id="vesselMark">MK II</strong></div>
+              <div class="reference-tab pressure-tab" id="pressureTab"><span>PRESSURE LIMIT</span><strong><span id="ratingStat">130</span><small> m</small></strong></div>
+              <div class="game-view-tools">
+                <button id="focusHelpBtn" class="view-tool" aria-label="Pilot instructions" title="Pilot instructions"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 8.5a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4M12 16.5v.5"/></svg></button>
+                <button id="focusToggleBtn" class="view-tool" aria-label="Expand play view" title="Expand play view"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5"/></svg></button>
+                <button id="focusPauseBtn" class="view-tool" aria-label="Pause game" title="Pause / resume (Esc)"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14M16 5v14" stroke-width="3"/></svg></button>
+              </div>
+            </div>
+            <div class="cockpit-systems">
+              <div class="instrument-tab depth-tab" id="depthTab"><span class="instrument-label">DEPTH</span><strong><span id="depthStat">0</span><small> m</small></strong><div class="instrument-track"><i id="depthBar"></i></div></div>
+              <div class="instrument-tab" id="hullTab"><span class="instrument-label">HULL</span><strong id="hullValue">100%</strong><div class="instrument-track"><i id="hullBar"></i></div></div>
+              <div class="instrument-tab oxygen-tab" id="oxygenTab"><span class="instrument-label">OXYGEN</span><strong id="oxygenValue">100%</strong><div class="instrument-track"><i id="oxygenBar"></i></div></div>
+              <div class="instrument-tab power-tab" id="batteryTab"><span class="instrument-label">POWER</span><strong id="batteryValue">100%</strong><div class="instrument-track"><i id="batteryBar"></i></div></div>
+              <div class="instrument-tab noise-tab" id="noiseTab"><span class="instrument-label">NOISE</span><strong id="noiseValue">0%</strong><div class="instrument-track"><i id="noiseBar"></i></div></div>
+              <div class="capability-group">
+                <div class="instrument-tab capability sonar-tab" id="sonarMeter"><div class="capability-head"><span class="instrument-label">SONAR</span><strong id="sonarText">READY</strong></div><div class="instrument-track"><i id="sonarBar"></i></div><small id="sonarStatus">WIDEBAND SCANNER</small></div>
+                <div class="instrument-tab capability boost-tab" id="boostMeter"><div class="capability-head"><span class="instrument-label">BOOST</span><strong id="boostValue">100%</strong></div><div class="instrument-track"><i id="boostBar"></i></div><small id="boostStatus">READY</small></div>
+                <div class="instrument-tab capability mine-tab" id="mineReadout"><div class="capability-head"><span class="instrument-label">MINES</span><strong id="mineAmmoValue">NOT FITTED</strong></div><div class="instrument-track"><i id="mineBar"></i></div><small id="mineState">BUY AT DOCK</small></div>
+              </div>
+            </div>
+            <div class="cockpit-context"><span id="coordsText">01 · THE SHALLOWS</span><span id="statusStat" class="status-safe">NOMINAL</span></div>
           </div>
           <div id="interactionPrompt" class="interaction-prompt hidden"></div>
           <div id="notification" class="notification hidden"></div>
-          <div class="vignette-label left">NEREID // MK-II</div><div class="vignette-label right">LIVE DEPTH FEED</div>
           <div class="mobile-controls" id="mobileControls">
+            <div class="mobile-actions" aria-label="Submarine actions">
+              <div class="secondary-actions">
+                <button id="mobileSonar" class="action-circle sonar-action" aria-label="Ping sonar" title="Ping sonar"><svg class="action-ring" viewBox="0 0 100 100" aria-hidden="true"><circle class="ring-track" cx="50" cy="50" r="46"/><circle class="ring-value" cx="50" cy="50" r="46" pathLength="100"/></svg><svg class="action-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/><path d="M12 12 19 5M12 2v2M2 12h2"/><circle cx="8" cy="15" r="1" fill="currentColor" stroke="none"/></svg><span class="action-name">SONAR</span><span id="sonarButtonLabel" class="action-state">READY</span></button>
+                <button id="mobileMine" class="action-circle mine-action" aria-label="Deploy sea mine" title="Deploy sea mine"><svg class="action-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5.5"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4M5 5l3 3m8 8 3 3M5 19l3-3m8-8 3-3"/><circle cx="10.5" cy="10" r="1" fill="currentColor"/></svg><span class="action-name">MINE</span><span id="mobileMineLabel" class="action-state">LOCKED</span></button>
+                <button id="mobileRepair" class="action-circle repair-action" aria-label="Repair hull using 2 scrap" title="Repair hull using 2 scrap"><svg class="action-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4a5 5 0 0 0-5 6L3 16a3 3 0 0 0 4 4l6-6a5 5 0 0 0 6-6l-4 3-3-3 3-4Z"/></svg><span class="action-name">REPAIR</span></button>
+                <button id="mobileSilent" class="action-circle silent-action" aria-label="Toggle quiet running" title="Toggle quiet running" aria-pressed="false"><svg class="action-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5 6 9H3v6h3l4 4zM15 9l6 6m0-6-6 6"/></svg><span class="action-name">SILENT</span></button>
+                <button id="mobileLights" class="action-circle lights-action" aria-label="Toggle flashlight" title="Toggle flashlight" aria-pressed="true"><svg class="action-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5c-6 0-9 2-9 7s3 7 9 7ZM18 5l4-2m-4 7h4m-4 5h4m-4 4 4 2"/></svg><span class="action-name">LIGHTS</span><span id="lightsLabel" class="action-state">ON</span></button>
+                <button id="mobileCruise" class="action-circle cruise-action" aria-label="Keep moving after releasing the joystick" title="Keep moving after releasing the joystick" aria-pressed="false"><svg class="action-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17a9 9 0 1 1 16 0M12 13l5-6M5 10l2 1m0-6 1 2m9 3 2-1"/><circle cx="12" cy="14" r="2"/></svg><span class="action-name">CRUISE</span><span id="cruiseLabel" class="action-state">OFF</span></button>
+              </div>
+              <div class="primary-actions">
+                <button id="mobileInteract" class="action-circle use-action" aria-label="Hold to salvage or dock while moving" title="Hold to salvage or dock while moving"><svg class="action-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H4v4m12-4h4v4M4 17v4h4m8 0h4v-4"/><path d="m12 7 1.5 3.5L17 12l-3.5 1.5L12 17l-1.5-3.5L7 12l3.5-1.5Z"/></svg><span class="action-name">USE</span><span class="action-state">HOLD</span></button>
+                <button id="mobileBoost" class="action-circle boost-action" aria-label="Hold to boost" title="Hold to boost while steering"><svg class="action-ring" viewBox="0 0 100 100" aria-hidden="true"><circle class="ring-track" cx="50" cy="50" r="46"/><circle class="ring-value" cx="50" cy="50" r="46" pathLength="100"/></svg><svg class="action-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 13 6-6 6 6M6 19l6-6 6 6M9 5l3-3 3 3"/></svg><span class="action-name">BOOST</span><span id="mobileBoostLabel" class="action-state">100%</span></button>
+              </div>
+            </div>
             <div class="joystick-stack">
               <div id="mobileJoystick" class="mobile-joystick" role="group" aria-label="Analogue submarine joystick. Drag to steer in any direction." tabindex="0">
-                <div class="joystick-guides" aria-hidden="true"><span class="joystick-n">N</span><span class="joystick-e">E</span><span class="joystick-s">S</span><span class="joystick-w">W</span></div>
+                <div class="joystick-guides" aria-hidden="true"><span class="joystick-n">⌃</span><span class="joystick-e">›</span><span class="joystick-s">⌄</span><span class="joystick-w">‹</span></div>
                 <div id="joystickThumb" class="joystick-thumb" aria-hidden="true"><span></span></div>
               </div>
-              <button id="mobileCruise" class="cruise-toggle" aria-pressed="false" title="Keep moving after releasing the joystick">CRUISE OFF</button>
-            </div>
-            <div class="mobile-actions" aria-label="Submarine actions">
-              <button id="mobileSonar" aria-label="Ping sonar" title="Ping sonar"><span class="action-glyph">◎</span><span id="sonarButtonLabel">PING</span></button>
-              <button id="mobileInteract" class="use-action" aria-label="Hold to salvage or dock while moving" title="Hold to salvage or dock while moving"><span class="action-glyph">✦</span><span>USE</span></button>
-              <button id="mobileSilent" aria-label="Toggle quiet running" title="Toggle quiet running"><span class="action-glyph">◌</span><span>SILENT</span></button>
-              <button id="mobileRepair" aria-label="Repair hull" title="Repair hull"><span class="action-glyph">✚</span><span>REPAIR</span></button>
-              <button id="mobileLights" class="wide" aria-label="Toggle lights" title="Toggle lights"><span class="action-glyph">☀</span><span id="lightsLabel">LIGHTS ON</span></button>
-              <button id="mobileMine" class="mine-action" aria-label="Deploy sea mine" title="Deploy sea mine"><span class="action-glyph" aria-hidden="true">✹</span><span id="mobileMineLabel">MINES</span></button>
-              <button id="mobileBoost" class="boost-toggle" aria-label="Hold to boost" title="Hold for a power-consuming speed boost"><span aria-hidden="true">⇈</span> <span id="mobileBoostLabel">BOOST 100%</span></button>
+              <span class="joystick-caption" aria-hidden="true">ANALOGUE HELM</span>
             </div>
           </div>
+          <div class="desktop-keybinds" aria-label="Keyboard and mouse controls">
+            <span class="key-hint"><kbd>MOUSE</kbd><span class="key-or">/</span><kbd>WASD</kbd><span>PILOT</span></span>
+            <span class="key-hint"><kbd>E</kbd><span>USE</span></span>
+            <span class="key-hint"><kbd>SPACE</kbd><span>BOOST</span></span>
+            <span class="key-hint"><kbd>Q</kbd><span>SONAR</span></span>
+            <span class="key-hint"><kbd>F</kbd><span>MINE</span></span>
+            <span class="key-hint"><kbd>R</kbd><span>REPAIR</span></span>
+            <span class="key-hint"><kbd>L</kbd><span>LIGHTS</span></span>
+            <span class="key-hint"><kbd>SHIFT</kbd><span>SILENT</span></span>
+            <span class="key-hint"><kbd>ESC</kbd><span>PAUSE</span></span>
+          </div>
         </section>
-        <div class="systems-bar">
-          <div class="system"><div class="system-head"><span>HULL INTEGRITY</span><strong id="hullValue">100%</strong></div><div class="gauge"><div id="hullBar" class="gauge-fill hull"></div></div></div>
-          <div class="system"><div class="system-head"><span>OXYGEN</span><strong id="oxygenValue">100%</strong></div><div class="gauge"><div id="oxygenBar" class="gauge-fill oxygen"></div></div></div>
-          <div class="system"><div class="system-head"><span>BATTERY</span><strong id="batteryValue">100%</strong></div><div class="gauge"><div id="batteryBar" class="gauge-fill battery"></div></div></div>
-          <div class="system"><div class="system-head"><span>ENGINE NOISE</span><strong id="noiseValue">0%</strong></div><div class="gauge"><div id="noiseBar" class="gauge-fill noise"></div></div></div>
-        </div>
-        <div class="bottom-hint"><span>HOLD MOUSE / WASD <b>PILOT</b></span><span>SPACE <b>BOOST</b></span><span>F <b>MINE</b></span><span>Q <b>SONAR</b></span><span>E <b>INTERACT / DOCK</b></span><span>SHIFT <b>QUIET RUN</b></span><span>R <b>REPAIR</b></span><span>L <b>LIGHTS</b></span></div>
       </div>
       <aside class="sidebar">
         <div class="section-tag">OPERATIONS CONSOLE <span class="tag-live">● LIVE</span></div>
@@ -87,7 +95,7 @@
         <button id="dockBtn" class="dock-btn" disabled>◈ RETURN TO STATION TO UPGRADE</button>
       </aside>
     </main>
-    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.7.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
+    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.8.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
   </div>
   <div class="overlay" id="menuOverlay"><div class="menu-card"><div class="menu-kicker">TRANSMISSION // 0001</div><div class="menu-icon">⌁</div><h1>THE ABYSS<br><span>BELOW</span></h1><p>Something went silent beneath the continental shelf. Six recorders remain, scattered as deep as 1,500 metres. Your oxygen is finite. Your vessel is not invincible. The deeper you go, the more the darkness notices you.</p><div class="menu-feature-list"><span>◈ PROCEDURAL TRENCH</span><span>◈ SURVIVAL SYSTEMS</span><span>◈ MINES &amp; PREDATORS</span><span>◈ UPGRADABLE SUB</span></div><button id="startBtn" class="primary-btn">BEGIN EXPEDITION <span>→</span></button><button id="newGameBtn" class="menu-secondary-btn">✦ NEW GAME</button><p id="menuProgress" class="menu-progress" aria-live="polite"></p><button id="instructionsBtn" class="text-btn">VIEW PILOT BRIEFING</button><button id="installBtn" class="install-btn hidden">⬇ INSTALL ON PHONE</button><div class="menu-bottom">NEREID EXPLORATION PROGRAM · CLASSIFIED</div></div></div>
   <div class="overlay pause-overlay hidden" id="pauseOverlay" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
@@ -105,6 +113,6 @@
     </div>
   </div>
   <div class="overlay hidden" id="modalOverlay"><div class="dialog-card"><div class="dialog-top"><div id="modalKicker" class="menu-kicker">FIELD BRIEFING</div><button id="modalClose" class="close-btn">✕</button></div><h2 id="modalTitle">PILOT BRIEFING</h2><div id="modalBody"></div><div id="modalFooter"></div></div></div>
-  <script src="game.js?v=0.7.0" defer></script>
+  <script src="game.js?v=0.8.0" defer></script>
 </body>
 </html>
