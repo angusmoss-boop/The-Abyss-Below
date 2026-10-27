@@ -1,0 +1,3 @@
+PASS actual light/medium/full touch drags produce increasing speed/noise; release coasts to rest; Shift no longer slows; passive insulation remains effective
+PASS flashlight telemetry switch at five sizes, paused-safe operation, saved state across reload, no steering/ammo leakage, L key retained
+PASS old saved silent state is removed without losing the fitted noise-reduction upgrade

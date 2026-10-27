@@ -1,0 +1,3 @@
+PASS triangle weapon positions, four graduated bottom buttons, 44px minimum targets, larger centred icons, no visible labels, pass-through gaps and real unlock transitions at four sizes
+PASS actual v0.17.1 saves in all three slots preserve resources, regeneration state, active dive, stock, achievements and all credit/crystal prices
+PASS pause: .38s gameplay fade, no abrupt stops or context suspension, 40s stereo theme, quiet loop seam; background fades to zero before suspend; rapid resume cancels pending suspension; no duplicate music; independent sound preview and mute
