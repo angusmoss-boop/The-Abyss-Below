@@ -1,0 +1,97 @@
+{
+  "version": "0.9.0",
+  "name": "Beyond the Beam",
+  "base_version": "0.8.0",
+  "save_key": "the-abyss-below-v01",
+  "population_save_key": "the-abyss-below-field-v1",
+  "runtime_sha256": {
+    "game.js": "f41a231334cbbb8be33c0701403ae3eb92357d019f69e1376475c53b225729c2",
+    "styles.css": "1870aa2f46df96f3f70951550aef1a94aeccad0496e26659561856a26d87f09e",
+    "index.html": "1123f1bad7ae4230436a7f856c6421190604bd607897f32bfe2eec5c3406a36e",
+    "service-worker.js": "cb7024d7dca22fa5be58954b6b50e44ee59878eb31cfcbc4d25c2638a0e34fc8",
+    "manifest.webmanifest": "02ae4faeec5656f3d0067f32396e1fb87058c75ad7cfe4fc5982964d236083e4"
+  },
+  "update_files": [
+    "CHANGELOG.md",
+    "GAME_DESIGN.md",
+    "README.md",
+    "RELEASE-v0.9.0.json",
+    "VERIFICATION-v0.9.0.md",
+    "game.js",
+    "index.html",
+    "service-worker.js",
+    "tests/smoke_test.py",
+    "tests/v050_depth_lighting_test.py",
+    "tests/v050_pwa_cache_test.py",
+    "tests/v060_mechanics_test.py",
+    "tests/v060_service_worker_test.mjs",
+    "tests/v070_mines_test.py",
+    "tests/v090_exploration_test.py",
+    "tests/v090_previews.py"
+  ],
+  "balance": {
+    "mobile_zoom": 0.7,
+    "desktop_zoom": 1,
+    "width_multiplier": 3,
+    "flashlight_marks": {
+      "length_world_units": [
+        260,
+        360,
+        480,
+        620
+      ],
+      "half_angle_radians": [
+        0.29,
+        0.38,
+        0.48,
+        0.6
+      ],
+      "power_per_second": [
+        0.04,
+        0.055,
+        0.075,
+        0.1
+      ],
+      "incremental_prices": [
+        0,
+        75,
+        150,
+        300
+      ]
+    },
+    "predators": {
+      "drifter": 138,
+      "stalker": 33,
+      "reaper": 15
+    },
+    "ordinary_loot": {
+      "scrap": 180,
+      "crystal": 24,
+      "supply_cache": 30
+    }
+  },
+  "verification": {
+    "chromium_browser_suites_passed": 11,
+    "browser_suites": [
+      "smoke_test.py",
+      "joystick_pwa_test.py",
+      "mobile_ui_v022_test.py",
+      "v022_behaviour_test.py",
+      "v030_deep_trench_test.py",
+      "v040_menu_visual_test.py",
+      "v050_depth_lighting_test.py",
+      "v060_mechanics_test.py",
+      "v070_mines_test.py",
+      "v080_cockpit_test.py",
+      "v090_exploration_test.py"
+    ],
+    "generated_world_seeds_tested": 12,
+    "touch_cockpit_viewports": 11,
+    "desktop_cockpit_viewports": 5,
+    "mock_worker_lifecycle": "passed",
+    "real_offline_integration": "blocked: ERR_BLOCKED_BY_ADMINISTRATOR",
+    "real_phone_hardware": "not tested",
+    "full_campaign_balance": "not playtested end-to-end"
+  },
+  "deployment": "Not pushed automatically. Replace changed files in the existing repository root."
+}

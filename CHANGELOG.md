@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.9.0 · Beyond the Beam (27 October 2026)
+
+- Set touch-only world zoom to 0.70, exposing about 43% more distance on each axis and 2.04x the area. Kept PC zoom at 1.00 and preserved the CSS sizes/layout of HUD, joystick and circular actions. Updated world/screen transformations, darkness coverage, rotation/focus anchors and sonar viewport range.
+- Added the EXPLORATION FLASHLIGHT dock tree. Mk I comes fitted; Mk II/III/IV cost 75/150/300 CR. Beam lengths are 26/36/48/62 m, full angles about 33/44/55/69 degrees. Real visibility and the darkness mask use each upgraded cone. Lamp draw is a slow 2.4/3.3/4.5/6.0 power/minute before battery efficiency.
+- Tripled trench width at every depth, rock placement candidates and predator populations. Three protected lateral routes and safe wreck clearances remain. Counts are now 138 drifters, 33 stalkers and 15 reapers; speed, health, damage and depth floors are unchanged.
+- Reduced ordinary loot to 180 scrap and 24 crystals, plus 30 caches. Crystals appear below 180 m and no longer occur as guaranteed wreck pairs. Eight early scraps and two at each wreck support initial progression.
+- Moved population replenishment to physical docking, once per dock visit. Terrain stays fixed; banking recorders keeps them removed. Damaged/dead predators and depleted ordinary loot persist through time, menus, relaunch and reload using a separate compact local save. Active vessel/cargo/mines are still not reload-persistent. Dock cycles clear deployed mines and sonar echoes.
+- Added safe migration for the lamp mark, field-save validation, new-game dual-save reset, new exploration regression tests and updated previous tests for the intentional changed counts/camera. Updated versioned shell/cache URLs to v0.9.0.
+- Test results and hardware/economy limitations are documented in VERIFICATION-v0.9.0.md.
+
 ## v0.8.0 · Glass Cockpit (27 October 2026)
 
 - Rebuilt all eight mobile gameplay actions as circular controls: largest USE, next-largest BOOST and six smaller action buttons. Kept all actions bottom left; moved CRUISE from the joystick to the left-hand bank. Only the redesigned analogue helm remains on the right.
@@ -93,6 +103,16 @@
 - Preserved save key and game balance.
 
 # Changelog
+
+## v0.9.0 · Beyond the Beam (27 October 2026)
+
+- Set touch-only world zoom to 0.70, exposing about 43% more distance on each axis and 2.04x the area. Kept PC zoom at 1.00 and preserved the CSS sizes/layout of HUD, joystick and circular actions. Updated world/screen transformations, darkness coverage, rotation/focus anchors and sonar viewport range.
+- Added the EXPLORATION FLASHLIGHT dock tree. Mk I comes fitted; Mk II/III/IV cost 75/150/300 CR. Beam lengths are 26/36/48/62 m, full angles about 33/44/55/69 degrees. Real visibility and the darkness mask use each upgraded cone. Lamp draw is a slow 2.4/3.3/4.5/6.0 power/minute before battery efficiency.
+- Tripled trench width at every depth, rock placement candidates and predator populations. Three protected lateral routes and safe wreck clearances remain. Counts are now 138 drifters, 33 stalkers and 15 reapers; speed, health, damage and depth floors are unchanged.
+- Reduced ordinary loot to 180 scrap and 24 crystals, plus 30 caches. Crystals appear below 180 m and no longer occur as guaranteed wreck pairs. Eight early scraps and two at each wreck support initial progression.
+- Moved population replenishment to physical docking, once per dock visit. Terrain stays fixed; banking recorders keeps them removed. Damaged/dead predators and depleted ordinary loot persist through time, menus, relaunch and reload using a separate compact local save. Active vessel/cargo/mines are still not reload-persistent. Dock cycles clear deployed mines and sonar echoes.
+- Added safe migration for the lamp mark, field-save validation, new-game dual-save reset, new exploration regression tests and updated previous tests for the intentional changed counts/camera. Updated versioned shell/cache URLs to v0.9.0.
+- Test results and hardware/economy limitations are documented in VERIFICATION-v0.9.0.md.
 
 ## v0.2.0 · Mobile helm & fullscreen installation
 

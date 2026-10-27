@@ -1,7 +1,7 @@
 /* Offline-ready static expedition shell. Bump cache name on every game build. */
-const CACHE = 'abyss-below-shell-v0.8.0';
+const CACHE = 'abyss-below-shell-v0.9.0';
 const SHELL = [
-  './', './index.html', './styles.css?v=0.8.0', './game.js?v=0.8.0', './manifest.webmanifest?v=0.8.0',
+  './', './index.html', './styles.css?v=0.9.0', './game.js?v=0.9.0', './manifest.webmanifest?v=0.9.0',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png'
 ];
 self.addEventListener('install', event => {
