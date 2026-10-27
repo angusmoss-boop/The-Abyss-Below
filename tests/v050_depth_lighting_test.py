@@ -122,7 +122,7 @@ def run():
             return max;
         }''')
         assert patch > 35, patch
-        # Sonar remains an instrument, not an all-round headlamp.
+        # v0.6: sonar echoes are an intentional temporary instrument overlay above darkness.
         page.evaluate('AbyssDiagnostics.lightingFixture({depth:1000,freeze:false,lights:false})')
         page.keyboard.press('q')
         page.wait_for_timeout(180)
@@ -137,11 +137,11 @@ def run():
             let max=0;for(let i=0;i<p.length;i+=4)max=Math.max(max,p[i],p[i+1],p[i+2]);
             return max;
         }''')
-        assert dark == 0
+        assert dark > 0, "v0.6 sonar echoes must now be visible through blackout"
         assert page.evaluate('AbyssDiagnostics.state().secured') == 2
         assert not errors, errors
         context.close()
-        print('PASS: distant illuminated salvage renders; predator/recorder glow and sonar cannot bypass blackout; save retained')
+        print('PASS: distant illuminated salvage renders; predator/recorder glow stays masked; intentional sonar echoes render; save retained')
 
         for width, height, dpr in ((390,844,2),(844,390,2),(360,780,1),(413,823,1.25)):
             context, page, errors = launch(browser, width, height, True, dpr)
