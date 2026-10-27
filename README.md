@@ -1,18 +1,20 @@
 # The Abyss Below
 
-## v0.17.0: Salvage & Supply
+## v0.17.1: Quiet Command
 
-A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. Three independent local campaigns, slowly renewing salvage, automatic scrap collection, finite crystals, paid dock ammunition and a rebalanced credit economy. Existing weapons, wildlife, sound and red damage feedback remain.
+A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. This patch adds compact icon-only mobile controls, a vertical weapon column, smoother pause/background audio transitions and an original chilled pause theme. The existing five-level game, three local campaign slots, weapons and v0.17 economy are unchanged.
+
+See [QUIET-COMMAND-v0.17.1.md](QUIET-COMMAND-v0.17.1.md) and [VERIFICATION-v0.17.1.md](VERIFICATION-v0.17.1.md).
 
 ## Install or update
 
-For an existing v0.16.0 site, bank cargo and quit the old dive as a precaution, extract the update ZIP, and replace the matching files at the repository root. Publish these files together:
+For an existing v0.17.0 site, bank cargo and quit the old dive as a precaution, extract the update ZIP, and replace the matching files at the repository root. Publish these files together:
 
 `index.html`, `styles.css`, **`campaign-slots.js`**, `audio.js`, `game.js`, `version-sync.js`, `service-worker.js`, `manifest.webmanifest`, `version.json`.
 
-Keep the existing icons. Do not upload the ZIP itself or create an extra nested directory. Use the complete ZIP for a new installation. The package does not deploy automatically. Reopen the same site online and check for **v0.17.0 / Salvage & Supply**. CHECK AGAIN compares the deployed checksums, runtime build markers and controlling service worker. Local/offline/unverified status must not be interpreted as a successful hosted upgrade.
+Keep the existing icons. Do not upload the ZIP itself or create an extra nested directory. Use the complete ZIP for a new installation. The package does not deploy automatically. Reopen the same site online and check for **v0.17.1 / Quiet Command**. CHECK AGAIN compares the deployed checksums, runtime build markers and controlling service worker. Local/offline/unverified status must not be interpreted as a successful hosted upgrade.
 
-Keep the same origin and browser profile. Do not clear site data, uninstall or start a new campaign to update. Existing slots retain their saves, finite crystal depletion, owned rounds and upgrades. Only original scrap sites gain saved recovery timers.
+Keep the same origin and browser profile. Do not clear site data, uninstall or start a new campaign to update. Existing slots retain their saves, finite crystal depletion, owned rounds and upgrades. The existing original-scrap recovery timers are preserved.
 
 ## Campaigns
 
@@ -37,23 +39,23 @@ Hold **Z / RAIL** for rapid direct shots; tap **X / TORP** for a forward explosi
 
 Mines: use **F / MINE**, capacity 2 / 4 / 6 / 8, ammunition purchased separately at 18 credits per round. No automatic mine refills.
 
-Mobile has a larger RAIL / TORP / MINE row above smaller utilities, followed by USE and BOOST. Drag open water to anchor the invisible-until-used joystick. Desktop shows a keybind strip; mouse-held piloting and WASD/arrows remain.
+Mobile has an icon-only vertical railgun / torpedo / mine column beside the smaller utility circles, with Use and Boost below the utilities. Use is the largest circle, then Boost. Unfitted equipment is grey; thin rings preserve charge, cooldown and ammunition feedback. Exact stocks are in telemetry. Drag open water to anchor the invisible-until-used joystick. Desktop shows a keybind strip; mouse-held piloting and WASD/arrows remain.
 
 ## Full controls
 
 | Action | Desktop | Mobile |
 |---|---|---|
 | Pilot | Hold left mouse; or WASD/arrows | Drag open water |
-| Crystals / recorders / supplies / dock | E | USE |
+| Crystals / recorders / supplies / dock | E | Large collection icon |
 | Scrap recovery | Automatic within magnet range | Automatic within magnet range |
-| Boost | Hold Space, requires magnetic thrusters | Hold BOOST |
-| Railgun | Hold Z | Hold RAIL |
-| Torpedo | X, one round per press | Tap TORP |
-| Mine | F | MINE |
-| Sonar | Q | SONAR |
-| Repair | R | REPAIR |
-| Lights | L | LIGHTS |
-| Quiet running | Shift | SILENT |
+| Boost | Hold Space, requires magnetic thrusters | Hold chevrons |
+| Railgun | Hold Z | Hold upper weapon icon |
+| Torpedo | X, one round per press | Tap middle weapon icon |
+| Mine | F | Lower weapon icon |
+| Sonar | Q | Sonar icon |
+| Repair | R | Wrench icon |
+| Lights | L | Lamp icon |
+| Quiet running | Shift | Muted speaker icon |
 | Map | M | Map icon |
 | Pause | Escape | Pause icon |
 
@@ -75,7 +77,7 @@ The compact HUD, survey map, beam upgrades, pressure limits, 20 achievements, th
 
 ## Sound
 
-Original menu and dock music loops have a separate MUSIC slider. Music starts after interaction, stops for diving/pause, and all sound suspends when hidden. EFFECTS, AMBIENCE and mute remain independent. Audio is generated locally; no external music files or permissions are required.
+Original menu, dock and chilled pause music loops share a separate MUSIC slider. Music starts after interaction. Pausing fades game effects and ambience into the pause theme; resuming fades back to the dive. Background audio fades to zero before suspension, with cancellation-safe rapid resume. EFFECTS, AMBIENCE and mute remain independent. Audio is generated locally; no external music files or permissions are required.
 
 ## Development and verification
 
@@ -90,10 +92,10 @@ The version manifest includes the exact runtime checksums. Inconsistent deployed
 Current test runner:
 
 ```sh
-python tests/run_v0170.py --jobs 3
-python tests/v0170_live_pwa_test.py
+python tests/run_v0171.py --jobs 3
+python tests/v0171_live_pwa_test.py
 ```
 
-Tests require Python, Playwright, Node and Chromium. Current evidence is in `verification/v0.17.0/`, not historical reports. Some UI tests use synthetic credits/gear or deterministic scene fixtures, never real user saves. The live PWA test is separate and must not be described as passing because mocked worker tests passed.
+Tests require Python, Playwright, Node and Chromium. Current evidence is in `verification/v0.17.1/`, not historical reports. Some UI tests use synthetic credits/gear or deterministic scene fixtures, never real user saves. The live PWA test is separate and must not be described as passing because mocked worker tests passed.
 
-Read **SALVAGE-SUPPLY-v0.17.0.md** for full rules and prices, **VERIFICATION-v0.17.0.md** for tested/untested boundaries. Historical guides remain for earlier versions. This is a web/PWA source package, not a signed Android app bundle or Play Store-ready release.
+Read **SALVAGE-SUPPLY-v0.17.0.md** for full rules and prices, **VERIFICATION-v0.17.1.md** for current tested/untested boundaries. Historical guides remain for earlier versions. This is a web/PWA source package, not a signed Android app bundle or Play Store-ready release.

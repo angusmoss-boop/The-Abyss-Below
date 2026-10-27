@@ -1,3 +1,12 @@
+# v0.17.1 / Quiet Command
+
+- Compact icon-only bottom-left controls; vertical railgun/torpedo/mine stack, larger SVG icons, retained charge/cooldown/ammunition rings and accessible labels.
+- Grey unfitted weapons and boost with no LOCKED captions; purchased equipment updates immediately. Use remains largest, then Boost. Floating steering and PC references unchanged.
+- Separate gameplay and preview audio buses; 0.38-second pause release instead of abrupt voice stop/context suspension.
+- Original 40-second, 48 BPM pause theme, independent MUSIC volume, warm pads and sparse melody. Existing menu/dock themes retained.
+- Background output reaches zero before suspension; rapid input cancels stale suspension. Delayed voices initialise silently for safe cancelled attacks.
+- No changes to campaign schema, currencies, resources, prices, weapons or ammunition economy.
+
 # v0.17.0 / Salvage & Supply
 
 - Original scrap sites recover after five active dive minutes, paced to one deposit every 45 seconds per visited level, never in view; queues persist independently in each campaign.
