@@ -1,0 +1,112 @@
+{
+  "version": "0.13.0",
+  "name": "Harbour Rising",
+  "build_id": "0.13.0-harbour-rising-1",
+  "base_version": "0.12.0",
+  "date": "2026-10-27",
+  "runtime_manifest": "version.json",
+  "campaign_schema": 3,
+  "canonical_save_key": "the-abyss-below-campaign-v3",
+  "levels": [
+    {
+      "id": "sunbreak-shelf",
+      "floor_m": 300,
+      "recorders": 2,
+      "scrap_units": 84,
+      "crystal_units": 36
+    },
+    {
+      "id": "glassbone-rift",
+      "floor_m": 600,
+      "recorders": 3,
+      "scrap_units": 130,
+      "crystal_units": 70
+    },
+    {
+      "id": "drowned-gardens",
+      "floor_m": 1000,
+      "recorders": 4,
+      "scrap_units": 170,
+      "crystal_units": 100
+    },
+    {
+      "id": "midnight-cathedral",
+      "floor_m": 1400,
+      "recorders": 5,
+      "scrap_units": 210,
+      "crystal_units": 130
+    },
+    {
+      "id": "calypso-abyss",
+      "floor_m": 1800,
+      "recorders": 6,
+      "scrap_units": 250,
+      "crystal_units": 160
+    }
+  ],
+  "economy": {
+    "fixed_scrap_credit_value": 15192,
+    "fixed_crystals": 496,
+    "upgrade_tree_credits": 12223,
+    "upgrade_tree_crystals": 432,
+    "paid_steps": 51,
+    "ammo_round_credits": 12,
+    "hull_iii": {
+      "credits": 297,
+      "crystals": 10
+    },
+    "crystal_guard": "Every required hull gate counts only stocks reachable before that pressure upgrade"
+  },
+  "achievements": {
+    "count": 20,
+    "entry_points": [
+      "main menu",
+      "pause menu"
+    ],
+    "scope": "campaign",
+    "currency_rewards": false
+  },
+  "migration": {
+    "v012": "Same schema and save key; all five fields and profile progress retained; no currency or upgrade changes",
+    "airborne_cargo": "Journal and recovery-pod positions clamped underwater to preserve finite cargo after interruption",
+    "legacy": "Earlier v0.11 migration still supported",
+    "active_dive": "Not resumed after reload"
+  },
+  "verification": {
+    "suites": 12,
+    "status": "PASS",
+    "completed_at": "2026-10-27T17:25:23.263948+00:00",
+    "report": "VERIFICATION-v0.13.0.md",
+    "physical_phone": "NOT_TESTED",
+    "live_pwa": "BLOCKED_BY_ADMINISTRATOR",
+    "full_playthrough": "NOT_TESTED"
+  },
+  "live_pwa": {
+    "status": "BLOCKED_OR_FAILED",
+    "error": "Page.goto: net::ERR_BLOCKED_BY_ADMINISTRATOR at http://127.0.0.1:46397/\nCall log:\n  - navigating to \"http://127.0.0.1:46397/\", waiting until \"load\"\n",
+    "limitations": [
+      "No successful live offline integration claim"
+    ]
+  },
+  "harbour": {
+    "x": 600,
+    "y": 160,
+    "safe_radius": 260,
+    "predator_exclusion_radius": 330,
+    "station_collision": "Background landmark, central berth open"
+  },
+  "surface": {
+    "water_y": 70,
+    "breach_speed": 100,
+    "gravity": 260,
+    "air_drag": 0.18,
+    "air_thrust": false,
+    "splash_damage": false
+  },
+  "upgrade_tiles": {
+    "columns": 3,
+    "labels": "name, fitted mark, current/maximum",
+    "maxed": "gold outline and MAX text",
+    "purchase_flow": "existing details modal"
+  }
+}
