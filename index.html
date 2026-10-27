@@ -1,17 +1,18 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <meta name="abyss-build" content="0.10.0-persistent-depths-1">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#06121d" />
   <meta name="description" content="The Abyss Below: a submarine exploration and survival game." />
   <title>The Abyss Below | Deepwater Expedition</title>
-  <link rel="manifest" href="manifest.webmanifest?v=0.9.0" />
+  <link rel="manifest" href="manifest.webmanifest?v=0.10.0" />
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="stylesheet" href="styles.css?v=0.9.0" />
+  <link rel="stylesheet" href="styles.css?v=0.10.0" />
 </head>
 <body>
   <div class="app">
@@ -65,14 +66,8 @@
                 <button id="mobileBoost" class="action-circle boost-action" aria-label="Hold to boost" title="Hold to boost while steering"><svg class="action-ring" viewBox="0 0 100 100" aria-hidden="true"><circle class="ring-track" cx="50" cy="50" r="46"/><circle class="ring-value" cx="50" cy="50" r="46" pathLength="100"/></svg><svg class="action-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 13 6-6 6 6M6 19l6-6 6 6M9 5l3-3 3 3"/></svg><span class="action-name">BOOST</span><span id="mobileBoostLabel" class="action-state">100%</span></button>
               </div>
             </div>
-            <div class="joystick-stack">
-              <div id="mobileJoystick" class="mobile-joystick" role="group" aria-label="Analogue submarine joystick. Drag to steer in any direction." tabindex="0">
-                <div class="joystick-guides" aria-hidden="true"><span class="joystick-n">⌃</span><span class="joystick-e">›</span><span class="joystick-s">⌄</span><span class="joystick-w">‹</span></div>
-                <div id="joystickThumb" class="joystick-thumb" aria-hidden="true"><span></span></div>
-              </div>
-              <span class="joystick-caption" aria-hidden="true">ANALOGUE HELM</span>
-            </div>
           </div>
+          <div id="mobileJoystick" class="floating-joystick" aria-hidden="true"><div id="joystickThumb" class="floating-thumb"></div></div>
           <div class="desktop-keybinds" aria-label="Keyboard and mouse controls">
             <span class="key-hint"><kbd>MOUSE</kbd><span class="key-or">/</span><kbd>WASD</kbd><span>PILOT</span></span>
             <span class="key-hint"><kbd>E</kbd><span>USE</span></span>
@@ -95,9 +90,14 @@
         <button id="dockBtn" class="dock-btn" disabled>◈ RETURN TO STATION TO UPGRADE</button>
       </aside>
     </main>
-    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.9.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
+    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.10.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
   </div>
-  <div class="overlay" id="menuOverlay"><div class="menu-card"><div class="menu-kicker">TRANSMISSION // 0001</div><div class="menu-icon">⌁</div><h1>THE ABYSS<br><span>BELOW</span></h1><p>Something went silent beneath the continental shelf. Six recorders remain, scattered as deep as 1,500 metres. Your oxygen is finite. Your vessel is not invincible. The deeper you go, the more the darkness notices you.</p><div class="menu-feature-list"><span>◈ PROCEDURAL TRENCH</span><span>◈ SURVIVAL SYSTEMS</span><span>◈ MINES &amp; PREDATORS</span><span>◈ UPGRADABLE SUB</span></div><button id="startBtn" class="primary-btn">BEGIN EXPEDITION <span>→</span></button><button id="newGameBtn" class="menu-secondary-btn">✦ NEW GAME</button><p id="menuProgress" class="menu-progress" aria-live="polite"></p><button id="instructionsBtn" class="text-btn">VIEW PILOT BRIEFING</button><button id="installBtn" class="install-btn hidden">⬇ INSTALL ON PHONE</button><div class="menu-bottom">NEREID EXPLORATION PROGRAM · CLASSIFIED</div></div></div>
+  <div class="overlay" id="menuOverlay"><div class="menu-card"><div class="menu-kicker">TRANSMISSION // 0001</div><div class="menu-icon">⌁</div><h1>THE ABYSS<br><span>BELOW</span></h1><section class="version-card" aria-label="Game build and update status">
+  <div class="version-heading"><strong id="menuVersion">v0.10.0</strong><span id="menuVersionName">Persistent Depths</span></div>
+  <div class="sync-indicator" id="syncIndicator" data-state="checking"><span class="sync-dot" aria-hidden="true"></span><strong id="syncStatus" role="status">CHECKING DEPLOYMENT</strong></div>
+  <p id="syncDetail">Checking the latest published build. Your campaign stays on this device.</p>
+  <div class="version-actions"><button id="checkVersionBtn" class="version-btn">CHECK AGAIN</button><button id="updateVersionBtn" class="version-btn hidden">LOAD UPDATE</button></div>
+</section><p>Something went silent beneath the continental shelf. Six recorders remain, scattered as deep as 1,500 metres. Your oxygen is finite. Your vessel is not invincible. The deeper you go, the more the darkness notices you.</p><div class="menu-feature-list"><span>◈ PROCEDURAL TRENCH</span><span>◈ SURVIVAL SYSTEMS</span><span>◈ MINES &amp; PREDATORS</span><span>◈ UPGRADABLE SUB</span></div><button id="startBtn" class="primary-btn">BEGIN EXPEDITION <span>→</span></button><button id="newGameBtn" class="menu-secondary-btn">✦ NEW GAME</button><p id="menuProgress" class="menu-progress" aria-live="polite"></p><p id="saveStatus" class="save-status"></p><button id="instructionsBtn" class="text-btn">VIEW PILOT BRIEFING</button><button id="installBtn" class="install-btn hidden">⬇ INSTALL ON PHONE</button><div class="menu-bottom">NEREID EXPLORATION PROGRAM · CLASSIFIED</div></div></div>
   <div class="overlay pause-overlay hidden" id="pauseOverlay" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
     <div class="pause-card">
       <div class="pause-emblem" aria-hidden="true">Ⅱ</div>
@@ -113,6 +113,7 @@
     </div>
   </div>
   <div class="overlay hidden" id="modalOverlay"><div class="dialog-card"><div class="dialog-top"><div id="modalKicker" class="menu-kicker">FIELD BRIEFING</div><button id="modalClose" class="close-btn">✕</button></div><h2 id="modalTitle">PILOT BRIEFING</h2><div id="modalBody"></div><div id="modalFooter"></div></div></div>
-  <script src="game.js?v=0.9.0" defer></script>
+  <script src="game.js?v=0.10.0" defer></script>
+  <script src="version-sync.js?v=0.10.0" defer></script>
 </body>
 </html>

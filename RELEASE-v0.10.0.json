@@ -1,0 +1,115 @@
+{
+  "version": "0.10.0",
+  "name": "Persistent Depths",
+  "build_id": "0.10.0-persistent-depths-1",
+  "base_version": "0.9.0",
+  "date": "2026-10-27",
+  "new_runtime_files": [
+    "version-sync.js",
+    "version.json"
+  ],
+  "runtime_manifest": "version.json",
+  "campaign_schema": 2,
+  "canonical_save_key": "the-abyss-below-campaign-v2",
+  "migration": {
+    "banked_profile": "retained",
+    "v09_resource_coordinates": "retained exactly",
+    "collected_resources": "remain depleted",
+    "ammo": "starts empty when migrating v0.9",
+    "active_dive": "not persisted"
+  },
+  "balance": {
+    "mine_round_credits": 12,
+    "rack_capacities": [
+      2,
+      4,
+      6,
+      8
+    ],
+    "thruster_boost_seconds": [
+      3,
+      4,
+      5,
+      6
+    ],
+    "thruster_boost_multipliers": [
+      1.45,
+      1.6,
+      1.75,
+      1.85
+    ],
+    "map_credit_value": 8640,
+    "full_upgrade_tree_credits": 9354,
+    "predator_scrap_rewards": [
+      2,
+      4,
+      8
+    ]
+  },
+  "verification": {
+    "build": "0.10.0-persistent-depths-1",
+    "completed_at": "2026-10-27T10:33:00.702645+00:00",
+    "results": [
+      {
+        "suite": "release",
+        "command": [
+          "/opt/pyvenv/bin/python",
+          "tests/v0100_release_test.py"
+        ],
+        "exit_code": 0,
+        "status": "PASS"
+      },
+      {
+        "suite": "campaign",
+        "command": [
+          "/opt/pyvenv/bin/python",
+          "tests/v0100_campaign_test.py"
+        ],
+        "exit_code": 0,
+        "status": "PASS"
+      },
+      {
+        "suite": "touch",
+        "command": [
+          "/opt/pyvenv/bin/python",
+          "tests/v0100_touch_test.py"
+        ],
+        "exit_code": 0,
+        "status": "PASS"
+      },
+      {
+        "suite": "regression",
+        "command": [
+          "/opt/pyvenv/bin/python",
+          "tests/v0100_regression_test.py"
+        ],
+        "exit_code": 0,
+        "status": "PASS"
+      },
+      {
+        "suite": "sync",
+        "command": [
+          "node",
+          "tests/v0100_sync_test.mjs"
+        ],
+        "exit_code": 0,
+        "status": "PASS"
+      },
+      {
+        "suite": "worker",
+        "command": [
+          "node",
+          "tests/v0100_worker_test.mjs"
+        ],
+        "exit_code": 0,
+        "status": "PASS"
+      }
+    ],
+    "limitations": [
+      "Browser renderer exercised via in-memory production assets, not a hosted navigation.",
+      "Network/service-worker boundaries are mocked; no live offline/update integration claim.",
+      "Physical Android/iOS and full-campaign balance playthrough not tested."
+    ]
+  },
+  "hosted_deployment_performed": false
+}

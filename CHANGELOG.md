@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.10.0: Persistent Depths (2026-10-27)
+
+- Title menu now shows running version, release name and a truthful deployment/cache verification state. Added no-store release manifest fetches, runtime checksums, build markers, offline/unverified/partial-update states, manual checks and guarded update loading.
+- Added `version-sync.js` and `version.json`. Service-worker installation verifies a complete shell before activation; failed partial deployments keep the earlier shell. Verification requests never use cached latest-version data.
+- Replaced the permanent touch pad with a low-contrast floating joystick anchored at the first open-water touch, visible only during a drag. Action buttons keep independent multi-touch handling. PC controls and camera scales unchanged.
+- Standard drive no longer boosts. Thruster Mk I-IV unlock and improve boost with 3/4/5/6 seconds of charge and 1.45/1.60/1.75/1.85 speed multipliers. Battery efficiency/recharge upgrades retained.
+- Added atomic, level-keyed campaign storage and previous-record backup. Migrates v0.9 exact resource coordinates, depletion and banked upgrades without creating new resources on return to dock.
+- Scrap/crystal positions and depletion are permanent within the campaign. Existing 180 scrap deposits and 24 crystal clusters yield two units each, worth 8,640 credits on an untouched map versus 9,354 for all upgrades.
+- Destroyed Drifters/Stalkers/Reapers drop 2/4/8 recoverable scrap; drops persist until collected. Only docking banks their value. Enemies and supply caches remain dock-refreshed, providing renewable salvage income.
+- Added separate dock Ammunition tab: 12-credit rounds, single purchase or affordable refill. No free ammunition on launch, docking, rescue, reload or any upgrade. Capacity remains 2/4/6/8; extra slots are empty. Migrated v0.9 rounds begin empty because they were not persistent owned inventory.
+- Added current browser tests, real-renderer previews, mocked deployment/worker boundary tests and an explicit verification report. Live hosted PWA behaviour and physical devices remain untested.
+
 ## v0.9.0 · Beyond the Beam (27 October 2026)
 
 - Set touch-only world zoom to 0.70, exposing about 43% more distance on each axis and 2.04x the area. Kept PC zoom at 1.00 and preserved the CSS sizes/layout of HUD, joystick and circular actions. Updated world/screen transformations, darkness coverage, rotation/focus anchors and sonar viewport range.
