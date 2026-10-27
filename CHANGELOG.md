@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.4.0 · NEREID Refit and Navigation (27 October 2026)
+
+- Replaced the basic submarine silhouette with a sleek rendered MK-II: gradient ceramic-titanium hull, curved glass canopy, swept stern fins, twin propellers, navigation lights, metallic ribs and animated bubble wake. Original hull physics retained.
+- Added large, accessible pause overlay with RESUME, MENU and QUIT. MENU suspends a dive for tab-lifetime continuation; QUIT explicitly confirms discarding unbanked cargo while preserving permanent banked progress.
+- Added prominent NEW GAME option on the initial menu with a second confirmation step that clears saved rank, depth records, credits, upgrades and recorders.
+- Main menu now distinguishes BEGIN EXPEDITION from CONTINUE EXPEDITION and displays a saved-progress summary. Main menu exit available after vessel loss.
+- Improved pause/dialog state transitions, keyboard Esc behaviour and mobile responsive overlays.
+- Raised asset URL versions and service worker cache to v0.4.0 for normal PWA updates without reinstalling.
+- Added browser integration tests for pause/resume, suspend/continue, quit cancel/confirm, and saved-game wipe/cancel.
+
+
 ## v0.3.0 · Into the Deep (27 October 2026)
 
 - Six recorders at depths 75, 260, 470, 725, 1,100 and 1,500 m; victory requires delivering all six.

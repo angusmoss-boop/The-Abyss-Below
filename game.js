@@ -72,6 +72,7 @@
   let cruiseEnabled=false;
   let installPrompt=null;
   let running = false, paused = false, showingDock = false;
+  let dialogReturnPause = false;
   let camera = {x:0,y:0};
   let viewport = {w:700,h:550,dpr:1};
   let previousTime=0, clock=0, uiTimer=0, lastZone='';
@@ -214,8 +215,8 @@
     addEvent('Dive systems initialised.');
     addEvent('Six recorders lost as deep as 1,500 m.');
     running=true;paused=false;showingDock=false;
-    $('menuOverlay').classList.add('hidden');$('modalOverlay').classList.add('hidden');
-    $('pauseBtn').textContent='Ⅱ PAUSE';
+    $('menuOverlay').classList.add('hidden');$('modalOverlay').classList.add('hidden');$('pauseOverlay').classList.add('hidden');
+    syncPauseButtons();
     announce('EXPEDITION ACTIVE · LOCATE THE RECORDERS');
     updateUI();
   }
@@ -279,14 +280,21 @@
     if(saved.secured.length===RECORDERS_TOTAL&&!victoryShown){openVictory();return;}
     showDock();
   }
+  function syncPauseButtons(){
+    $('pauseBtn').textContent=paused?'▶ RESUME':'Ⅱ PAUSE';
+    $('focusPauseBtn').textContent=paused?'▶':'Ⅱ';
+    $('focusPauseBtn').setAttribute('aria-label',paused?'Resume game':'Pause game');
+  }
   function openDialog(kicker,title,body,footer='') {
-    paused=true;useHeld=false;usePointerId=null;resetJoystick(true);
+    dialogReturnPause=paused;
+    paused=true;useHeld=false;usePointerId=null;resetJoystick(true);keys.clear();
     $('modalKicker').textContent=kicker;$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modalFooter').innerHTML=footer;
-    $('modalOverlay').classList.remove('hidden');$('pauseBtn').textContent='▶ RESUME';
+    $('modalOverlay').classList.remove('hidden');syncPauseButtons();
   }
   function closeDialog() {
     $('modalOverlay').classList.add('hidden');showingDock=false;
-    if(running) {paused=false;$('pauseBtn').textContent='Ⅱ PAUSE';}
+    paused=running?dialogReturnPause:false;
+    syncPauseButtons();updateUI();
   }
   function showDock() {
     showingDock=true;
@@ -314,13 +322,14 @@
   }
   function openVictory() {
     victoryShown=true;
-    openDialog('TRANSMISSION // RESTORED','THE SIGNAL RETURNS',`<div class="briefing"><p>All six flight recorders are secured. The <em>Calypso</em> went silent because it found something beneath the final trench, something that appeared to be listening.</p><p><strong>MISSION COMPLETE.</strong> Your expedition rank is now ${levelOf(saved.xp)}. You may keep exploring, collect salvage and upgrade the NEREID, or begin a fresh game using your existing progress.</p><p>The story continues in future builds of The Abyss Below.</p></div>`, '<div class="dialog-actions"><button class="alt-btn" id="victoryClose">CONTINUE EXPLORING</button></div>');
+    openDialog('TRANSMISSION // RESTORED','THE SIGNAL RETURNS',`<div class="briefing"><p>All six flight recorders are secured. The <em>Calypso</em> went silent because it found something beneath the final trench, something that appeared to be listening.</p><p><strong>MISSION COMPLETE.</strong> Your expedition rank is now ${levelOf(saved.xp)}. You may keep exploring, collect salvage and upgrade the NEREID, or start a brand-new expedition from the main menu.</p><p>The story continues in future builds of The Abyss Below.</p></div>`, '<div class="dialog-actions"><button class="alt-btn" id="victoryClose">CONTINUE EXPLORING</button></div>');
     $('victoryClose').addEventListener('click',closeDialog);
   }
   function defeat(reason) {
     running=false;paused=true;player.hull=Math.max(0,player.hull);persist();
-    openDialog('SIGNAL LOST // EMERGENCY','VESSEL LOST',`<div class="briefing"><p>${reason}</p><p>Unbanked cargo and undelivered recorders were lost. Your secured recorders, credits, upgrades and expedition rank remain saved.</p><p><strong>Best depth:</strong> ${saved.bestDepth} m · <strong>Secured recorders:</strong> ${saved.secured.length}/${RECORDERS_TOTAL}</p></div>`, '<div class="dialog-actions"><button class="primary-btn" id="retryBtn">LAUNCH RESCUE VESSEL <span>→</span></button></div>');
+    openDialog('SIGNAL LOST // EMERGENCY','VESSEL LOST',`<div class="briefing"><p>${reason}</p><p>Unbanked cargo and undelivered recorders were lost. Your secured recorders, credits, upgrades and expedition rank remain saved.</p><p><strong>Best depth:</strong> ${saved.bestDepth} m · <strong>Secured recorders:</strong> ${saved.secured.length}/${RECORDERS_TOTAL}</p></div>`, '<div class="dialog-actions"><button class="primary-btn" id="retryBtn">LAUNCH RESCUE VESSEL <span>→</span></button><button class="alt-btn" id="defeatMenuBtn">MAIN MENU</button></div>');
     $('retryBtn').addEventListener('click',newDive);
+    $('defeatMenuBtn').addEventListener('click',()=>returnToMenu(false));
   }
   function takeDamage(amount,reason='Hull breach') {
     if(player.damageCooldown>0)return;
@@ -558,20 +567,84 @@
     ctx.beginPath();ctx.moveTo(16,-7);ctx.lineTo(len,-88);ctx.arc(len,0,88,-Math.PI/2,Math.PI/2);ctx.lineTo(16,7);ctx.closePath();ctx.fillStyle=beam;ctx.fill();
     ctx.restore();
   }
+  // NEREID MK-II concept: compact hydrodynamic ceramic hull, titanium spine,
+  // observation canopy, swept fins and a softly animated dual-jet stern.
+  // Visual footprint preserves the original 3-circle collision capsule.
   function drawPlayer(){
     ctx.save();ctx.translate(player.x,player.y);ctx.rotate(player.facing);
-    if(player.damageCooldown>0&&Math.sin(clock*30)>0){ctx.globalAlpha=.62;}
-    ctx.shadowColor='#6ee7de';ctx.shadowBlur=16;
-    ctx.fillStyle='#244b5b';ctx.strokeStyle='#9ceee0';ctx.lineWidth=2;
-    ctx.beginPath();ctx.ellipse(0,0,27,12,0,0,TAU);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
-    ctx.fillStyle='#8ed3d6';ctx.beginPath();ctx.moveTo(27,0);ctx.lineTo(14,-10);ctx.lineTo(14,10);ctx.closePath();ctx.fill();
-    ctx.fillStyle='#367d86';ctx.fillRect(-4,-17,10,10);ctx.strokeStyle='#a1e6d6';ctx.strokeRect(-4,-17,10,10);
-    ctx.fillStyle='#8cdbf0';ctx.fillRect(7,-4,8,8);ctx.fillStyle='#4ad7d1';ctx.fillRect(-16,-3,6,6);
-    ctx.strokeStyle='#86f3e8';ctx.beginPath();ctx.moveTo(-30,-8);ctx.lineTo(-30,8);ctx.stroke();
-    if(Math.hypot(player.vx,player.vy)>10){ctx.strokeStyle='#5dbdda88';ctx.beginPath();ctx.arc(-35,0,6+Math.sin(clock*22)*2,-Math.PI/2,Math.PI/2);ctx.stroke();}
+    const thrust=clamp(Math.hypot(player.vx,player.vy)/145,0,1);
+    if(player.damageCooldown>0&&Math.sin(clock*30)>0)ctx.globalAlpha=.67;
+
+    // Propulsion shimmer and micro-bubble trail live behind the moving hull.
+    if(thrust>.09){
+      const engineGlow=ctx.createRadialGradient(-30,0,1,-37,0,23+thrust*9);
+      engineGlow.addColorStop(0,'rgba(155,248,250,.5)');engineGlow.addColorStop(1,'rgba(57,195,229,0)');
+      ctx.fillStyle=engineGlow;ctx.beginPath();ctx.ellipse(-34,0,24+thrust*11,13,0,0,TAU);ctx.fill();
+      for(let i=0;i<3;i++){
+        const drift=(clock*(24+thrust*30)+i*12)%38;
+        const by=(i-1)*5+Math.sin(clock*8+i*3)*2;
+        ctx.fillStyle=`rgba(135,232,239,${(.42+thrust*.3)*(1-drift/42)})`;
+        ctx.beginPath();ctx.arc(-33-drift,by,1.1+i*.35,0,TAU);ctx.fill();
+      }
+    }
+
+    // Tail planes, keel and armour silhouette.
+    ctx.fillStyle='#1b4657';ctx.strokeStyle='#69b9c5';ctx.lineWidth=1.15;
+    ctx.beginPath();ctx.moveTo(-23,-6);ctx.lineTo(-32,-18);ctx.lineTo(-21,-12);ctx.lineTo(-12,-7);ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.moveTo(-23,6);ctx.lineTo(-32,18);ctx.lineTo(-21,12);ctx.lineTo(-12,7);ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.fillStyle='#102d3b';ctx.beginPath();ctx.moveTo(-30,-8);ctx.lineTo(-34,-9);ctx.lineTo(-34,9);ctx.lineTo(-30,8);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#ace9e6';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(-34,-10);ctx.lineTo(-34,10);ctx.stroke();
+    // Two thruster vanes rotate in opposite visual phases, independent of game mechanics.
+    for(const yy of [-5.7,5.7]){
+      ctx.save();ctx.translate(-34,yy);ctx.rotate(clock*(thrust>.06?21:2));
+      ctx.strokeStyle=thrust>.1?'#c6fdf2':'#70c9d1';ctx.lineWidth=1.2;
+      ctx.beginPath();ctx.moveTo(-3,0);ctx.lineTo(3,0);ctx.moveTo(0,-3);ctx.lineTo(0,3);ctx.stroke();ctx.restore();
+    }
+
+    const shell=ctx.createLinearGradient(0,-13,0,14);
+    shell.addColorStop(0,'#d2edf0');shell.addColorStop(.15,'#6dabb8');shell.addColorStop(.43,'#285e70');shell.addColorStop(.72,'#15394e');shell.addColorStop(1,'#092837');
+    ctx.shadowColor='#0e070f';ctx.shadowBlur=10;ctx.shadowOffsetY=3;
+    ctx.beginPath();ctx.moveTo(-26,-7);
+    ctx.bezierCurveTo(-17,-12,10,-13,20,-8);
+    ctx.quadraticCurveTo(30,-4,31,0);
+    ctx.quadraticCurveTo(30,4,20,8);
+    ctx.bezierCurveTo(10,13,-17,12,-26,7);
+    ctx.quadraticCurveTo(-30,0,-26,-7);ctx.closePath();
+    ctx.fillStyle=shell;ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+    ctx.strokeStyle='#b2f2ec';ctx.lineWidth=1.5;ctx.stroke();
+
+    // Sleek top ridge, segmented pressure ribs, and glowing cyan equipment rail.
+    ctx.strokeStyle='#edffff';ctx.lineWidth=.75;ctx.globalAlpha*=.5;
+    ctx.beginPath();ctx.moveTo(-19,-8);ctx.bezierCurveTo(-4,-11,16,-8,23,-5);ctx.stroke();
+    ctx.globalAlpha=player.damageCooldown>0&&Math.sin(clock*30)>0?.67:1;
+    ctx.strokeStyle='#4fa4b1';ctx.lineWidth=1.1;
+    for(const xx of [-14,-9,0]){
+      ctx.beginPath();ctx.moveTo(xx,-9.8);ctx.lineTo(xx+1,-5.5);
+      ctx.moveTo(xx,9.8);ctx.lineTo(xx+1,5.5);ctx.stroke();
+    }
+    ctx.strokeStyle='#69f4dc';ctx.lineWidth=1.25;
+    ctx.beginPath();ctx.moveTo(-11,8.5);ctx.quadraticCurveTo(7,10,22,5.5);ctx.stroke();
+    ctx.fillStyle='#9bffdc';ctx.beginPath();ctx.arc(-17,6,1.6,0,TAU);ctx.fill();
+
+    // Dark smoked wraparound canopy with a curved specular reflection.
+    const glass=ctx.createLinearGradient(2,-8,18,7);
+    glass.addColorStop(0,'#d6fff5');glass.addColorStop(.24,'#4ccce3');glass.addColorStop(.57,'#176780');glass.addColorStop(1,'#072a40');
+    ctx.beginPath();ctx.moveTo(4,-6);ctx.quadraticCurveTo(16,-8,21,-1);
+    ctx.quadraticCurveTo(22,4,15,6);ctx.lineTo(4,5);
+    ctx.quadraticCurveTo(0,0,4,-6);ctx.closePath();
+    ctx.fillStyle=glass;ctx.fill();ctx.strokeStyle='#a1ffff';ctx.lineWidth=1;ctx.stroke();
+    ctx.strokeStyle='#e0ffffaa';ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(5,-5);ctx.quadraticCurveTo(11,-6,17,-3);ctx.stroke();
+    // Navigation lights and angled twin bow lamps.
+    ctx.fillStyle='#ffc67c';ctx.shadowColor='#ffb866';ctx.shadowBlur=7;
+    for(const yy of [-5.1,5.1]){ctx.beginPath();ctx.arc(25,yy,1.8,0,TAU);ctx.fill();}
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#d6fcf5';ctx.beginPath();ctx.moveTo(28,-2.2);ctx.lineTo(32,-1);ctx.lineTo(32,1);ctx.lineTo(28,2.2);ctx.closePath();ctx.fill();
+    // Subtle bow chevron and mission stripes.
+    ctx.strokeStyle='#eece89';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-4,-4);ctx.lineTo(-1,0);ctx.lineTo(-4,4);ctx.stroke();
     ctx.restore();
-    // Ship identification and intermittent sonar targeting brackets.
-    ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.fillStyle='#9ce9e2aa';ctx.fillText('NEREID',player.x,player.y-26);
+    ctx.save();ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.fillStyle='#a8f3e9cf';
+    ctx.shadowColor='#0a1c2b';ctx.shadowBlur=4;
+    ctx.fillText('NEREID // MK-II',player.x,player.y-28);ctx.restore();
   }
   function drawWave(w){
     const t=(clock-w.birth)/1.2,r=w.radius*t;
@@ -670,24 +743,74 @@
       document.exitFullscreen().catch(()=>{});
     }
   }
-  function togglePause(){if(!running)return;if(!$('modalOverlay').classList.contains('hidden')){closeDialog();return;}paused=!paused;if(paused){useHeld=false;usePointerId=null;resetJoystick(true);}$('pauseBtn').textContent=paused?'▶ RESUME':'Ⅱ PAUSE';if(paused)announce('GAME PAUSED',3600);else $('notification').classList.add('hidden');}
+  function resumeDive(){
+    if(!running)return;
+    paused=false;keys.clear();resetJoystick(true);
+    $('pauseOverlay').classList.add('hidden');$('menuOverlay').classList.add('hidden');
+    $('notification').classList.add('hidden');syncPauseButtons();updateUI();
+  }
+  function updateMainMenu(){
+    $('startBtn').innerHTML=running?'CONTINUE EXPEDITION <span>→</span>':'BEGIN EXPEDITION <span>→</span>';
+    const existing=saved.bestDepth>0||saved.credits>0||saved.xp>0||saved.secured.length>0||Object.values(saved.upgrades).some(v=>v>0);
+    $('menuProgress').textContent=running?'DIVE SUSPENDED · '+depthOf(player.y)+'m · '+player.cargo.recorders.length+' RECORDER(S) ABOARD':
+      existing?'BANKED PROGRESS · '+saved.secured.length+'/'+RECORDERS_TOTAL+' RECORDERS · BEST '+saved.bestDepth+'m':'NEW CAPTAIN · NO SAVED PROGRESS';
+  }
+  function returnToMenu(preserveDive){
+    keys.clear();useHeld=false;usePointerId=null;resetJoystick(true);
+    $('modalOverlay').classList.add('hidden');$('pauseOverlay').classList.add('hidden');
+    if(!preserveDive) {running=false;paused=false;persist();}
+    else paused=true;
+    syncPauseButtons();updateMainMenu();
+    $('menuOverlay').classList.remove('hidden');updateUI();
+  }
+  function showPause(){
+    if(!running||!$('menuOverlay').classList.contains('hidden'))return;
+    paused=true;keys.clear();useHeld=false;usePointerId=null;resetJoystick(true);
+    $('pauseStats').textContent='DEPTH '+depthOf(player.y)+'m  ·  HULL '+Math.round(player.hull/maxHull()*100)+'%  ·  RECORDERS '+player.cargo.recorders.length+' ABOARD';
+    $('pauseOverlay').classList.remove('hidden');
+    $('notification').classList.add('hidden');syncPauseButtons();updateUI();
+  }
+  function togglePause(){
+    if(!$('modalOverlay').classList.contains('hidden')){closeDialog();return;}
+    if(!running||!$('menuOverlay').classList.contains('hidden'))return;
+    if(paused)resumeDive();else showPause();
+  }
+  function quitDiveConfirmation(){
+    openDialog('MISSION CONTROL // ABORT','ABANDON THIS DIVE?',
+      '<p class="dialog-info">Unbanked salvage and undelivered recorders will be lost. Secured recorders, upgrades, credits, rank and best depth will remain saved.</p>',
+      '<div class="dialog-actions"><button id="cancelQuitBtn" class="alt-btn">GO BACK</button><button id="confirmQuitBtn" class="danger-btn">QUIT DIVE</button></div>');
+    $('cancelQuitBtn').addEventListener('click',closeDialog);
+    $('confirmQuitBtn').addEventListener('click',()=>returnToMenu(false));
+  }
+  function newGameConfirmation(){
+    openDialog('EXPEDITION CONTROL // RESET','START A NEW GAME?',
+      '<p class="dialog-info">This begins again from zero. <strong>All saved credits, upgrades, secured recorders, rank and best-depth records will be erased.</strong> Any current unbanked cargo will also be lost.</p>',
+      '<div class="dialog-actions"><button id="cancelNewGameBtn" class="alt-btn">KEEP PROGRESS</button><button id="confirmNewGameBtn" class="danger-btn">START FRESH</button></div>');
+    $('cancelNewGameBtn').addEventListener('click',closeDialog);
+    $('confirmNewGameBtn').addEventListener('click',()=>{saved=defaults();persist();launchDive();});
+  }
+  function launchDive(){newDive();enterMobileCockpit();}
+  function enterMobileCockpit(){
+    if(window.matchMedia('(max-width: 850px)').matches){
+      setFocusMode(true);
+      if(document.fullscreenEnabled&&!document.fullscreenElement&&document.documentElement.requestFullscreen){
+        document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{});
+      }
+    }
+  }
   function briefing(){
-    const body=`<div class="briefing"><p>You pilot the <strong>NEREID MK-I</strong>, a salvage submarine. Retrieve six <strong>golden flight recorders</strong> at approximately 75, 260, 470, 725, 1,100 and 1,500 m from wrecks in the trench and dock at the surface to save them.</p><ul><li><kbd>W A S D</kbd> or <kbd>↑ ← ↓ →</kbd> moves the sub. On phones, <strong>drag the joystick</strong> in any direction. Tilt slightly for gentle thrust or to the edge for full speed. Toggle <strong>CRUISE</strong> to keep going after letting go. Turn cruise off to stop thrust.</li><li><kbd>Q</kbd> uses active sonar to reveal salvage and threats. Sonar <strong>consumes energy and attracts predators</strong>.</li><li><kbd>E</kbd> recovers nearby scrap, crystals, oxygen caches and recorders. At the station, it banks cargo and opens upgrades.</li><li><kbd>Shift</kbd> moves slowly and quietly to avoid attracting predators. On phones, toggle <strong>SILENT</strong>.</li><li><kbd>R</kbd> repairs 30 hull for two scrap. <kbd>L</kbd> toggles external lamps to conserve energy.</li><li><kbd>Esc</kbd> pauses. Always return to the surface to bank progress, refill oxygen, recharge and upgrade the ship.</li></ul><p><strong>Warning:</strong> Diving beneath your depth rating inflicts rapidly increasing pressure damage. Your hull starts at 130 m and can be upgraded seven times by 200 m to reach 1,530 m. Common predators hunt everywhere; purple abyss stalkers spawn only below 400 m, see and hear farther, swim faster, and bite harder. Ship upgrades let you venture deeper. Damage or suffocation costs unbanked cargo, not your permanent progress.</p></div>`;
+    const body=`<div class="briefing"><p>You pilot the <strong>NEREID MK-II</strong>, a salvage submarine. Retrieve six <strong>golden flight recorders</strong> at approximately 75, 260, 470, 725, 1,100 and 1,500 m from wrecks in the trench and dock at the surface to save them.</p><ul><li><kbd>W A S D</kbd> or <kbd>↑ ← ↓ →</kbd> moves the sub. On phones, <strong>drag the joystick</strong> in any direction. Tilt slightly for gentle thrust or to the edge for full speed. Toggle <strong>CRUISE</strong> to keep going after letting go. Turn cruise off to stop thrust.</li><li><kbd>Q</kbd> uses active sonar to reveal salvage and threats. Sonar <strong>consumes energy and attracts predators</strong>.</li><li><kbd>E</kbd> recovers nearby scrap, crystals, oxygen caches and recorders. At the station, it banks cargo and opens upgrades.</li><li><kbd>Shift</kbd> moves slowly and quietly to avoid attracting predators. On phones, toggle <strong>SILENT</strong>.</li><li><kbd>R</kbd> repairs 30 hull for two scrap. <kbd>L</kbd> toggles external lamps to conserve energy.</li><li><kbd>Esc</kbd> pauses. Always return to the surface to bank progress, refill oxygen, recharge and upgrade the ship.</li></ul><p><strong>Warning:</strong> Diving beneath your depth rating inflicts rapidly increasing pressure damage. Your hull starts at 130 m and can be upgraded seven times by 200 m to reach 1,530 m. Common predators hunt everywhere; purple abyss stalkers spawn only below 400 m, see and hear farther, swim faster, and bite harder. Ship upgrades let you venture deeper. Damage or suffocation costs unbanked cargo, not your permanent progress.</p></div>`;
     openDialog('OPERATIONS MANUAL // NEREID','PILOT BRIEFING',body,'<div class="dialog-actions"><button id="briefDone" class="alt-btn">UNDERSTOOD</button></div>');
     $('briefDone').addEventListener('click',closeDialog);
   }
   function bind() {
     $('startBtn').addEventListener('click',()=>{
-      newDive();
-      // Phones start in the uncluttered cockpit by default; the EXIT button restores the console.
-      if(window.matchMedia('(max-width: 850px)').matches){
-        setFocusMode(true);
-        // A direct tap can grant native fullscreen on Android Chrome; CSS fullscreen is fallback.
-        if(document.fullscreenEnabled && !document.fullscreenElement && document.documentElement.requestFullscreen){
-          document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{});
-        }
-      }
+      if(running)resumeDive();else launchDive();
     });
+    $('newGameBtn').addEventListener('click',newGameConfirmation);
+    $('resumeBtn').addEventListener('click',resumeDive);
+    $('pauseMenuBtn').addEventListener('click',()=>returnToMenu(true));
+    $('quitBtn').addEventListener('click',quitDiveConfirmation);
     $('focusToggleBtn').addEventListener('click',toggleFocusMode);
     $('focusHelpBtn').addEventListener('click',briefing);
     $('focusPauseBtn').addEventListener('click',togglePause);
@@ -811,9 +934,9 @@
   bind();resize();createWorld();
   player={x:600,y:160,vx:0,vy:0,facing:0,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),lights:true,noise:0,cargo:{scrap:0,crystal:0,recorders:[]},scanCooldown:0,damageCooldown:0};
   camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
-  updateUI();requestAnimationFrame(frame);
+  updateMainMenu();updateUI();requestAnimationFrame(frame);
   // Tiny inspection hook for automated smoke tests.
-  window.AbyssDiagnostics={state:()=>({recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,paused,depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier!=='apex').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
+  window.AbyssDiagnostics={state:()=>({recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier!=='apex').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
   if(location.search.includes('testmode=1')||window.ABYSS_TEST_MODE===true){
     window.AbyssDiagnostics.fixture=({x=600,y=700,rocks=[],predators=[],items=[]}={})=>{
       player.x=x;player.y=y;player.vx=0;player.vy=0;player.facing=0;player.noise=0;

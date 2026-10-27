@@ -1,7 +1,7 @@
 # THE ABYSS BELOW
-### Deepwater Expedition · v0.3.0
+### Deepwater Expedition · v0.4.0
 
-A single-player submarine survival game built with vanilla HTML, CSS and JavaScript. The v0.2 update adds analogue touchscreen steering and installable fullscreen/offline Progressive Web App (PWA) support.
+A single-player submarine survival game built with vanilla HTML, CSS and JavaScript. The game adds analogue touchscreen steering and installable fullscreen/offline Progressive Web App (PWA) support.
 
 ## Play and controls
 
@@ -17,8 +17,19 @@ After publishing to HTTPS GitHub Pages, open the site in your mobile browser.
 | Repair (2 scrap) | R | REPAIR |
 | Lamps | L | LIGHTS ON/OFF |
 | Pause | Esc | PAUSE |
+| Resume | Esc again or RESUME | RESUME |
+| Suspend to main menu | Pause → MENU | Pause → MENU |
+| Abandon current dive | Pause → QUIT → confirm | Pause → QUIT → confirm |
+| Reset all progress | Main menu → NEW GAME → confirm | Main menu → NEW GAME → confirm |
 
 Joystick releases to neutral. Your submarine slows rather than snapping to a stop because it has momentum. Cruise mode holds your **last steering vector**, not collision avoidance. It turns off automatically if you pause, switch apps, open a dialog or start a new dive. Watch your oxygen, battery and rocks!
+
+## New in v0.4.0 · Sleek vessel and proper menus
+
+- Rebuilt the **NEREID MK-II** in-game submarine sprite with a streamlined metallic hull, curved blue canopy, swept fins, navigation lights, cyan accents, dual rear propellers, and thrust bubble effects. Existing collision boundaries and handling are unchanged.
+- **Pause → RESUME** continues the same run; **Pause → MENU** returns to the title and suspends the current dive within the open tab; **Pause → QUIT** asks for confirmation and abandons unbanked cargo (but keeps all banked permanent progress).
+- **Main menu → NEW GAME** asks for confirmation, then permanently resets credits, XP, recorders, upgrades and depth records. **BEGIN EXPEDITION** starts a fresh dive with existing banked progress when no dive is suspended; **CONTINUE EXPEDITION** resumes an in-memory paused dive.
+- In-progress dives are **not** saved across page refreshes/app closure. Use the surface station to bank valuables before leaving the app.
 
 ## Install on Android (fullscreen, no address bar)
 
@@ -33,7 +44,7 @@ The new service worker caches core files for offline play after installation and
 
 **First publish:** create a public repo, upload root files, go to **Settings → Pages**, choose **Deploy from a branch**, `main`, `/ (root)` and Save.
 
-**Updating v0.1:** replace the three existing root game files, add `manifest.webmanifest`, `service-worker.js`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` to the same root, and commit. If using Android's GitHub web interface, enable Desktop site when GitHub hides the upload controls. You do not need to create another repository. GitHub may take a short while to refresh the site after committing. Open your published site and check the footer says **v0.3.0**.
+**Updating v0.1:** replace the three existing root game files, add `manifest.webmanifest`, `service-worker.js`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` to the same root, and commit. If using Android's GitHub web interface, enable Desktop site when GitHub hides the upload controls. You do not need to create another repository. GitHub may take a short while to refresh the site after committing. Open your published site and check the footer says **v0.4.0**.
 
 ## Mission and gameplay
 

@@ -12,7 +12,7 @@
 6. **Bank and improve:** dock to convert salvage to credits and XP, refill systems and purchase upgrades.
 7. **Push deeper:** reach the next wreck using better equipment and smarter tactics.
 
-## Current play areas · v0.3.0
+## Current play areas · v0.4.0
 
 | Zone | Depth range (approx) | Milestone |
 |---|---:|---|
@@ -80,3 +80,11 @@ Each reinforced-hull upgrade adds 200 m to the rating and 28 maximum hull HP. Se
 - Add a reproducible test for every critical mechanic or reported regression.
 - Prioritise feel and readability before adding more features.
 - No paid dependencies or backend until a clear game feature needs them.
+
+## v0.4.0 · UX navigation rules
+
+- Pause is a blocking overlay. All motion/actions freeze until Resume.
+- MENU hides the cockpit and suspends the in-memory run; CONTINUE EXPEDITION restores it. It does not persist across app closure.
+- QUIT requires an explicit confirmation. Unbanked inventory is discarded; banked credits, upgrades, recorder progress and rank remain.
+- NEW GAME requires explicit confirmation and overwrites local saved progress with fresh defaults, then launches from surface.
+- Vessel sprite refit is visual only; engine, world collision capsule and upgrade balance are unchanged.

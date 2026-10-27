@@ -137,3 +137,33 @@ body.game-focus .vignette-label{display:none}
 .fragment-icons{flex-wrap:wrap;gap:5px 12px;}
 .fragment-icons span{min-width:19px;text-align:center;}
 @media(max-width:620px){.fragment-icons{gap:3px 10px}.fragment-icons span{font-size:23px}}
+
+/* v0.4.0: clearly differentiated pause, title and destructive-action controls. */
+#menuOverlay{z-index:24}
+#pauseOverlay{z-index:25;background:#010d17ce;backdrop-filter:blur(12px)}
+#modalOverlay{z-index:30}
+.menu-secondary-btn,.menu-danger-btn,.danger-btn{letter-spacing:1.3px;min-height:44px;border-radius:5px;cursor:pointer}
+.menu-secondary-btn{display:block;width:100%;max-width:395px;margin:10px auto 0;padding:12px 17px;text-align:center;color:#b7f4eb;background:#103746;border:1px solid #448798;font-size:12px;font-weight:850}
+.menu-secondary-btn:hover{background:#1a5663}
+.menu-danger-btn,.danger-btn{color:#ffbdb1;background:#331b28;border:1px solid #9c5b63;padding:12px 17px;font-size:12px;font-weight:850}
+.menu-danger-btn:hover,.danger-btn:hover{background:#552430}
+.menu-progress{margin:10px auto 0!important;font-size:10px!important;letter-spacing:1.1px;line-height:1.5!important;color:#7299a7!important}
+.pause-card{position:relative;width:min(100%,420px);max-height:min(94dvh,710px);overflow:auto;border-radius:14px;border:1px solid #427c8f;background:radial-gradient(circle at top,#145164 0%,#0b2a3b 39%,#061624 96%);box-shadow:0 26px 100px #000d,0 0 60px #1ac3c420;padding:32px 28px 22px;text-align:center}
+.pause-card:before{content:'';position:absolute;inset:10px;pointer-events:none;border:1px solid #7cd7d61d;border-radius:10px}
+.pause-emblem{display:flex;justify-content:center;align-items:center;margin:0 auto 17px;width:58px;height:58px;border-radius:50%;border:1px solid #7ce9dc80;background:#0d4251;color:#d4fff5;box-shadow:0 0 30px #52efdd35;font-size:27px;font-weight:900}
+.pause-card h2{font-size:clamp(24px,5vw,32px);color:#f1ffff;letter-spacing:2px;margin:11px 0 7px}
+.pause-card>p{font:750 11px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.4px;color:#a1d3d9;line-height:1.8;margin:0 0 25px}
+.pause-actions .primary-btn{min-height:55px}
+.pause-actions .menu-secondary-btn,.pause-actions .menu-danger-btn{min-height:50px;width:100%;margin:11px auto 0;max-width:395px}
+.pause-note{color:#6e9bab;font-size:10px;line-height:1.6;letter-spacing:.3px;margin-top:23px}
+.menu-card{max-height:94dvh;overflow:auto}
+@media(max-width:540px){
+  .menu-card,.pause-card{padding:23px 20px 18px}
+  .menu-icon{font-size:58px;margin:9px 0 0}
+  .menu-card h1{margin-bottom:13px;letter-spacing:3px}
+  .menu-card>p{line-height:1.55;margin-bottom:10px}
+  .menu-feature-list{margin:13px auto;gap:8px}
+  .pause-card>p{margin-bottom:15px}
+  .pause-note{margin-top:15px}
+}
+@media(max-height:600px){.menu-card,.pause-card{max-height:94dvh}.pause-emblem{width:37px;height:37px;font-size:21px;margin-bottom:6px}.pause-card h2{margin:6px 0}}
