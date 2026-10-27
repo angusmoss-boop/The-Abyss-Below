@@ -170,3 +170,46 @@ body.game-focus .vignette-label{display:none}
 
 /* v0.5.0: action buttons must stay tappable above the old 620px breakpoint. */
 .mobile-actions button{pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+
+/* v0.6.0: screen-space mouse helm, boost capacitor and timed sonar controls. */
+#gameCanvas{outline:none;cursor:crosshair;touch-action:none}
+#gameCanvas.mouse-piloting{cursor:none}
+.viewport-topline,.vignette-label,.notification,.interaction-prompt,.focus-hud{pointer-events:none}
+.boost-meter{position:absolute;left:17px;top:44px;z-index:3;width:144px;pointer-events:none;padding:7px 9px 6px;border:1px solid #507d8a70;border-radius:5px;background:#041923c9;color:#a7e6e6;font:700 9px ui-monospace,monospace;letter-spacing:.6px}
+.boost-meter-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.boost-meter kbd{font-size:8px;color:#759fab;margin-left:4px}
+.boost-track{height:4px;background:#24414b;margin:5px 0 4px;overflow:hidden;border-radius:2px}
+#boostBar{height:100%;width:100%;background:#7ce5ee;transition:width .12s linear}
+#boostStatus{font-size:8px;color:#8badbb}
+.boost-active{border-color:#abf3ff;box-shadow:0 0 16px #6adff329}
+.boost-active #boostStatus{color:#c7ffff}
+.boost-locked #boostBar{background:#dda675}
+.boost-toggle{pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;width:122px;min-height:34px;padding:5px 7px;border:1px solid #8be1e6a1;border-radius:10px;background:#133c52e6;color:#d1f9ff;font:800 10px ui-monospace,monospace;letter-spacing:.3px}
+.boost-toggle.held,.boost-toggle.active{background:#276a7de6;border-color:#d4ffff;box-shadow:0 0 17px #7deeff66}
+.boost-toggle.cooling,#mobileSonar.cooling{color:#c7aa81;border-color:#b88c557a}
+body.game-focus .boost-meter{top:calc(69px + env(safe-area-inset-top,0px));left:12px}
+body.game-focus .notification{top:calc(131px + env(safe-area-inset-top,0px))}
+@media(max-width:850px){.boost-meter{width:124px}.boost-meter kbd{display:none}.boost-toggle{min-height:34px}.notification{top:108px}}
+@media(max-width:380px){.boost-toggle{width:112px;font-size:9px}}
+@media(orientation:landscape) and (max-height:510px){
+  body.game-focus .boost-meter{top:66px;width:124px}
+  body.game-focus .boost-toggle{width:100px;min-height:30px;font-size:9px}
+  body.game-focus .joystick-stack{gap:4px}
+  body.game-focus .notification{top:75px;max-width:48%}
+}
+/* Desktop fullscreen keeps the sea clear; keyboard and mouse need no touch pads. */
+@media(hover:hover) and (pointer:fine) and (min-width:851px){body.game-focus .mobile-controls{display:none}}
+
+/* Boost sits with left-hand actions so the right thumb can keep steering. */
+@media(max-width:850px){
+  .mobile-actions{grid-template-rows:62px 42px 42px 34px}
+  .mobile-actions #mobileBoost{grid-column:1/-1;grid-row:4;width:100%;min-height:34px;flex-direction:row;gap:5px;font-size:9px;padding:4px}
+  .interaction-prompt,body.game-focus .interaction-prompt{bottom:222px}
+}
+@media(max-width:380px){.mobile-actions{grid-template-rows:58px 40px 40px 34px}}
+@media(orientation:landscape) and (max-height:510px){
+  body.game-focus .mobile-actions{grid-template-rows:43px 43px 30px}
+  body.game-focus .mobile-actions .use-action{grid-row:1/3}
+  body.game-focus .mobile-actions #mobileBoost{grid-row:3;grid-column:1/-1;width:100%;min-height:30px}
+  body.game-focus .interaction-prompt{bottom:145px}
+}

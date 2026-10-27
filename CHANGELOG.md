@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.6.0 · Silent Echoes (27 October 2026)
+
+- Added desktop hold-left-click/drag piloting. Screen-space mouse targets follow the camera correctly, turn the bow and flashlight, and ease thrust near the cursor. Releasing outside the canvas, cancelling, pausing, opening a dialog or losing focus clears held input. Keyboard and mobile joystick/cruise remain available.
+- Added Space / mobile hold-BOOST propulsion at 1.85x speed. A 100-point capacitor lasts four seconds at full use. Boost additionally draws 7 battery units per second before upgrades, waits 1.5 seconds before recharge, then restores 12.5 charge per second. Empty capacitors lock until full, with release-to-rearm protection. No energy is created by charge recovery.
+- Battery upgrades now reduce boost draw by the existing efficiency multiplier and increase boost recharge speed by 10% per level. Boost is noisy and overrides quiet running. Docking or purchasing an upgrade refills the capacitor.
+- Added compact boost meter, recharge status and a hold button in the left-hand mobile action cluster; sonar buttons now display a cooldown countdown.
+- Replaced instant sonar reveal with an expanding wavefront. The scan reaches all current screen corners, including large desktop views, with additional upgraded range. Contacts reveal on arrival, rather than at launch. Echo outlines include salvage, recorders, supply caches, predators, rocks, wrecks, vents and trench walls.
+- Sonar echoes and the travelling ring are now intentionally drawn above the depth-darkness mask, then fade out. This supersedes the v0.5.0 rule that masked sonar entirely. The world returns to black after echoes expire when lamps are off at 1,000 m or deeper.
+- Separated enemy sonar visibility from its AI alert timer. Sonar still consumes power, can alert reached predators and cannot be spammed during cooldown. Sonar upgrades reduce costs/cooldown and extend echo persistence.
+- Added the crimson tier-3 CRIMSON REAPER: 196 chase speed, 42 damage, 1.15-second attack interval, greater awareness and a finite 610-unit pursuit leash. Only five spawn per trench, versus 11 stalkers and 46 drifters. They spawn deeper than 800 m and cannot enter the upper 800 m, even in pursuit.
+- Moved the submarine nameplate into the instrument layer and added the current hull rating: NEREID // MK-II · LIMIT 1,530m. It remains visible in darkness and turns red when current depth exceeds the rating.
+- Preserved the existing save key, upgrades, six-recorders campaign, depth lighting, pause/menu/New Game flow and polygon collision solver. Added boosted-speed collision, real pointer capture, multi-touch, sonar pixel and tier-3 regression checks.
+- Updated runtime asset URLs and service-worker cache to v0.6.0. Browser gameplay checks and mocked worker lifecycle checks passed. Real offline integration was blocked by the environment, and actual Android installation/performance remains untested.
+
 ## v0.5.0 · The Lightless Deep (27 October 2026)
 
 - Replaced stepped depth colours with continuous ambient attenuation using fractional metres. Ambient light is exactly zero at and below 1,000 m.

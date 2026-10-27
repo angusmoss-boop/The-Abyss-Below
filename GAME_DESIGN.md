@@ -1,101 +1,60 @@
-# THE ABYSS BELOW: GAME DESIGN
+# The Abyss Below: implemented design
 
-**Design promise:** The player is a lone submarine captain pushing deeper into an increasingly hostile trench. Every useful action should have a cost, every dive should reward preparation, and returning safely to the surface should feel like an achievement.
+## Current release: v0.6.0, Silent Echoes
 
-## Core loop
+The core loop is dive, locate salvage and lost recorders, manage oxygen/power/hull, evade predators, return to bank resources and upgrade. Permanent progress is stored locally; active dives are not persisted across a page reload.
 
-1. **Prepare at surface:** choose upgrades and review the target signal.
-2. **Dive:** navigate the rock trench using pilot controls, lamps, sonar and passive radar.
-3. **Make trade-offs:** sonar reveals useful items but consumes battery and can attract predators; moving quietly is slower but safer; dive too deep and the hull takes continuous pressure damage.
-4. **Salvage:** recover scrap, crystals, air caches and story recorders.
-5. **Survive the ascent:** collected salvage and mission recorders are at risk until delivered.
-6. **Bank and improve:** dock to convert salvage to credits and XP, refill systems and purchase upgrades.
-7. **Push deeper:** reach the next wreck using better equipment and smarter tactics.
+## World and progression
 
-## Current play areas · v0.5.0
+The trench extends to 1,800 m, with fixed recorder depths of 75, 260, 470, 725, 1,100 and 1,500 m. Seven sectors change the depth readout. Rocks and salvage vary per dive; protected routes and open wreck lanes reduce blocked-objective risk.
 
-| Zone | Depth range (approx) | Milestone |
-|---|---:|---|
-| The Shallows | 0–179 m | Recorder 1 at 75 m, base hull rating 130 m |
-| Midnight Rift | 180–399 m | Recorder 2 at 260 m (hull MK-I, 330 m rating) |
-| Glassbone Trench | 400–649 m | Purple abyss stalkers appear; recorder 3 at 470 m (MK-II, 530 m) |
-| The Hollow | 650–924 m | Recorder 4 at 725 m (MK-III, 730 m) |
-| Drowned Cathedral | 925–1,209 m | Recorder 5 at 1,100 m (MK-V, 1,130 m) |
-| The Pale Descent | 1,210–1,509 m | Recorder 6 at 1,500 m (MK-VII, 1,530 m) |
-| The Last Dark | 1,510–1,800 m | Optional uncharted trench below the final recorder |
+Hull begins at 100 HP and a 130 m safe depth. Seven upgrades add 28 HP and 200 m each, ending at 296 HP and a 1,530 m limit. Going deeper than the current rating causes escalating continuous pressure damage. The live rating appears alongside the NEREID name above the submarine.
 
-The trench extends to ~1,800 m, while the maximum permanently safe depth is 1,530 m. The lowest region is intentionally high risk. World layout changes on each dive; wreck depths are fixed, salvage positions vary. A lane is preserved by rock placement.
+## Steering, boost and collisions
 
-### Predator tiers
+Desktop mouse steering uses a held left-button screen-space target, transformed with the current camera position each simulation frame. A 12-unit neutral zone and 75-unit throttle ramp avoid jitter near the cursor. Mouse aim controls facing directly, while velocity eases towards the target. Mouse and joystick inputs take priority over keyboard movement; keyboard movement takes priority over cruise. Mouse steering cancels latched cruise.
 
-| Characteristic | Drifter (common) | Abyss stalker (rare) |
-|---|---|---|
-| Colour | Slate blue, red eye | Purple/pink glow and fins |
-| Chase speed | 80 | 134 |
-| Attack damage | 13 | 27 |
-| Chase disengagement distance | 345 world units | 505 world units |
-| Detection | Normal | 1.52× normal sensitivity; longer detection radius |
-| Spawn region | Throughout trench | Strictly below 400 m |
+Boost uses a capacitor separate from ship energy. Constants: speed multiplier 1.85, charge 100, drain 25 per second, recharge delay 1.5 seconds, recharge 12.5 per second, extra energy cost 7 per second. Full depletion locks until 100 charge; held input must also be released before restarting. Charge recovery does not produce battery energy. Battery level b gives a power multiplier of 1/(1+0.12b) and a recharge multiplier of 1+0.10b. Boost overrides silent running and has a minimum target noise of 82, even with quiet-drive upgrades.
 
-Neither creature is meant to be able to pursue the submarine forever. Noise, lights and sonar still matter in both cases.
+The existing three-circle capsule and polygon edge solver remain authoritative. Movement is subdivided into steps no greater than approximately seven units before collision resolution, including boosted movement. Decorative thruster effects do not change the collision footprint.
 
-### Reinforced hull depth ladder
+## Darkness and sonar
 
-Each reinforced-hull upgrade adds 200 m to the rating and 28 maximum hull HP. Seven upgrades produce a 1,530 m rating and 296 maximum HP. Pressure damage grows sharply if depth exceeds this rating, preventing an unupgraded run from trivially skipping to the final recorder. Recover salvage, bank credits and return to the surface for upgrades. Existing saved hull levels are preserved and use the new progression formula automatically.
+Ambient lighting is continuous in fractional depth and exactly zero at and below 1,000 m. A cached, soft-edged cone texture controls lamp scatter and the final darkness mask. No per-frame pixel loops are used.
 
-**Success:** recover all six recorders and deliver them to the surface station.
+Rendering order: world objects and vessel, darkness mask, temporary sonar echoes, then instrument annotations. Sonar never modifies ambient light or permanently unmasks scenery. Without a powered lamp or a current sonar echo, the world remains black below 1,000 m; HUD instruments and the ship nameplate remain visible.
 
-**Failure:** reach zero hull integrity or suffocate. Permanent credits, upgrades, XP and already delivered recorders remain saved; unbanked cargo is lost.
+A ping snapshots its origin and initial contacts. Its radius reaches every corner of the current viewport plus margin and upgraded reach. The front advances at 520 world units per second. Contact crossing considers previous and current distances so moving predators cannot be revealed instantly at launch. Each hit receives its own expiration time. Static outlines, coloured salvage glyphs and tier-labelled creature outlines are used instead of illuminating the whole scene. Wall geometry is sampled into finite-lived outline segments. Enemy reveal timers are distinct from awareness timers.
 
-## Intended next milestones
+Base ping: 12 battery, 5.5-second cooldown, 4.5-second echo persistence. Sonar upgrades: -2 cost, -0.35 seconds cooldown, +0.45 seconds echo life and +55 units nominal reach per level. Cooldown has a floor of the current wave's travel time plus 0.4 seconds.
 
-### Future: Discovery
-- Signal triangulation, discovered map and fog of war.
-- Wreck interiors as short scripted interactions.
-- Additional salvage types, journal entries and four distinct creatures.
-- More responsive touch UI and accessibility options.
+## Predator parameters
 
-**Acceptance:** maps and signals track discoveries, at least 3 unique wreck event outcomes, no game-stopping softlocks.
+| Parameter | Drifter | Abyss stalker | Crimson reaper |
+|---|---:|---:|---:|
+| Tier | 1 | 2 | 3 |
+| World count | 46 | 11 | 5 |
+| Chase speed | 80 | 134 | 196 |
+| Patrol speed | 21 | 31 | 39 |
+| Detection cap | 245 | 370 | 440 |
+| Awareness multiplier | 1 | 1.52 | 1.85 |
+| Pursuit leash | 345 | 505 | 610 |
+| Attack damage | 13 | 27 | 42 |
+| Attack interval, seconds | 1.7 | 1.35 | 1.15 |
+| Attack reach | 35 | 43 | 48 |
 
-### v0.4: Consequences
-- Modular damage to power, sonar, lights and propulsion.
-- Compartment repair tasks and resource-driven emergency decisions.
-- Thermal vents, currents, magnetic anomalies and a pressure-zone system.
-- Stealth upgrades and creature counterplay.
+Stalkers spawn below 400 m. Reapers spawn at homes beginning around 810 m, with only five spread through deeper water. Reaper movement is restricted to at least 800 m so chasing cannot pull them into the upper trench. Every tier loses interest beyond a finite leash. Lights, noise and sonar affect awareness.
 
-**Acceptance:** at least three distinct ways to survive a hostile encounter; upgrades alter survivability in verified tests.
+## Save and interface contracts
 
-### v0.5: Living abyss
-- Region-specific world generation and environmental storytelling.
-- Side objectives, signal anomalies, abandoned installations and meaningful missions.
-- Unlockable ship hulls with different operating profiles.
-- Expanded progression and endgame story.
+Keep the `the-abyss-below-v01` save key. Current fields remain credits, XP, best depth, secured recorder IDs and upgrade levels. Boost, active sonar, enemy positions and current cargo are runtime-only, just like the existing active dive.
 
-**Acceptance:** a complete beginning, middle and ending can be finished without external instructions, with saves surviving upgrades.
+Pause, modal dialogs, title-menu suspension, focus loss and visibility loss clear held helm/boost/use input. While paused, boost charge, cooldowns and other simulation timers do not advance. Resume never synthesises a still-held action. New Game is explicitly confirmed; Quit preserves banked progress but abandons current cargo.
 
-## Development rules
+## Uncommitted future ideas
 
-- Keep the project playable at the end of each version.
-- Preserve previous save compatibility when changing data schema, or clearly document a reset when unavoidable.
-- Add a reproducible test for every critical mechanic or reported regression.
-- Prioritise feel and readability before adding more features.
-- No paid dependencies or backend until a clear game feature needs them.
+Discovered maps, wreck interiors, currents, modular system damage, environmental storytelling and additional mission types remain ideas, not implemented features or promised version numbers.
 
-## v0.4.0 · UX navigation rules
+## Acceptance and remaining uncertainty
 
-- Pause is a blocking overlay. All motion/actions freeze until Resume.
-- MENU hides the cockpit and suspends the in-memory run; CONTINUE EXPEDITION restores it. It does not persist across app closure.
-- QUIT requires an explicit confirmation. Unbanked inventory is discarded; banked credits, upgrades, recorder progress and rank remain.
-- NEW GAME requires explicit confirmation and overwrites local saved progress with fresh defaults, then launches from surface.
-- Vessel sprite refit is visual only; engine, world collision capsule and upgrade balance are unchanged.
-
-## v0.5.0 · Depth and visibility
-
-- Fractional depth: `max(0, (player.y - 120) / 10)` metres.
-- Ambient fraction: `(1 - clamp(depth / 1000, 0, 1)) ** 1.35`. Representative values: surface 100%, 250 m 67.8%, 500 m 39.2%, 750 m 15.4%, 900 m 4.5%, 1,000 m and below 0%.
-- One darkness pass covers all world rendering. The world is fully black with lamps off at 1,000 m or deeper. Instrument overlays remain outside that pass.
-- A powered, directional cone starts 30 world units ahead of the vessel centre, reaches 320 world units further, and uses a 0.40-radian half-angle with feathered edges. The beam rotates with the ship's actual facing, not a screen-fixed direction.
-- The same pre-baked alpha texture shapes the beam and removes darkness. No omnidirectional proximity light or glowing-item exceptions.
-- Sonar still detects contacts and attracts predators. It updates the separate radar, but does not remove the darkness mask or reveal the surrounding world outside the flashlight.
-- Lamp selection is retained at zero power, but no light is produced until power is restored. Docking retains its existing full-refill behaviour.
-- This is a 2D cone visibility model, not terrain-occluded ray tracing. Real-device performance and deeper-trench difficulty still require playtesting.
+Automated tests exercise mouse capture, touch input, boost arithmetic and lockout, collision at boosted speed, sonar arrival/expiry and rendered darkness, save compatibility, menu flows, upgrade progression and creature parameters. Real-device Android installation/performance, mobile ergonomics over a long session and whole-campaign economy/difficulty remain manual playtest work. The local real-HTTP offline integration test is blocked in this execution environment; a mocked worker-lifecycle test covers cache logic separately.

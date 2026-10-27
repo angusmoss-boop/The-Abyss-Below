@@ -6,6 +6,8 @@
   const radar = $('radarCanvas');
   const rctx = radar.getContext('2d');
   const TAU = Math.PI * 2;
+  const BOOST = Object.freeze({capacity:100,drain:25,recharge:12.5,rechargeDelay:1.5,powerPerSecond:7,speedMultiplier:1.85});
+  const SONAR = Object.freeze({waveSpeed:520,echoSeconds:4.5,cooldown:5.5});
   const LIGHTING = Object.freeze({blackoutDepth:1000,fadeExponent:1.35,beamLength:320,beamHalfAngle:.40,bowOffset:30,nearHalfWidth:5});
   // Reuse one mask and one small, pre-baked beam texture. No per-frame pixel loops.
   const darknessCanvas = document.createElement('canvas');
@@ -26,15 +28,16 @@
     {start:1510, name:'THE LAST DARK', code:'07', color:'#d16aab'}
   ];
   const PREDATOR_TIERS = {
-    common:{name:'DRIFTER',speed:80,patrolSpeed:21,detectionCap:245,leash:345,awareness:1,damage:13,cooldown:1.7},
-    apex:{name:'ABYSS STALKER',speed:134,patrolSpeed:31,detectionCap:370,leash:505,awareness:1.52,damage:27,cooldown:1.35}
+    common:{name:'DRIFTER',level:1,speed:80,patrolSpeed:21,detectionCap:245,leash:345,awareness:1,damage:13,cooldown:1.7,reach:35},
+    apex:{name:'ABYSS STALKER',level:2,speed:134,patrolSpeed:31,detectionCap:370,leash:505,awareness:1.52,damage:27,cooldown:1.35,reach:43},
+    reaper:{name:'CRIMSON REAPER',level:3,speed:196,patrolSpeed:39,detectionCap:440,leash:610,awareness:1.85,damage:42,cooldown:1.15,reach:48}
   };
   const UPGRADES = [
     {id:'hull', name:'REINFORCED HULL', desc:'Adds 28 max hull HP and 200 m to safe depth (maximum 1,530 m).', base:80, limit:7},
     {id:'oxygen', name:'AIR RECYCLER', desc:'Expand oxygen capacity and slow oxygen consumption.', base:70, limit:5},
-    {id:'battery', name:'DEEP-CELL BATTERY', desc:'Expand energy storage and reduce engine drain.', base:65, limit:5},
+    {id:'battery', name:'DEEP-CELL BATTERY', desc:'More energy, cheaper boost bursts and 10% faster boost recharge per level.', base:65, limit:5},
     {id:'engine', name:'MAGNETIC THRUSTERS', desc:'Increase speed and improve handling.', base:75, limit:4},
-    {id:'sonar', name:'WIDEBAND SONAR', desc:'Extend sonar detection radius and reduce scan costs.', base:90, limit:4},
+    {id:'sonar', name:'WIDEBAND SONAR', desc:'Wider scans, longer-lived echoes, lower power cost and shorter cooldowns.', base:90, limit:4},
     {id:'quiet', name:'SILENT DRIVE', desc:'Suppress engine noise and reduce predator detection.', base:95, limit:4}
   ];
   const defaults = () => ({credits:0,xp:0,bestDepth:0,secured:[],upgrades:{hull:0,oxygen:0,battery:0,engine:0,sonar:0,quiet:0}});
@@ -97,6 +100,11 @@
   const safeDepth = () => 130 + saved.upgrades.hull*200;
   const sonarRange = () => 230 + saved.upgrades.sonar*55;
   const sonarCost = () => Math.max(4,12-saved.upgrades.sonar*2);
+  const sonarCooldown = () => SONAR.cooldown-saved.upgrades.sonar*.35;
+  const sonarEchoSeconds = () => SONAR.echoSeconds+saved.upgrades.sonar*.45;
+  const boostPowerRate = () => BOOST.powerPerSecond/(1+saved.upgrades.battery*.12);
+  const boostRechargeRate = () => BOOST.recharge*(1+saved.upgrades.battery*.10);
+  const vesselLabel = () => 'NEREID // MK-II · LIMIT '+safeDepth().toLocaleString('en-GB')+'m';
   const SHIP_RADIUS = 10.5; // Three small circles form a narrow capsule that matches the submarine silhouette.
   const SHIP_OFFSETS = [-15,0,15];
   let scene = {rocks:[],items:[],predators:[],vents:[],dust:[],wrecks:[]};
@@ -105,6 +113,9 @@
   // Joystick is analogue (-1..1 on each axis). Cruise stores the last steering vector.
   const joystick = {x:0,y:0,pointerId:null};
   const cruiseHeading = {x:0,y:0};
+  // Pointer coordinates remain in screen space while the follow camera moves.
+  const mouseHelm = {pointerId:null,clientX:0,clientY:0};
+  let boostHeld=false,boostPointerId=null;
   let cruiseEnabled=false;
   let installPrompt=null;
   let running = false, paused = false, showingDock = false;
@@ -112,7 +123,7 @@
   let camera = {x:0,y:0};
   let viewport = {w:700,h:550,dpr:1};
   let previousTime=0, clock=0, uiTimer=0, lastZone='';
-  let toastUntil=0, eventLines=[], sonarWaves=[];
+  let toastUntil=0, eventLines=[], sonarWaves=[], sonarTerrainEchoes=[];
   let pointerSilent = false, victoryShown = false;
   let useHeld = false, useHoldTimer = 0, usePointerId = null;
   let idCounter = 0;
@@ -230,11 +241,13 @@
     }
     const addPredator=(y,tier)=>{
       const x=centerAt(y)+(r()-.5)*340;
-      scene.predators.push({tier,x,y,homeX:x+(r()-.5)*90,homeY:y,vx:0,vy:0,phase:r()*TAU,aggression:0,lastHit:-10,alertUntil:0,forgetUntil:0});
+      scene.predators.push({tier,x,y,homeX:x+(r()-.5)*90,homeY:y,vx:0,vy:0,phase:r()*TAU,aggression:0,lastHit:-10,alertUntil:0,forgetUntil:0,revealUntil:0});
     };
     for(let i=0;i<46;i++)addPredator(510+i*370+r()*110,'common');
     // Elite tier is rare, and NEVER spawned shallower than 400 m.
     for(let i=0;i<11;i++)addPredator(4490+i*1190+r()*220,'apex');
+    // Only five tier-3 hunters per trench, with the first home at 810-850 m.
+    for(let i=0;i<5;i++)addPredator(8220+i*2090+r()*400,'reaper');
     for(let i=0;i<69;i++) {
       const y=150+r()*(MAX_WORLD_Y-270);
       scene.vents.push({x:lerp(leftAt(y)+30,rightAt(y)-30,r()),y,phase:r()*TAU});
@@ -246,13 +259,13 @@
   }
   function newDive() {
     createWorld();
-    player={x:600,y:160,vx:0,vy:0,facing:-Math.PI/2,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,quiet:false,damageCooldown:0,scanCooldown:0,cargo:{scrap:0,crystal:0,recorders:[]},lastRepair:-100};
-    sonarWaves=[];clock=0;lastZone='';eventLines=[];useHeld=false;useHoldTimer=0;usePointerId=null;victoryShown=saved.secured.length===RECORDERS_TOTAL;pointerSilent=false;resetJoystick(true);keys.clear();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
+    player={x:600,y:160,vx:0,vy:0,facing:-Math.PI/2,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,quiet:false,damageCooldown:0,scanCooldown:0,boost:BOOST.capacity,boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,cargo:{scrap:0,crystal:0,recorders:[]},lastRepair:-100};
+    sonarWaves=[];sonarTerrainEchoes=[];clock=0;lastZone='';eventLines=[];useHoldTimer=0;victoryShown=saved.secured.length===RECORDERS_TOTAL;pointerSilent=false;resetPilotInput();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
     addEvent('Dive systems initialised.');
     addEvent('Six recorders lost as deep as 1,500 m.');
     running=true;paused=false;showingDock=false;
     $('menuOverlay').classList.add('hidden');$('modalOverlay').classList.add('hidden');$('pauseOverlay').classList.add('hidden');
-    syncPauseButtons();
+    canvas.focus({preventScroll:true});syncPauseButtons();
     announce('EXPEDITION ACTIVE · LOCATE THE RECORDERS');
     updateUI();
   }
@@ -283,15 +296,52 @@
   }
   function scan() {
     if(!running||paused)return;
-    if(player.scanCooldown>0) {announce('SONAR RECHARGING',.85);return;}
+    if(player.scanCooldown>0) {announce('SONAR RECHARGING · '+Math.ceil(player.scanCooldown)+'s',.85);return;}
     if(player.battery<sonarCost()) {announce('INSUFFICIENT BATTERY',1.5);return;}
-    player.battery-=sonarCost();player.scanCooldown=5.5;player.noise=Math.min(100,player.noise+27);
-    const range=sonarRange();
-    for(const item of scene.items)if(distance(player,item)<=range+90)item.revealUntil=clock+4.5;
-    for(const enemy of scene.predators)if(distance(player,enemy)<range+90)enemy.alertUntil=clock+5;
-    sonarWaves.push({x:player.x,y:player.y,birth:clock,radius:range});
-    addEvent('Active sonar pulse emitted');
+    // Cover every corner of the CURRENT viewport, even on a large desktop.
+    // Additional sonar levels extend detection beyond it, rather than making
+    // wide displays silently hide contacts outside a small fixed-radius scan.
+    const dx=Math.max(Math.abs(camera.x-player.x),Math.abs(camera.x+viewport.w-player.x));
+    const dy=Math.max(Math.abs(camera.y-player.y),Math.abs(camera.y+viewport.h-player.y));
+    const range=Math.max(sonarRange(),Math.hypot(dx,dy)+70+saved.upgrades.sonar*55);
+    const origin={x:player.x,y:player.y},contacts=[];
+    const add=(kind,object)=>{
+      if(object.collected)return;
+      const d=distance(origin,object);
+      if(d<=range+100)contacts.push({kind,object,previousDistance:d,hit:false});
+    };
+    for(const kind of ['items','predators','rocks','wrecks','vents'])for(const object of scene[kind])add(kind,object);
+    for(let y=Math.floor((camera.y-30)/24)*24;y<=camera.y+viewport.h+30;y+=24){
+      if(y<120)continue;
+      for(const side of [-1,1])add('wall',{x:side<0?leftAt(y):rightAt(y),y,side});
+    }
+    const duration=range/SONAR.waveSpeed;
+    player.battery-=sonarCost();player.scanCooldown=Math.max(sonarCooldown(),duration+.4);
+    player.noise=Math.min(100,player.noise+27);
+    sonarWaves.push({...origin,birth:clock,radius:range,front:0,duration,echoSeconds:sonarEchoSeconds(),contacts});
+    addEvent('Sonar sweeping · contacts appear on wave arrival');
     updateUI();
+  }
+  function updateSonar() {
+    for(const wave of sonarWaves){
+      const previous=wave.front;
+      wave.front=Math.min(wave.radius,Math.max(0,clock-wave.birth)*SONAR.waveSpeed);
+      for(const contact of wave.contacts){
+        if(contact.hit||contact.object.collected)continue;
+        const object=contact.object,d=distance(wave,object);
+        // Crossing test handles moving predators and large simulation steps.
+        if(d<=wave.front&&(contact.previousDistance>=previous||previous===0)){
+          contact.hit=true;
+          object.revealUntil=Math.max(object.revealUntil||0,clock+wave.echoSeconds);
+          object.echoDuration=wave.echoSeconds;
+          if(contact.kind==='predators')object.alertUntil=Math.max(object.alertUntil||0,clock+5);
+          if(contact.kind==='wall')sonarTerrainEchoes.push(object);
+        }
+        contact.previousDistance=d;
+      }
+    }
+    sonarWaves=sonarWaves.filter(w=>clock-w.birth<w.duration);
+    sonarTerrainEchoes=sonarTerrainEchoes.filter(e=>e.revealUntil>clock);
   }
   function repair() {
     if(!running||paused)return;
@@ -309,7 +359,7 @@
     for(const i of player.cargo.recorders)if(!saved.secured.includes(i))saved.secured.push(i);
     const delivered=player.cargo.recorders.length;
     player.cargo={scrap:0,crystal:0,recorders:[]};
-    player.hull=maxHull();player.oxygen=maxOxygen();player.battery=maxBattery();player.noise=0;
+    player.hull=maxHull();player.oxygen=maxOxygen();player.battery=maxBattery();player.noise=0;resetBoost();
     persist();
     addEvent('Docking completed · vessel refilled');
     if(gained||delivered)announce('SALVAGE BANKED: +'+gained+' CREDITS · +'+earnedXP+' XP',4);
@@ -323,7 +373,7 @@
   }
   function openDialog(kicker,title,body,footer='') {
     dialogReturnPause=paused;
-    paused=true;useHeld=false;usePointerId=null;resetJoystick(true);keys.clear();
+    paused=true;resetPilotInput();
     $('modalKicker').textContent=kicker;$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modalFooter').innerHTML=footer;
     $('modalOverlay').classList.remove('hidden');syncPauseButtons();
   }
@@ -351,7 +401,7 @@
       const lv=saved.upgrades[upgrade.id],cost=Math.floor(upgrade.base*Math.pow(1.55,lv));
       if(lv>=upgrade.limit||saved.credits<cost)return;
       saved.credits-=cost;saved.upgrades[upgrade.id]++;persist();
-      player.hull=maxHull();player.oxygen=maxOxygen();player.battery=maxBattery();
+      player.hull=maxHull();player.oxygen=maxOxygen();player.battery=maxBattery();resetBoost();
       $('modalBody').querySelectorAll('.dialog-info')[1].innerHTML=`<strong>AVAILABLE CREDITS: ${saved.credits}</strong> · RECORDERS DELIVERED: ${saved.secured.length}/${RECORDERS_TOTAL}`;
       drawUpgrades();updateUI();addEvent(upgrade.name+' upgraded');
     }));
@@ -373,6 +423,65 @@
     if(amount>=8) {addEvent(reason);announce(reason.toUpperCase(),2);}
     if(player.hull<=0)defeat(reason+' destroyed the NEREID.');
   }
+  function resetBoost(){
+    player.boost=BOOST.capacity;player.boosting=false;player.boostLocked=false;
+    player.boostNeedsRelease=false;player.boostRechargeDelay=0;
+  }
+  function updateBoost(dt,hasInput){
+    const requested=keys.has(' ')||boostHeld;
+    if(!requested)player.boostNeedsRelease=false;
+    player.boosting=false;
+    const eligible=requested&&hasInput&&!player.boostLocked&&!player.boostNeedsRelease&&player.battery>.5&&player.boost>0;
+    if(eligible){
+      const activeTime=Math.min(dt,player.boost/BOOST.drain,Math.max(0,player.battery-.5)/boostPowerRate());
+      if(activeTime>0){
+        player.boost=Math.max(0,player.boost-activeTime*BOOST.drain);
+        player.battery=Math.max(0,player.battery-activeTime*boostPowerRate());
+        player.boosting=true;player.boostRechargeDelay=BOOST.rechargeDelay;
+        if(player.boost<.0001){
+          player.boost=0;player.boostLocked=true;player.boostNeedsRelease=true;
+          announce('BOOST DEPLETED · RECHARGING',1.7);
+        }
+        return activeTime/dt;
+      }
+    }
+    // The capacitor recovers, not the ship battery. Pause freezes both timers.
+    const rechargeTime=Math.max(0,dt-player.boostRechargeDelay);
+    player.boostRechargeDelay=Math.max(0,player.boostRechargeDelay-dt);
+    if(player.battery>.5){
+      player.boost=Math.min(BOOST.capacity,player.boost+rechargeTime*boostRechargeRate());
+      if(player.boost>=BOOST.capacity-.0001){player.boost=BOOST.capacity;player.boostLocked=false;}
+    }
+    return 0;
+  }
+  function mouseSteering(){
+    if(mouseHelm.pointerId===null)return {x:0,y:0,distance:0,angle:player.facing};
+    const rect=canvas.getBoundingClientRect();
+    const targetX=(mouseHelm.clientX-rect.left)*viewport.w/(rect.width||1)+camera.x;
+    const targetY=(mouseHelm.clientY-rect.top)*viewport.h/(rect.height||1)+camera.y;
+    const dx=targetX-player.x,dy=targetY-player.y,d=Math.hypot(dx,dy);
+    // Ease off near the cursor rather than circling it at full thrust.
+    const amount=d<12?0:clamp((d-12)/75,0,1);
+    return {x:dx/(d||1)*amount,y:dy/(d||1)*amount,distance:d,angle:Math.atan2(dy,dx)};
+  }
+  function releaseMouseHelm(){
+    const id=mouseHelm.pointerId;mouseHelm.pointerId=null;
+    canvas.classList.remove('mouse-piloting');
+    if(id!==null&&canvas.hasPointerCapture(id))canvas.releasePointerCapture(id);
+  }
+  function releaseBoostInput(){
+    const id=boostPointerId;boostHeld=false;boostPointerId=null;
+    const b=$('mobileBoost');b.classList.remove('held');
+    if(id!==null&&b.hasPointerCapture(id))b.releasePointerCapture(id);
+    if(player)player.boosting=false;
+  }
+  function resetPilotInput(){
+    releaseMouseHelm();releaseBoostInput();keys.clear();
+    const id=usePointerId;useHeld=false;usePointerId=null;
+    $('mobileInteract').classList.remove('held');
+    if(id!==null&&$('mobileInteract').hasPointerCapture(id))$('mobileInteract').releasePointerCapture(id);
+    resetJoystick(true);
+  }
   function update(dt) {
     clock+=dt;
     if(!player)return;
@@ -380,22 +489,32 @@
     player.damageCooldown=Math.max(0,player.damageCooldown-dt);
     const keyX=Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft'));
     const keyY=Number(keys.has('s')||keys.has('arrowdown'))-Number(keys.has('w')||keys.has('arrowup'));
-    const steering=joystick.pointerId!==null?joystick:cruiseEnabled?cruiseHeading:{x:0,y:0};
-    const x=clamp(keyX+steering.x,-1,1),y=clamp(keyY+steering.y,-1,1);
-    const magnitude=Math.hypot(x,y);
-    const hasInput=magnitude>.04;
-    const quiet=keys.has('shift')||pointerSilent;
+    const helm=mouseSteering();
+    // Mouse and joystick are direct helm commands, not additive inputs.
+    const steering=joystick.pointerId!==null?joystick:mouseHelm.pointerId!==null?helm:
+      (keyX||keyY)?{x:keyX,y:keyY}:cruiseEnabled?cruiseHeading:{x:0,y:0};
+    const x=clamp(steering.x,-1,1),y=clamp(steering.y,-1,1);
+    const magnitude=Math.hypot(x,y),hasInput=magnitude>.04;
+    const boostFraction=updateBoost(dt,hasInput);
+    const quiet=(keys.has('shift')||pointerSilent)&&!player.boosting;
     player.quiet=quiet;
-    const maxSpeed=(quiet?68:146)*(1+saved.upgrades.engine*.17);
+    const maxSpeed=(quiet?68:146)*(1+saved.upgrades.engine*.17)*lerp(1,BOOST.speedMultiplier,boostFraction);
     const thrustPower=hasInput&&player.battery>.5?1:0;
     const divisor=Math.max(1,magnitude);
     const desiredX=x/divisor*maxSpeed*thrustPower,desiredY=y/divisor*maxSpeed*thrustPower;
     const factor=1-Math.exp(-(3.5+saved.upgrades.engine*.2)*dt);
     player.vx=lerp(player.vx,desiredX,factor);player.vy=lerp(player.vy,desiredY,factor);
-    if(Math.hypot(player.vx,player.vy)>9)player.facing=lerpAngle(player.facing,Math.atan2(player.vy,player.vx),Math.min(1,dt*5));
+    // Aim the bow (and lamp) towards a held cursor, even while momentum turns.
+    if(mouseHelm.pointerId!==null&&helm.distance>8&&joystick.pointerId===null){
+      player.facing=lerpAngle(player.facing,helm.angle,Math.min(1,dt*7));
+    }else if(Math.hypot(player.vx,player.vy)>9){
+      player.facing=lerpAngle(player.facing,Math.atan2(player.vy,player.vx),Math.min(1,dt*5));
+    }
     const speed=Math.hypot(player.vx,player.vy);
-    const noiseTarget=hasInput&&!quiet?45+speed*.2:quiet&&hasInput?8:0;
-    player.noise=lerp(player.noise,Math.min(95,noiseTarget)/(1+saved.upgrades.quiet*.32),1-Math.exp(-dt*(hasInput?2.8:1.6)));
+    const noiseTarget=player.boosting?100:hasInput&&!quiet?45+speed*.2:quiet&&hasInput?8:0;
+    const noise=player.boosting?Math.max(82,noiseTarget/(1+saved.upgrades.quiet*.32)):
+      Math.min(95,noiseTarget)/(1+saved.upgrades.quiet*.32);
+    player.noise=lerp(player.noise,noise,1-Math.exp(-dt*(hasInput?2.8:1.6)));
     if(!hasInput)player.noise=Math.max(0,player.noise-dt*4);
     const steps=Math.max(1,Math.ceil(speed*dt/7));
     let impactSpeed=0;
@@ -407,6 +526,7 @@
     if(impactSpeed>43)takeDamage(Math.min(7,1+impactSpeed*.025),'Rock impact');
     // Hold USE with a second finger while steering: collect immediately on entering range.
     if(useHeld){useHoldTimer-=dt;if(useHoldTimer<=0){interact(true);useHoldTimer=.12;}}
+    if(!running||paused)return;
     const energyDrain=dt*(.018+(player.lights?.027:0)+(hasInput?(quiet?.028:.075):0))/(1+saved.upgrades.battery*.12);
     player.battery=clamp(player.battery-energyDrain,0,maxBattery());
     player.oxygen=clamp(player.oxygen-dt*(.22/(1+saved.upgrades.oxygen*.2)),0,maxOxygen());
@@ -422,7 +542,7 @@
     for(const enemy of scene.predators){
       const tier=PREDATOR_TIERS[enemy.tier]||PREDATOR_TIERS.common;
       const d=distance(player,enemy);
-      // Both tiers give up once sufficiently far away, but apex hunters track farther.
+      // Every tier has a finite pursuit leash; higher tiers track farther.
       if(d>tier.leash){
         if(enemy.aggression>.15&&d<tier.leash+80)addEvent(tier.name+' contact lost');
         enemy.aggression=0;
@@ -446,14 +566,17 @@
       enemy.vx=lerp(enemy.vx,(tx-enemy.x)/ed*es,1-Math.exp(-dt*2));
       enemy.vy=lerp(enemy.vy,(ty-enemy.y)/ed*es,1-Math.exp(-dt*2));
       enemy.x=clamp(enemy.x+enemy.vx*dt,leftAt(enemy.y)+34,rightAt(enemy.y)-34);
-      enemy.y+=enemy.vy*dt;
-      if(chase&&distance(player,enemy)<(enemy.tier==='apex'?43:35)&&clock-enemy.lastHit>tier.cooldown){
+      enemy.y=clamp(enemy.y+enemy.vy*dt,58,MAX_WORLD_Y);
+      // Tier-3 encounters never leak into the upper 800 m, even in pursuit.
+      if(enemy.tier==='reaper'&&enemy.y<8120){enemy.y=8120;enemy.vy=Math.max(0,enemy.vy);enemy.aggression=0;enemy.alertUntil=0;enemy.forgetUntil=clock+1;}
+      if(chase&&enemy.aggression>.13&&distance(player,enemy)<tier.reach&&clock-enemy.lastHit>tier.cooldown){
         enemy.lastHit=clock;
         takeDamage(tier.damage,tier.name+' attack');
+        if(!running)return;
         player.vx+=(player.x-enemy.x)*2;player.vy+=(player.y-enemy.y)*2;
       }
     }
-    sonarWaves=sonarWaves.filter(w=>clock-w.birth<1.2);
+    updateSonar();
     camera.x=lerp(camera.x,player.x-viewport.w/2,Math.min(1,dt*3.4));
     camera.y=lerp(camera.y,player.y-viewport.h*.52,Math.min(1,dt*3.4));
     if(clock>toastUntil)$('notification').classList.add('hidden');
@@ -518,15 +641,17 @@
       const d=distance(player,enemy);
       if(d<250 || enemy.alertUntil>clock || beamIntersects(enemy.x,enemy.y,60))drawEnemy(enemy);
     }
-    for(const wave of sonarWaves)drawWave(wave);
     if(player)drawPlayer();
     ctx.restore();
     const edge=ctx.createRadialGradient(W*.5,H*.48,Math.min(W,H)*.1,W*.5,H*.5,Math.max(W,H)*.77);
     edge.addColorStop(0,'#00132000');edge.addColorStop(.75,'#000e1c33');edge.addColorStop(1,'#00050dd1');ctx.fillStyle=edge;ctx.fillRect(0,0,W,H);
     if(!running && player && player.hull<=0){ctx.fillStyle='#7e22241c';ctx.fillRect(0,0,W,H);}
-    // Last world pass masks everything, including eyes, salvage glows, sonar, the
-    // vessel and its wake. Only instrument overlays are allowed above the darkness.
+    // World illumination stays black at 1,000 m. Sonar is a separate, timed
+    // instrument echo layer: silhouettes only, never an ambient-light reset.
     applyDepthDarkness(ambient);
+    drawSonarEchoes();
+    drawVesselLabel();
+    drawMouseTarget();
     drawEdgeArrows();
   }
   function applyDepthDarkness(ambient){
@@ -603,6 +728,7 @@
     ctx.restore();
   }
   function drawEnemy(enemy){
+    if(enemy.tier==='reaper'){drawReaper(enemy);return;}
     const alert=enemy.aggression>.15,apex=enemy.tier==='apex';
     const a=Math.atan2(enemy.vy,enemy.vx);
     ctx.save();ctx.translate(enemy.x,enemy.y);ctx.rotate(a);
@@ -623,6 +749,27 @@
     ctx.fillStyle=apex?'#ffdbff':'#f88079';ctx.beginPath();ctx.arc(11,-4,apex?3.2:2.6,0,TAU);ctx.fill();
     ctx.restore();
   }
+  function reaperOutline(){
+    ctx.beginPath();ctx.moveTo(35,0);ctx.lineTo(18,-7);ctx.lineTo(12,-12);
+    ctx.lineTo(-2,-26);ctx.lineTo(-7,-12);ctx.lineTo(-23,-8);
+    ctx.lineTo(-43,-20);ctx.lineTo(-32,0);ctx.lineTo(-43,20);
+    ctx.lineTo(-23,8);ctx.lineTo(-7,12);ctx.lineTo(-2,26);
+    ctx.lineTo(12,12);ctx.lineTo(18,7);ctx.closePath();
+  }
+  function drawReaper(enemy){
+    ctx.save();ctx.translate(enemy.x,enemy.y);ctx.rotate(Math.atan2(enemy.vy,enemy.vx));
+    const glow=ctx.createRadialGradient(0,0,1,0,0,63);
+    glow.addColorStop(0,enemy.aggression>.13?'#ff453b66':'#b532402e');glow.addColorStop(1,'#00000000');
+    ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,0,63,0,TAU);ctx.fill();
+    reaperOutline();ctx.fillStyle='#37151e';ctx.strokeStyle='#ff796e';ctx.lineWidth=2;ctx.fill();ctx.stroke();
+    ctx.strokeStyle='#efae78';ctx.lineWidth=1.2;
+    for(const y of [-1,1]){
+      ctx.beginPath();ctx.moveTo(10,y*7);ctx.lineTo(-8,y*9);ctx.lineTo(-25,y*3);ctx.stroke();
+      for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(28-i*5,y*3);ctx.lineTo(24-i*5,0);ctx.stroke();}
+    }
+    ctx.fillStyle='#fff0c2';ctx.beginPath();ctx.arc(18,-5,3,0,TAU);ctx.arc(18,5,3,0,TAU);ctx.fill();
+    ctx.restore();
+  }
   function drawLightBeam(){
     ctx.save();ctx.translate(player.x,player.y);ctx.rotate(player.facing);
     // The visible light scatter and the mask use exactly the same cone texture.
@@ -639,6 +786,11 @@
     if(player.damageCooldown>0&&Math.sin(clock*30)>0)ctx.globalAlpha=.67;
 
     // Propulsion shimmer and micro-bubble trail live behind the moving hull.
+    if(player.boosting){
+      const jet=ctx.createLinearGradient(-31,0,-88,0);
+      jet.addColorStop(0,'#dcffffdd');jet.addColorStop(.3,'#65eaff88');jet.addColorStop(1,'#34b5ff00');
+      ctx.fillStyle=jet;ctx.beginPath();ctx.moveTo(-30,-7);ctx.lineTo(-92-Math.sin(clock*38)*6,0);ctx.lineTo(-30,7);ctx.closePath();ctx.fill();
+    }
     if(thrust>.09){
       const engineGlow=ctx.createRadialGradient(-30,0,1,-37,0,23+thrust*9);
       engineGlow.addColorStop(0,'rgba(155,248,250,.5)');engineGlow.addColorStop(1,'rgba(57,195,229,0)');
@@ -705,14 +857,70 @@
     // Subtle bow chevron and mission stripes.
     ctx.strokeStyle='#eece89';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-4,-4);ctx.lineTo(-1,0);ctx.lineTo(-4,4);ctx.stroke();
     ctx.restore();
-    ctx.save();ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.fillStyle='#a8f3e9cf';
-    ctx.shadowColor='#0a1c2b';ctx.shadowBlur=4;
-    ctx.fillText('NEREID // MK-II',player.x,player.y-28);ctx.restore();
   }
   function drawWave(w){
-    const t=(clock-w.birth)/1.2,r=w.radius*t;
+    const t=clamp((clock-w.birth)/w.duration,0,1),r=w.front;
     ctx.beginPath();ctx.arc(w.x,w.y,r,0,TAU);ctx.strokeStyle=`rgba(114,237,225,${.85*(1-t)})`;ctx.lineWidth=2.3;ctx.stroke();
     ctx.beginPath();ctx.arc(w.x,w.y,Math.max(0,r-15),0,TAU);ctx.strokeStyle=`rgba(114,237,225,${.25*(1-t)})`;ctx.lineWidth=12;ctx.stroke();
+  }
+  function drawSonarEchoes(){
+    ctx.save();ctx.translate(-camera.x,-camera.y);
+    for(const wave of sonarWaves)drawWave(wave);
+    const echo=(object,kind)=>{
+      if(object.collected||!(object.revealUntil>clock)||!onscreen(object.x,object.y,110))return;
+      const remaining=clamp((object.revealUntil-clock)/(object.echoDuration||SONAR.echoSeconds),0,1);
+      ctx.save();ctx.translate(object.x,object.y);ctx.globalAlpha=Math.min(.92,remaining*1.5);
+      ctx.strokeStyle='#7debd9';ctx.lineWidth=1.35;
+      if(kind==='items'){
+        const type=object.type;
+        ctx.strokeStyle=type==='recorder'?'#ffd28d':type==='crystal'?'#bea5ff':type==='air'?'#7ee5ff':'#8debd3';
+        if(type==='recorder'){ctx.strokeRect(-12,-9,24,18);ctx.strokeRect(-5,-2,10,4);}
+        else if(type==='crystal'){ctx.beginPath();ctx.moveTo(0,-13);ctx.lineTo(10,0);ctx.lineTo(0,13);ctx.lineTo(-10,0);ctx.closePath();ctx.stroke();}
+        else if(type==='air'){ctx.strokeRect(-9,-11,18,22);ctx.beginPath();ctx.moveTo(-5,0);ctx.lineTo(5,0);ctx.moveTo(0,-5);ctx.lineTo(0,5);ctx.stroke();}
+        else{ctx.strokeRect(-8,-8,16,16);ctx.beginPath();ctx.moveTo(-8,4);ctx.lineTo(8,-4);ctx.stroke();}
+        ctx.beginPath();ctx.arc(0,0,21,0,TAU);ctx.stroke();
+      }else if(kind==='predators'){
+        const tier=PREDATOR_TIERS[object.tier]||PREDATOR_TIERS.common;
+        ctx.strokeStyle=object.tier==='reaper'?'#ff796e':object.tier==='apex'?'#d597ff':'#ffac99';
+        ctx.save();ctx.rotate(Math.atan2(object.vy,object.vx));
+        if(object.tier==='reaper')reaperOutline();
+        else{
+          if(object.tier==='apex')ctx.scale(1.25,1.25);
+          ctx.beginPath();ctx.moveTo(24,0);ctx.quadraticCurveTo(2,-14,-17,-10);ctx.lineTo(-31,-19);ctx.lineTo(-27,0);ctx.lineTo(-31,19);ctx.lineTo(-17,10);ctx.quadraticCurveTo(2,14,24,0);
+        }
+        ctx.stroke();ctx.restore();
+        ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.fillStyle=ctx.strokeStyle;
+        ctx.fillText('T'+tier.level+' '+tier.name,0,-36);
+      }else if(kind==='rocks'){
+        ctx.beginPath();object.vertices.forEach((p,i)=>{if(i===0)ctx.moveTo(p.x-object.x,p.y-object.y);else ctx.lineTo(p.x-object.x,p.y-object.y);});ctx.closePath();ctx.stroke();
+      }else if(kind==='wrecks'){
+        ctx.rotate(-.5);ctx.beginPath();ctx.ellipse(0,0,49,17,0,0,TAU);ctx.stroke();ctx.strokeRect(-7,-27,14,17);
+      }else if(kind==='vents'){
+        ctx.beginPath();ctx.ellipse(0,0,13,6,0,0,TAU);ctx.moveTo(-4,-4);ctx.lineTo(-7,-22);ctx.moveTo(5,-5);ctx.lineTo(8,-30);ctx.stroke();
+      }else if(kind==='wall'){
+        ctx.beginPath();const edge=object.side<0?leftAt:rightAt;
+        ctx.moveTo(edge(object.y-12)-object.x,-12);ctx.lineTo(0,0);ctx.lineTo(edge(object.y+12)-object.x,12);ctx.stroke();
+      }
+      ctx.restore();
+    };
+    for(const kind of ['rocks','wrecks','vents','items','predators'])for(const object of scene[kind])echo(object,kind);
+    for(const wall of sonarTerrainEchoes)echo(wall,'wall');
+    ctx.restore();
+  }
+  function drawVesselLabel(){
+    if(!player||!running)return;
+    ctx.save();ctx.font='bold 9px monospace';ctx.textAlign='center';
+    const text=vesselLabel(),width=ctx.measureText(text).width+16;
+    const x=clamp(player.x-camera.x,width/2+4,viewport.w-width/2-4),y=player.y-camera.y-45;
+    ctx.fillStyle='#03131cdb';ctx.fillRect(x-width/2,y-11,width,18);
+    ctx.fillStyle=depthOf(player.y)>safeDepth()?'#ff9486':'#b6f6e9';
+    ctx.fillText(text,x,y+1);ctx.restore();
+  }
+  function drawMouseTarget(){
+    if(mouseHelm.pointerId===null||!running||paused)return;
+    const rect=canvas.getBoundingClientRect(),x=(mouseHelm.clientX-rect.left)*viewport.w/(rect.width||1),y=(mouseHelm.clientY-rect.top)*viewport.h/(rect.height||1);
+    ctx.save();ctx.strokeStyle=player.boosting?'#b5f2ff':'#8adfce';ctx.lineWidth=1.2;ctx.globalAlpha=.8;
+    ctx.beginPath();ctx.arc(x,y,10,0,TAU);ctx.moveTo(x-15,y);ctx.lineTo(x-7,y);ctx.moveTo(x+7,y);ctx.lineTo(x+15,y);ctx.moveTo(x,y-15);ctx.lineTo(x,y-7);ctx.moveTo(x,y+7);ctx.lineTo(x,y+15);ctx.stroke();ctx.restore();
   }
   function drawEdgeArrows(){
     if(!player||!running)return;
@@ -742,7 +950,7 @@
       if(item.type==='recorder')dot(item.x,item.y,'#f4c685',5);
       else dot(item.x,item.y,'#4f9d9e',2);
     }
-    for(const enemy of scene.predators)if(distance(player,enemy)<(enemy.tier==='apex'?205:130)||enemy.alertUntil>clock)dot(enemy.x,enemy.y,enemy.tier==='apex'?'#d683ff':'#ed7873',enemy.tier==='apex'?6:4);
+    for(const enemy of scene.predators)if(distance(player,enemy)<(enemy.tier==='reaper'?260:enemy.tier==='apex'?205:130)||enemy.revealUntil>clock)dot(enemy.x,enemy.y,enemy.tier==='reaper'?'#ff665b':enemy.tier==='apex'?'#d683ff':'#ed7873',enemy.tier==='reaper'?7:enemy.tier==='apex'?6:4);
     dot(player.x,player.y,'#b8ffe9',6);
     rctx.save();rctx.translate(cx,cy);rctx.rotate(player.facing);rctx.strokeStyle='#b7ffe8';rctx.beginPath();rctx.moveTo(14,0);rctx.lineTo(4,-6);rctx.moveTo(14,0);rctx.lineTo(4,6);rctx.stroke();rctx.restore();
     const sweep=(clock*.55)%TAU;
@@ -755,13 +963,29 @@
     $('zoneStat').style.color=zone.color;
     const enemyClose=scene.predators.some(e=>e.aggression>.15&&distance(player,e)<240);
     const apexClose=scene.predators.some(e=>e.tier==='apex'&&e.aggression>.15&&distance(player,e)<300);
-    const st=depth>rating?'PRESSURE ALERT':apexClose?'APEX CONTACT':enemyClose?'PREDATOR ALERT':player.oxygen<20?'LOW OXYGEN':player.battery<15?'LOW POWER':'NOMINAL';
-    $('statusStat').textContent=st;$('statusStat').className='metric-value '+(st==='NOMINAL'?'status-safe':st==='PREDATOR ALERT'||st==='APEX CONTACT'||st==='PRESSURE ALERT'?'status-danger':'status-warning');
+    const reaperClose=scene.predators.some(e=>e.tier==='reaper'&&e.aggression>.15&&distance(player,e)<360);
+    const st=depth>rating?'PRESSURE ALERT':reaperClose?'REAPER CONTACT':apexClose?'APEX CONTACT':enemyClose?'PREDATOR ALERT':player.oxygen<20?'LOW OXYGEN':player.battery<15?'LOW POWER':'NOMINAL';
+    $('statusStat').textContent=st;$('statusStat').className='metric-value '+(st==='NOMINAL'?'status-safe':st==='PREDATOR ALERT'||st==='APEX CONTACT'||st==='REAPER CONTACT'||st==='PRESSURE ALERT'?'status-danger':'status-warning');
     $('signalText').textContent=st==='NOMINAL'?'VESSEL ONLINE':'VESSEL WARNING';
     const setGauge=(kind,value,max)=>{const pct=clamp(value/max*100,0,100);$(kind+'Value').textContent=Math.round(pct)+'%';$(kind+'Bar').style.width=pct+'%';};
     setGauge('hull',player.hull,maxHull());setGauge('oxygen',player.oxygen,maxOxygen());setGauge('battery',player.battery,maxBattery());setGauge('noise',player.noise,100);
     $('coordsText').textContent='SECTOR '+zone.code+' · '+zone.name;
-    $('sonarText').textContent=player.scanCooldown>0?'SONAR CHARGING '+Math.ceil(player.scanCooldown)+'s':'SONAR READY · Q';
+    const sonarCooling=player.scanCooldown>0;
+    $('sonarText').textContent=sonarCooling?'SONAR COOLDOWN '+Math.ceil(player.scanCooldown)+'s':player.battery<sonarCost()?'SONAR · LOW POWER':'SONAR READY · Q';
+    $('sonarButtonLabel').textContent=sonarCooling?Math.ceil(player.scanCooldown)+'s':'PING';
+    $('mobileSonar').classList.toggle('cooling',sonarCooling);
+    $('mobileSonar').setAttribute('aria-disabled',String(sonarCooling||player.battery<sonarCost()));
+    $('mobileSonar').setAttribute('aria-label',sonarCooling?'Sonar recharging, '+Math.ceil(player.scanCooldown)+' seconds':'Ping sonar, costs '+sonarCost()+' power');
+    const boostPct=Math.round(player.boost||0);
+    const boostStatus=player.battery<=.5?'NO POWER':player.boosting?'BOOSTING':player.boostLocked?'RECHARGING':player.boostNeedsRelease?'RELEASE TO REARM':player.boost>=100?'READY':player.boostRechargeDelay>0?'COOLING':'CHARGING';
+    $('boostStatus').textContent=boostStatus;
+    $('boostValue').textContent=boostPct+'%';$('boostBar').style.width=boostPct+'%';
+    $('boostMeter').classList.toggle('boost-active',Boolean(player.boosting));
+    $('boostMeter').classList.toggle('boost-locked',Boolean(player.boostLocked));
+    $('mobileBoostLabel').textContent=player.boostLocked?'CHARGE '+boostPct+'%':'BOOST '+boostPct+'%';
+    $('mobileBoost').classList.toggle('active',Boolean(player.boosting));
+    $('mobileBoost').classList.toggle('cooling',Boolean(player.boostLocked));
+    $('mobileBoost').setAttribute('aria-label','Hold to boost, '+boostPct+' percent charge, '+boostStatus.toLowerCase());
     $('radarStatus').textContent=player.scanCooldown>0?'COOLDOWN':'ACTIVE';
     const count=saved.secured.length,loose=player.cargo.recorders.length;
     $('fragmentCount').textContent=count+' / '+RECORDERS_TOTAL;
@@ -811,7 +1035,7 @@
   }
   function resumeDive(){
     if(!running)return;
-    paused=false;keys.clear();resetJoystick(true);
+    paused=false;resetPilotInput();canvas.focus({preventScroll:true});
     $('pauseOverlay').classList.add('hidden');$('menuOverlay').classList.add('hidden');
     $('notification').classList.add('hidden');syncPauseButtons();updateUI();
   }
@@ -822,7 +1046,7 @@
       existing?'BANKED PROGRESS · '+saved.secured.length+'/'+RECORDERS_TOTAL+' RECORDERS · BEST '+saved.bestDepth+'m':'NEW CAPTAIN · NO SAVED PROGRESS';
   }
   function returnToMenu(preserveDive){
-    keys.clear();useHeld=false;usePointerId=null;resetJoystick(true);
+    resetPilotInput();
     $('modalOverlay').classList.add('hidden');$('pauseOverlay').classList.add('hidden');
     if(!preserveDive) {running=false;paused=false;persist();}
     else paused=true;
@@ -831,7 +1055,7 @@
   }
   function showPause(){
     if(!running||!$('menuOverlay').classList.contains('hidden'))return;
-    paused=true;keys.clear();useHeld=false;usePointerId=null;resetJoystick(true);
+    paused=true;resetPilotInput();
     $('pauseStats').textContent='DEPTH '+depthOf(player.y)+'m  ·  HULL '+Math.round(player.hull/maxHull()*100)+'%  ·  RECORDERS '+player.cargo.recorders.length+' ABOARD';
     $('pauseOverlay').classList.remove('hidden');
     $('notification').classList.add('hidden');syncPauseButtons();updateUI();
@@ -865,7 +1089,16 @@
     }
   }
   function briefing(){
-    const body=`<div class="briefing"><p>You pilot the <strong>NEREID MK-II</strong>, a salvage submarine. Retrieve six <strong>golden flight recorders</strong> at approximately 75, 260, 470, 725, 1,100 and 1,500 m from wrecks in the trench and dock at the surface to save them.</p><ul><li><kbd>W A S D</kbd> or <kbd>↑ ← ↓ →</kbd> moves the sub. On phones, <strong>drag the joystick</strong> in any direction. Tilt slightly for gentle thrust or to the edge for full speed. Toggle <strong>CRUISE</strong> to keep going after letting go. Turn cruise off to stop thrust.</li><li><kbd>Q</kbd> uses active sonar to detect salvage and threats. Deep in the dark, read contacts on the radar: sonar does not light up the water. Sonar <strong>consumes energy and attracts predators</strong>.</li><li><kbd>E</kbd> recovers nearby scrap, crystals, oxygen caches and recorders. At the station, it banks cargo and opens upgrades.</li><li><kbd>Shift</kbd> moves slowly and quietly to avoid attracting predators. On phones, toggle <strong>SILENT</strong>.</li><li><kbd>R</kbd> repairs 30 hull for two scrap. <kbd>L</kbd> toggles the flashlight to conserve energy. Ambient light fades smoothly with depth and is completely gone at <strong>1,000 m</strong>. Only the forward beam reveals the world down there. No lamp or no battery means total darkness; gauges and sonar radar still work as instruments.</li><li><kbd>Esc</kbd> pauses. Always return to the surface to bank progress, refill oxygen, recharge and upgrade the ship.</li></ul><p><strong>Warning:</strong> Diving beneath your depth rating inflicts rapidly increasing pressure damage. Your hull starts at 130 m and can be upgraded seven times by 200 m to reach 1,530 m. Common predators hunt everywhere; purple abyss stalkers spawn only below 400 m, see and hear farther, swim faster, and bite harder. Ship upgrades let you venture deeper. Damage or suffocation costs unbanked cargo, not your permanent progress.</p></div>`;
+    const body=`<div class="briefing"><p>You pilot the <strong>NEREID MK-II</strong>. Recover six golden recorders at 75, 260, 470, 725, 1,100 and 1,500 m and bring them to the surface.</p><ul>
+      <li><strong>PC helm:</strong> hold the left mouse button over the water and move the cursor. The sub points and travels towards it, easing off when close. Release to coast to a stop. <kbd>WASD</kbd> / arrow keys still work.</li>
+      <li><strong>Mobile:</strong> drag the right joystick. CRUISE retains your heading after release; the large left USE button salvages while you steer.</li>
+      <li><kbd>Space</kbd> / hold <strong>BOOST</strong>: 1.85× thrust speed for up to 4 seconds. Costs battery and boost charge. Charge recovers after 1.5 seconds; a fully emptied meter locks until full. Release to rearm. Boost is loud and overrides quiet running. Battery upgrades reduce its power drain and speed up recharge.</li>
+      <li><kbd>Q</kbd> / <strong>PING</strong>: a sonar wave sweeps the entire current screen. Salvage, recorders, caches, predators, rocks, wrecks, vents and walls appear as fading echoes <strong>when the wave reaches them</strong>, even with lights off. It uses power, alerts reached predators and has a visible cooldown. It does not light up the water permanently.</li>
+      <li><kbd>E</kbd> / <strong>USE</strong>: recover nearby objects or dock to bank cargo, refill systems and upgrade. <kbd>R</kbd> repairs 30 hull for 2 scrap. <kbd>L</kbd> toggles lights. <kbd>Shift</kbd> / <strong>SILENT</strong> reduces speed and noise.</li>
+      <li>The water darkens gradually to total darkness at <strong>1,000 m</strong>. Only your forward lamp and temporary sonar echoes reveal the surroundings. The pressure limit beside your name stays readable and turns red beyond your rating.</li>
+      <li><strong>Three threat tiers:</strong> common blue drifters; rarer purple stalkers below 400 m; only five crimson reapers, all below 800 m. Reapers are faster and hit harder. Break contact, reduce noise or use a well-timed boost; every tier eventually gives up.</li>
+      <li><kbd>Esc</kbd> / <strong>PAUSE</strong> freezes the dive. MENU suspends it for this session; QUIT loses unbanked cargo. NEW GAME asks before erasing saved progress. Refreshing the page does not preserve an active dive.</li>
+    </ul></div>`;
     openDialog('OPERATIONS MANUAL // NEREID','PILOT BRIEFING',body,'<div class="dialog-actions"><button id="briefDone" class="alt-btn">UNDERSTOOD</button></div>');
     $('briefDone').addEventListener('click',closeDialog);
   }
@@ -886,18 +1119,48 @@
     $('pauseBtn').addEventListener('click',togglePause);
     $('dockBtn').addEventListener('click',()=>{if(running&&!paused&&nearestInteractable()?.type==='station')depositAndDock();});
     window.addEventListener('keydown',e=>{
-      const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();
+      const k=e.key.toLowerCase();
+      if(e.target instanceof Element&&e.target.closest('input,textarea,select,[contenteditable="true"]'))return;
+      if(k==='escape'){if(!e.repeat)togglePause();return;}
+      if(!running||paused)return;
+      if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();
       if(e.repeat)return;
       keys.add(k);
-      if(k==='q')scan();else if(k==='e')interact();else if(k==='r')repair();else if(k==='l')toggleLights();else if(k==='escape')togglePause();
+      if(k==='q')scan();else if(k==='e')interact();else if(k==='r')repair();else if(k==='l')toggleLights();
     });
     window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-    window.addEventListener('blur',()=>{keys.clear();useHeld=false;usePointerId=null;resetJoystick(true);});
-    document.addEventListener('visibilitychange',()=>{if(document.hidden){keys.clear();useHeld=false;usePointerId=null;resetJoystick(true);}});
+    window.addEventListener('blur',resetPilotInput);
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)resetPilotInput();});
+    canvas.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='touch'||e.button!==0||mouseHelm.pointerId!==null||!running||paused)return;
+      e.preventDefault();resetJoystick(true);canvas.focus({preventScroll:true});
+      mouseHelm.pointerId=e.pointerId;mouseHelm.clientX=e.clientX;mouseHelm.clientY=e.clientY;
+      canvas.setPointerCapture(e.pointerId);canvas.classList.add('mouse-piloting');
+    });
+    canvas.addEventListener('pointermove',e=>{
+      if(e.pointerId!==mouseHelm.pointerId)return;
+      if(!(e.buttons&1)){releaseMouseHelm();return;}
+      mouseHelm.clientX=e.clientX;mouseHelm.clientY=e.clientY;
+    });
+    const endMouse=e=>{if(e.pointerId===mouseHelm.pointerId)releaseMouseHelm();};
+    canvas.addEventListener('pointerup',endMouse);canvas.addEventListener('pointercancel',endMouse);
+    canvas.addEventListener('lostpointercapture',endMouse);window.addEventListener('pointerup',endMouse);
+    const boostButton=$('mobileBoost');
+    boostButton.addEventListener('pointerdown',e=>{
+      if(!running||paused||boostPointerId!==null||(e.pointerType==='mouse'&&e.button!==0))return;
+      e.preventDefault();boostHeld=true;boostPointerId=e.pointerId;
+      boostButton.setPointerCapture(e.pointerId);boostButton.classList.add('held');
+    });
+    const endBoost=e=>{if(e.pointerId===boostPointerId)releaseBoostInput();};
+    boostButton.addEventListener('pointerup',endBoost);boostButton.addEventListener('pointercancel',endBoost);
+    boostButton.addEventListener('lostpointercapture',endBoost);
+    boostButton.addEventListener('keydown',e=>{if(e.key==='Enter'&&running&&!paused){e.preventDefault();boostHeld=true;}});
+    boostButton.addEventListener('keyup',e=>{if(e.key==='Enter')releaseBoostInput();});
+    boostButton.addEventListener('blur',()=>{if(boostPointerId===null)boostHeld=false;});
     const stick=$('mobileJoystick');
     stick.addEventListener('pointerdown',e=>{
       if(joystick.pointerId!==null||!running||paused)return;
-      e.preventDefault();joystick.pointerId=e.pointerId;
+      e.preventDefault();releaseMouseHelm();joystick.pointerId=e.pointerId;
       stick.setPointerCapture(e.pointerId);
       stick.classList.add('engaged');
       steerJoystick(e);
@@ -963,7 +1226,8 @@
     thumb.style.transform=`translate3d(${joystick.x*radius}px,${joystick.y*radius}px,0)`;
   }
   function resetJoystick(cancelCruise=false){
-    joystick.pointerId=null;joystick.x=0;joystick.y=0;
+    const id=joystick.pointerId;joystick.pointerId=null;joystick.x=0;joystick.y=0;
+    if(id!==null&&$('mobileJoystick').hasPointerCapture(id))$('mobileJoystick').releasePointerCapture(id);
     $('mobileJoystick').classList.remove('engaged');
     $('joystickThumb').style.transform='translate3d(0,0,0)';
     if(cancelCruise){cruiseEnabled=false;cruiseHeading.x=0;cruiseHeading.y=0;}
@@ -999,17 +1263,17 @@
   }
   beamTexture=buildBeamTexture();
   bind();resize();createWorld();
-  player={x:600,y:160,vx:0,vy:0,facing:0,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),lights:true,noise:0,cargo:{scrap:0,crystal:0,recorders:[]},scanCooldown:0,damageCooldown:0};
+  player={x:600,y:160,vx:0,vy:0,facing:0,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),lights:true,noise:0,cargo:{scrap:0,crystal:0,recorders:[]},scanCooldown:0,damageCooldown:0,boost:100,boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0};
   camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
   updateMainMenu();updateUI();requestAnimationFrame(frame);
   // Tiny inspection hook for automated smoke tests.
-  window.AbyssDiagnostics={state:()=>({ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier!=='apex').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
+  window.AbyssDiagnostics={state:()=>({ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),vesselLabel:vesselLabel(),boost:player.boost,boosting:player.boosting,boostLocked:player.boostLocked,boostNeedsRelease:player.boostNeedsRelease,boostRechargeDelay:player.boostRechargeDelay,boostPowerRate:boostPowerRate(),boostRechargeRate:boostRechargeRate(),scanCooldown:player.scanCooldown,sonarCost:sonarCost(),mouseHeld:mouseHelm.pointerId!==null,boostHeld,facing:player.facing,hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier==='common').length,reaperCount:scene.predators.filter(e=>e.tier==='reaper').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
   if(location.search.includes('testmode=1')||window.ABYSS_TEST_MODE===true){
     window.AbyssDiagnostics.fixture=({x=600,y=700,rocks=[],predators=[],items=[]}={})=>{
       player.x=x;player.y=y;player.vx=0;player.vy=0;player.facing=0;player.noise=0;
       scene.rocks=rocks.map(rock=>({...rock,vertices:rockPolygon(rock)}));
       scene.predators=predators.map(enemy=>({...enemy,tier:enemy.tier||'common',vx:0,vy:0,homeX:enemy.x,homeY:enemy.y,phase:0,aggression:enemy.aggression??0,alertUntil:enemy.alertUntil??0,forgetUntil:0,lastHit:-10}));
-      scene.items=items.map((i,index)=>makeItem(i.x,i.y,i.type||'scrap',{id:index}));
+      scene.items=items.map((i,index)=>makeItem(i.x,i.y,i.type||'scrap',{id:index,...i}));
       return true;
     };
     window.AbyssDiagnostics.lightingFixture=({depth=1000,facing=0,lights=true,battery=100,quietScene=false,freeze=true,hud=true}={})=>{
@@ -1030,7 +1294,28 @@
     };
     window.AbyssDiagnostics.ambientAtDepth=depth=>ambientLightAt(120+depth*10);
     window.AbyssDiagnostics.renderWorld=()=>{const before=running;running=false;render();running=before;};
-    window.AbyssDiagnostics.debug=()=>({clock,sonarWaves:sonarWaves.map(w=>({...w})),player:{...player},saved:{...saved,upgrades:{...saved.upgrades}},wrecks:scene.wrecks.map(w=>({...w})),predators:scene.predators.map(e=>({...e})),items:scene.items.map(i=>({...i}))});
+    window.AbyssDiagnostics.debug=()=>({clock,sonarWaves:sonarWaves.map(({contacts,...w})=>({...w,contacts:contacts.map(c=>({kind:c.kind,hit:c.hit,x:c.object.x,y:c.object.y}))})),camera:{...camera},viewport:{...viewport},sonarTerrainEchoes:sonarTerrainEchoes.map(e=>({...e})),rocks:scene.rocks.map(e=>({...e})),vents:scene.vents.map(e=>({...e})),player:{...player},saved:{...saved,upgrades:{...saved.upgrades}},wrecks:scene.wrecks.map(w=>({...w})),predators:scene.predators.map(e=>({...e})),items:scene.items.map(i=>({...i}))});
+    window.AbyssDiagnostics.simulationFixture=({depth=500,facing=Math.PI/2,lights=false,battery=maxBattery(),boost=100,upgrades={},items=[],predators=[],rocks=[],wrecks=[],vents=[]}={})=>{
+      resetPilotInput();Object.assign(saved.upgrades,upgrades);
+      const y=120+depth*10,x=centerAt(y);
+      player={...player,x,y,vx:0,vy:0,facing,lights,battery,boost,hull:maxHull(),oxygen:maxOxygen(),noise:0,quiet:false,boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,damageCooldown:0,scanCooldown:0,cargo:{scrap:0,crystal:0,recorders:[]}};
+      scene={items:items.map((i,n)=>makeItem(x+i.dx,y+i.dy,i.type||'scrap',{id:n,index:i.index??0,...i})),
+        rocks:rocks.map(r=>{const k={x:x+r.dx,y:y+r.dy,radius:30,rot:0,seed:.4,spikes:8,...r};return {...k,vertices:rockPolygon(k)};}),
+        predators:predators.map(e=>({tier:'common',vx:0,vy:0,phase:0,aggression:0,lastHit:-10,alertUntil:0,forgetUntil:0,revealUntil:0,...e,x:x+e.dx,y:y+e.dy,homeX:x+e.dx,homeY:y+e.dy})),
+        wrecks:wrecks.map(w=>({...w,x:x+w.dx,y:y+w.dy})),vents:vents.map(v=>({phase:0,...v,x:x+v.dx,y:y+v.dy})),dust:[]};
+      running=true;paused=true;clock=0;sonarWaves=[];sonarTerrainEchoes=[];pointerSilent=false;toastUntil=0;$('notification').classList.add('hidden');
+      camera={x:x-viewport.w/2,y:y-viewport.h*.52};
+      for(const id of ['menuOverlay','pauseOverlay','modalOverlay'])$(id).classList.add('hidden');
+      updateUI();render();return {x,y,camera:{...camera},viewport:{...viewport}};
+    };
+    window.AbyssDiagnostics.step=(seconds,{heldKeys=[],freezeAfter=true}={})=>{
+      keys.clear();heldKeys.forEach(k=>keys.add(k));paused=false;
+      for(let remaining=seconds;remaining>1e-8&&running&&!paused;){const dt=Math.min(1/60,remaining);update(dt);remaining-=dt;}
+      keys.clear();if(freezeAfter)paused=true;updateUI();render();return window.AbyssDiagnostics.state();
+    };
+    window.AbyssDiagnostics.ping=()=>{const before=paused;paused=false;scan();paused=before;render();};
+    window.AbyssDiagnostics.unfreeze=()=>{paused=false;canvas.focus({preventScroll:true});};
+    window.AbyssDiagnostics.tiers=()=>JSON.parse(JSON.stringify(PREDATOR_TIERS));
     window.AbyssDiagnostics.grantCredits=(value)=>{saved.credits=Math.max(0,Math.floor(value));persist();updateUI();};
   }
 })();

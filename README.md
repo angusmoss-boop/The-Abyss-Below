@@ -1,123 +1,92 @@
-# THE ABYSS BELOW
-### Deepwater Expedition · v0.5.0
+# The Abyss Below
 
-A single-player submarine survival game built with vanilla HTML, CSS and JavaScript. The game adds analogue touchscreen steering and installable fullscreen/offline Progressive Web App (PWA) support.
+## v0.6.0: Silent Echoes
 
-## Play and controls
+A standalone, dependency-free browser/PWA submarine expedition game. Pilot the NEREID through a 1,800 m trench, bank salvage, upgrade the vessel and recover six lost recorders.
 
-After publishing to HTTPS GitHub Pages, open the site in your mobile browser.
+### Update an existing GitHub Pages game
 
-| Action | PC | Phone |
+1. Bank your active dive at the surface before refreshing. Only permanent banked progress survives a reload.
+2. Extract the v0.6.0 update ZIP. Copy its contents into the existing repository root, replacing files with the same names. Do not upload the ZIP itself or put the files in a nested folder.
+3. Commit the changes, let GitHub Pages finish deploying, then reopen the game online. Check **EXPEDITION BUILD v0.6.0** in the console footer. On mobile, use EXIT to leave the expanded cockpit and view the footer.
+
+Keep the same site origin and browser profile to retain local saved credits, upgrades, rank, secured recorders and best depth. Do not clear site storage or select NEW GAME to install an update. The save key remains `the-abyss-below-v01`.
+
+The complete-source ZIP is a full copy. The update ZIP contains changed code, documentation and tests; existing icon assets remain unchanged. This package has not been pushed to your repository automatically.
+
+### Controls
+
+| Action | PC | Phone / tablet |
 |---|---|---|
-| Pilot | WASD / arrow keys | Drag the circular **joystick**; slight tilt = slow, edge = fast |
-| Hands-free travel | n/a | Enable **CRUISE**, drag the stick to set a course, release it; adjust by dragging again; tap CRUISE to stop |
-| Sonar | Q | SONAR |
-| Salvage / dock | E | USE |
-| Quiet propulsion | Hold Shift | SILENT toggle |
-| Repair (2 scrap) | R | REPAIR |
-| Lamps | L | LIGHTS ON/OFF |
-| Pause | Esc | PAUSE |
-| Resume | Esc again or RESUME | RESUME |
-| Suspend to main menu | Pause → MENU | Pause → MENU |
-| Abandon current dive | Pause → QUIT → confirm | Pause → QUIT → confirm |
-| Reset all progress | Main menu → NEW GAME → confirm | Main menu → NEW GAME → confirm |
+| Pilot | Hold left click over water, move the cursor; or WASD / arrow keys | Drag right-hand analogue joystick |
+| Boost | Hold Space while piloting | Hold left-side BOOST while steering or cruising |
+| Sonar | Q | PING |
+| Salvage / dock | E | Hold USE, including while moving |
+| Quiet running | Hold Shift | Toggle SILENT |
+| Repair | R | REPAIR |
+| Flashlight | L | LIGHTS |
+| Pause | Escape or PAUSE | Pause button |
+| Keep moving | Hold an input | Enable CRUISE, steer, then release the joystick |
 
-Joystick releases to neutral. Your submarine slows rather than snapping to a stop because it has momentum. Cruise mode holds your **last steering vector**, not collision avoidance. It turns off automatically if you pause, switch apps, open a dialog or start a new dive. Watch your oxygen, battery and rocks!
+Mouse piloting aims the bow and the lamp towards the held cursor. Thrust reduces near the cursor. Letting go stops thrust; the submarine coasts down rather than snapping to a halt. Mouse piloting cancels mobile cruise, preventing unexpected motion after release.
 
-## New in v0.5.0 · The Lightless Deep
+### Boost and power
 
-Ambient light fades continuously as the submarine descends, reaching **zero at 1,000 m** and staying there throughout the deeper trench. At those depths, the world is visible **only inside the powered flashlight beam**. Switching it off, or draining the battery completely, leaves the surroundings black.
+Boost increases thrust speed by **1.85x** and uses a separate **100-point charge meter** at **25 points/second**, for up to **4 seconds**. It also consumes **7 battery units/second** before upgrades, in addition to normal engine/lamp draw. Charge begins recovering **1.5 seconds** after the last boosted frame, at **12.5 points/second**. A fully empty meter must return to full, and the held boost input must be released to rearm. Partially used charge can be spent again without waiting for a complete refill.
 
-The forward beam follows the submarine's heading, has feathered sides and distance falloff, and reveals salvage and predators along its full reach. No circular reveal bubble is added around the vessel. Rock outlines, wrecks, glowing items, predator eyes, vents, particles, the submarine, its wake and in-world sonar rings are all covered by the same darkness pass. The depth display, gauges, controls, mission direction pointer, interaction prompts and separate radar remain readable instruments, not additional light sources.
+Each battery upgrade already adds 30 energy capacity and improves efficiency. It now also increases boost recharge speed by 10%. At MK5, extra boost draw is 4.375 energy/second and charge recovery is 18.75 points/second. Charge recovery never refills ship energy and requires remaining battery power. Boost is loud and overrides quiet running. It does not consume charge when you are not steering. Docking refills the capacitor.
 
-The light button still works on phones, and **L** toggles it on a keyboard. A depleted battery shows **NO POWER**. The landscape touch-button issue above the old mobile breakpoint has also been corrected. Menus, progression, movement and collision rules are retained.
+### Sonar and darkness
 
-**Update from v0.4.0:** extract `the-abyss-below-v0.5.0-update.zip`, upload the files inside it to the existing repository root, replacing their older versions, and commit. Do not upload the ZIP itself. After deployment, reopen the same site/app online and check **v0.5.0** in the normal console footer. The save key is unchanged. Bank the current dive before refreshing; in-progress dives are still held only in memory. Do not clear site storage or choose New Game to install this update.
+Ambient water light fades smoothly to zero at **1,000 m**. A powered, switched-on flashlight illuminates only its forward cone.
 
-The complete ZIP also contains browser tests, verification notes and actual browser screenshots in `screenshots/v0.5.0/`. Existing lighting and collision parameters are in `game.js`; `LIGHTING.blackoutDepth` controls the zero-ambient threshold.
+Sonar is a deliberate exception for instrument echoes, not a permanent room light. Its expanding ring covers every corner of the current viewport. Objects appear as coloured outlines only when the wave reaches them, including objects behind the submarine or outside its lamp cone. Echoes normally last **4.5 seconds from contact** and then fade. Salvage, recorders, air caches, predators, rocks, wrecks, vents and trench walls all respond. A scan does not bank, collect or permanently discover an object.
 
-## Previous update: v0.4.0 · Sleek vessel and proper menus
+Base sonar costs **12 energy** and has a **5.5-second cooldown**. Each upgrade reduces cost by 2, reduces cooldown by 0.35 seconds, extends echo persistence by 0.45 seconds and expands coverage beyond the visible screen. On exceptionally large displays, cooldown cannot finish before that scan's wave has finished travelling. Reached predators may hear the ping. Their AI alert timer is separate from the finite echo visibility timer.
 
-- Rebuilt the **NEREID MK-II** in-game submarine sprite with a streamlined metallic hull, curved blue canopy, swept fins, navigation lights, cyan accents, dual rear propellers, and thrust bubble effects. Existing collision boundaries and handling are unchanged.
-- **Pause → RESUME** continues the same run; **Pause → MENU** returns to the title and suspends the current dive within the open tab; **Pause → QUIT** asks for confirmation and abandons unbanked cargo (but keeps all banked permanent progress).
-- **Main menu → NEW GAME** asks for confirmation, then permanently resets credits, XP, recorders, upgrades and depth records. **BEGIN EXPEDITION** starts a fresh dive with existing banked progress when no dive is suspended; **CONTINUE EXPEDITION** resumes an in-memory paused dive.
-- In-progress dives are **not** saved across page refreshes/app closure. Use the surface station to bank valuables before leaving the app.
+### Predator tiers
 
-## Install on Android (fullscreen, no address bar)
+| Tier | Predator | Count per trench | Chase speed (world units/s) | Damage | Region |
+|---|---|---:|---:|---:|---|
+| 1 | Drifter | 46 | 80 | 13 | Throughout the trench |
+| 2 | Abyss stalker | 11 | 134 | 27 | Spawns below 400 m |
+| 3 | Crimson reaper | 5 | 196 | 42 | Below 800 m only |
 
-1. Upload the game's root files to your **existing** GitHub repository. Keep `index.html`, `game.js`, `styles.css`, `manifest.webmanifest`, `service-worker.js`, and the three `.png` icon files at the repository root. Upload other docs/tests if wanted. **Don't upload the ZIP itself.**
-2. Wait for GitHub Pages to redeploy, then open the **same Pages URL** in **Chrome** (HTTPS). If the old layout remains, refresh or close/reopen the page.
-3. Chrome's **⋮ menu** should offer **Install app** or **Add to Home screen**. Use **Install app** when offered. Alternatively, use the game's *INSTALL ON PHONE* button if Chrome displays it.
-4. Launch **The Abyss Below** from its new home-screen icon, rather than reopening the GitHub Pages tab. The app requests **fullscreen** display to hide browser toolbars. Android may retain system navigation gestures or override fullscreen settings.
+The reaper has a crimson armoured silhouette, paired pale eyes and greater awareness. All tiers have finite pursuit ranges. Boost, engine upgrades, distance and quieter running offer different escape options; campaign balance still needs real playtesting.
 
-The new service worker caches core files for offline play after installation and the initial online load. The game uses the same browser storage key as v0.1, so credits/upgrades already saved on the same device and GitHub Pages origin should remain available. **Saves are local to that browser/origin; there is no cloud sync or transfer between devices.** Unbanked cargo and an in-progress dive are not saved. Avoid clearing site data/uninstalling before securing anything important.
+### Pressure and progress
 
-## Publish or update on GitHub Pages
+The tag over the vessel now includes its current limit, for example **NEREID // MK-II · LIMIT 530m**. It remains readable in the dark and turns red beyond the rating.
 
-**First publish:** create a public repo, upload root files, go to **Settings → Pages**, choose **Deploy from a branch**, `main`, `/ (root)` and Save.
+Hull starts at 130 m. Seven upgrades add 200 m and 28 hull HP each, to a maximum rating of 1,530 m and 296 HP. Recorders remain at 75, 260, 470, 725, 1,100 and 1,500 m. The bottom of the world is 1,800 m and is deliberately beyond the maximum safe hull rating.
 
-**Updating v0.1:** replace the three existing root game files, add `manifest.webmanifest`, `service-worker.js`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` to the same root, and commit. If using Android's GitHub web interface, enable Desktop site when GitHub hides the upload controls. You do not need to create another repository. GitHub may take a short while to refresh the site after committing. Open your published site and check the footer says **v0.5.0**.
+### Menus
 
-## Mission and gameplay
+- RESUME returns to the current dive.
+- MENU suspends a dive only for the current page session. CONTINUE returns to it.
+- QUIT asks before discarding unbanked cargo. Banked progression remains.
+- NEW GAME asks before clearing permanent saved progression.
 
-Locate six gold/orange flight recorders at approximately 75, 260, 470, 725, 1,100 and 1,500 m and **return to the surface station to deliver them**. Salvage scrap/crystals for credits, then upgrade hull, oxygen, battery, engine, sonar and stealth. Noise and sonar attract predators. Depth pressure can damage the hull. Dock to bank progress and restore your systems.
+### Local development and testing
 
-**Permanent progress:** saved credits, upgrades, XP, best depth and delivered recorders. The original localStorage key `the-abyss-below-v01` is deliberately retained to protect v0.1 saves.
+No game build step or runtime library is required. For local HTTP development, run `python -m http.server 8000` from the game folder and open localhost on port 8000. A service worker requires HTTPS or a supported localhost origin. GitHub Pages supplies HTTPS.
 
-## Developer notes
+Browser tests require Python, Playwright and Chromium. Install Playwright and its browser separately as appropriate for your development environment. The tests use a system Chromium if available, otherwise Playwright's Chromium.
 
-No runtime libraries or external assets required. The entire app is static, compatible with GitHub Pages subdirectories because PWA paths are relative. Game code is `game.js`, mobile controls in `index.html`/`styles.css`, install config in `manifest.webmanifest`, and offline caching in `service-worker.js`.
+```sh
+node --check game.js
+node tests/v060_service_worker_test.mjs
+python tests/v060_mechanics_test.py
+python tests/v050_depth_lighting_test.py
+python tests/v040_menu_visual_test.py
+python tests/v030_deep_trench_test.py
+python tests/v022_behaviour_test.py
+python tests/joystick_pwa_test.py
+python tests/smoke_test.py
+python tests/mobile_ui_v022_test.py
+python tests/v050_pwa_cache_test.py
+```
 
-Optional tests: `pip install playwright pillow`, `python -m playwright install chromium`, `python tests/smoke_test.py` and `python tests/joystick_pwa_test.py`. The second checks movement and manifest icons in an in-memory browser. It does not prove installed Android fullscreen or actual offline behaviour; test that on Chrome after deployment. A read-only `window.AbyssDiagnostics.state()` hook is available for inspecting game state.
+The last command is a real HTTP/offline integration test, updated to the current release version despite its historical filename. It was **blocked by the execution environment** during this release. The Node worker test checks a mocked worker lifecycle, not an installed PWA.
 
-### v0.5.0 verification
-
-Run `python tests/v050_depth_lighting_test.py` for pixel-level blackout, beam rotation, battery, mobile touch and resize checks. See `VERIFICATION-v0.5.0.md` for all executed checks and limitations. `tests/v050_pwa_cache_test.py` is an additional real HTTP/offline test to run where browser access to a local server is permitted; that integration check was blocked by this build environment.
-
-## What comes next
-
-Further navigation tools, creature variety, and richer environmental storytelling.
-
-
-## Mobile v0.2.2: fullscreen cockpit
-
-On a phone, **BEGIN EXPEDITION** enters the expanded play view automatically. Use the
-**EXIT** button at the top right to return to the complete mission/radar/upgrade
-console. **FULLSCREEN** inside the canvas lets you switch back. The browser will
-also attempt its native Fullscreen API when you press this button; in browsers
-that disallow it, immersive view still fills the available webpage area. Install
-via Chrome's **Install app** for a display without the usual address bar.
-
-A high-contrast joystick is at the bottom right, and compact sonar/use/silent/
-repair/lights controls are at the bottom left. USE is enlarged and can be held while moving. Toggle **CRUISE** for hands-free
-thrust after steering. CSS and JS carry versioned URLs so new uploads do not
-accidentally reuse old files from browser caches; offline app caching also uses
-a new release key.
-
-When updating GitHub Pages from a phone, upload the files **inside** the update
-ZIP to the repository root, replacing the old versions; do not upload the ZIP
-itself. Confirm the version in the regular console footer is v0.2.2. If your
-installed home-screen app is showing an old layout, close/reopen it after the
-Pages deployment completes and clear the site's cache if necessary.
-
-## v0.2.2 gameplay and mobile layout
-
-- **Actions are on the left; joystick and cruise are on the right.** The **USE** button is now large and at the top of the left-hand action cluster.
-- **Hold USE while steering** with another finger. Salvage is checked every 120 ms, so you can coast into range and automatically pick up items. You can also tap USE to pick up an item immediately. Docking still opens the upgrade panel and stops the dive as before. Pickup distance is now 60 world units.
-- **Predator disengagement:** chasing predators break pursuit when you are over 345 world units from them, lose their sonar alert, and won't immediately reacquire while returning to patrol. Quiet running still helps avoid detection; staying close or pinging sonar still attracts enemies.
-- **Rocks use their actual rendered polygon outlines** with a submarine capsule hitbox, multiple small movement steps, tangential sliding, and a generated traversable corridor. Tight gaps that visually fit the vessel are more reliable. Collisions at higher speed can still damage the hull.
-- The old save key, mission objectives, app icon, installation and full-screen mode are unchanged. Update files in the existing GitHub repository; the versioned asset URLs and new PWA cache name help phones fetch the new version without reinstalling.
-
-## v0.3.0 · Into the deep
-
-- **Six recorders** instead of three, fixed at approximately 75, 260, 470, 725, 1,100 and 1,500 metres. Orange wrecks remain the mission targets; all six must be **delivered to the station** to win.
-- **Trench extended to 1,800 m**, with seven depth sectors and larger procedurally generated rock, salvage and predator fields. The continuous navigable corridor remains intact.
-- **Common DRIFTERS:** blue-grey bodies, pink/red eyes, 80-unit/s chase speed, 13 damage per bite, 345-unit pursuit leash.
-- **Rare ABYSS STALKERS:** glowing purple bodies and larger fins, 134-unit/s chase speed, better hearing/vision, 27 damage per bite, longer 505-unit pursuit leash. They spawn only beyond 400 m. Both tiers abandon pursuit after escaping their leash.
-- **Reinforced hull:** seven purchasable levels. Base rating is 130 m; each level adds 200 m to the safe depth, up to **1,530 m** at level 7. Each level also adds 28 maximum hull HP. Pressure damage outside the rating rises much more sharply, so racing to the bottom without upgrades is not a viable shortcut.
-- More crystal salvage at depth and salvage near wrecks help fund successive upgrades. Take your salvage home and return for deeper recorders. Higher-level travel and predator encounters still require caution.
-- Radar distinguishes rare predators with a purple dot, and the main dive status warns of **APEX CONTACT**.
-- Original v0.1-v0.2.2 save key remains unchanged: previously secured recorders `[0,1,2]` remain credited, and the three additional recorders are new objectives. Banked credits, XP and upgrades are preserved. Old hull upgrade levels now grant the new depth capacity.
-- Update the files from the v0.3.0 update ZIP at your existing repository root and commit. You do **not** have to reinstall the PWA. Reopen it online after GitHub Pages redeploys and verify v0.3.0 in the console footer.
-
-**Verification:** Browser regressions cover joystick + multitouch USE, existing rock physics, old-save conversion, six recorder locations, apex-only spawn depth, higher predator damage, and hull upgrades at 1,500 m. Real Samsung performance and full-campaign balancing need playtesting.
+See **VERIFICATION-v0.6.0.md** for actual results and limitations. Test-only fixture mutation APIs are available only when explicitly using `?testmode=1` or `window.ABYSS_TEST_MODE = true`.
