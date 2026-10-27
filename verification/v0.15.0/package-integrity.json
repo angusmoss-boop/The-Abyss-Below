@@ -1,0 +1,21 @@
+{
+  "build_id": "0.15.0-wild-waters-1",
+  "timestamp_utc": "2026-10-27T20:22:07.706428+00:00",
+  "runtime_assets": [
+    "index.html",
+    "styles.css",
+    "audio.js",
+    "game.js",
+    "version-sync.js",
+    "service-worker.js",
+    "manifest.webmanifest",
+    "icon-192.png",
+    "icon-512.png",
+    "icon-maskable-512.png"
+  ],
+  "complete": "PASS",
+  "overlay": "PASS",
+  "base_archive": "the-abyss-below-v0.14.0-complete.zip",
+  "suites_passed": 17,
+  "live_offline": "BLOCKED"
+}

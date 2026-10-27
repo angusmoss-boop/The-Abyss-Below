@@ -1,0 +1,31 @@
+{
+  "peaks": {
+    "chain": 0.014401355758309364,
+    "ventWarning": 0.01674499548971653,
+    "ventErupt": 0.036709703505039215,
+    "kelp": 0.009691734798252583,
+    "schoolRush": 0.0123873520642519,
+    "wreckGroan": 0.018576830625534058,
+    "harbour": 0.008418796584010124,
+    "derelictBlast": 0.08223490417003632,
+    "dock": 0.022606410086154938,
+    "explosion": 0.06097668781876564,
+    "pickup": 0.027148671448230743,
+    "sonar": 0.03749683126807213
+  },
+  "baselines": {
+    "chain": 0,
+    "ventWarning": 0,
+    "ventErupt": 0,
+    "kelp": 0,
+    "schoolRush": 0,
+    "wreckGroan": 0,
+    "harbour": 0,
+    "derelictBlast": 0,
+    "dock": 0,
+    "explosion": 0,
+    "pickup": 0,
+    "sonar": 0
+  },
+  "notes": "Actual Chromium analyser samples. This is NOT a human listening, headphone, phone-speaker or perceptual-mix test."
+}
