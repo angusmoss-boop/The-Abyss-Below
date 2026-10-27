@@ -1,8 +1,8 @@
-/* Living Depths: original procedural audio, no downloads or permissions.
+/* Wild Waters: original procedural audio, no downloads or permissions.
    Start/resume only after user input. Settings persist independently of campaigns. */
 (() => {
   'use strict';
-  const KEY='abyss-audio-v1', BUILD='0.14.0-living-depths-1';
+  const KEY='abyss-audio-v1', BUILD='0.15.0-wild-waters-1';
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   let settings={effects:.5,ambience:.35,muted:false};
   try { const v=JSON.parse(localStorage.getItem(KEY)||'null'); if(v){
@@ -11,7 +11,8 @@
   }} catch(_){}
   let context=null, master=null, fx=null, bed=null, engineGain=null, engine=null, motor=null, motorGain=null, waterGain=null, waterFilter=null;
   let unlocked=false, blocked=false, active=false, lastTick=0, lastThreat=-99,lastCreak=-99,lastEcho=-99;
-  const voices=new Set();
+  const voices=new Set(),eventTimes=new Map();
+  let noiseBuffer=null;const counts={};
   function ramp(param,value,seconds=.12){if(!param||!context)return;param.setTargetAtTime(value,context.currentTime,seconds);}
   function apply(){if(!context)return;ramp(master.gain,settings.muted?0:.65,.04);ramp(fx.gain,settings.effects,.04);ramp(bed.gain,settings.ambience,.08);}
   function init(){
@@ -48,32 +49,60 @@
     try{localStorage.setItem(KEY,JSON.stringify(settings));}catch(_){}
     apply();return {...settings};
   }
-  function tone(freq,endFreq,duration=.3,gain=.12,pan=0,type='sine',delay=0){
+  function tone(freq,endFreq,duration=.3,gain=.12,pan=0,type='sine',delay=0,bus='effects'){
     if(!context||context.state!=='running'||settings.muted||voices.size>=28)return;
     const t=context.currentTime+delay,o=context.createOscillator(),g=context.createGain();
     o.type=type;o.frequency.setValueAtTime(Math.max(10,freq),t);o.frequency.exponentialRampToValueAtTime(Math.max(10,endFreq),t+duration);
     g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+duration);
     o.connect(g);let p=null;
-    if(context.createStereoPanner){p=context.createStereoPanner();p.pan.value=clamp(pan,-1,1);g.connect(p);p.connect(fx);}else g.connect(fx);
+    if(context.createStereoPanner){p=context.createStereoPanner();p.pan.value=clamp(pan,-1,1);g.connect(p);p.connect(bus==='ambience'?bed:fx);}else g.connect(bus==='ambience'?bed:fx);
     voices.add(o);o.onended=()=>{voices.delete(o);o.disconnect();g.disconnect();p?.disconnect();};o.start(t);o.stop(t+duration+.025);
   }
-  function event(kind,pan=0){
-    if(!unlocked||!context||context.state!=='running'||settings.muted)return;
+  // Shared noise texture, filtered per event. No decoded assets, network or per-tick buffers.
+  function noise(duration,gain,pan=0,frequency=600,type='lowpass',delay=0,bus='effects'){
+    if(!context||context.state!=='running'||settings.muted||voices.size>=24)return;
+    if(!noiseBuffer){noiseBuffer=context.createBuffer(1,Math.floor(context.sampleRate*2.4),context.sampleRate);const data=noiseBuffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;}
+    const source=context.createBufferSource(),filter=context.createBiquadFilter(),g=context.createGain(),t=context.currentTime+delay;
+    source.buffer=noiseBuffer;filter.type=type;filter.frequency.value=frequency;filter.Q.value=.65;
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+Math.min(.08,duration/4));g.gain.exponentialRampToValueAtTime(.0001,t+duration);
+    source.connect(filter);filter.connect(g);let p=null;
+    if(context.createStereoPanner){p=context.createStereoPanner();p.pan.value=clamp(pan,-1,1);g.connect(p);p.connect(bus==='ambience'?bed:fx);}else g.connect(bus==='ambience'?bed:fx);
+    voices.add(source);source.onended=()=>{voices.delete(source);source.disconnect();filter.disconnect();g.disconnect();p?.disconnect();};source.start(t);source.stop(t+duration+.03);
+  }
+  function event(kind,pan=0,intensity=1){
+    if(!unlocked||!context||context.state!=='running'||settings.muted||voices.size>=24)return;
+    const gaps={echo:.14,chain:2.5,ventWarning:1.6,ventErupt:.7,harbour:4,wreckGroan:5,kelp:1.5,schoolRush:2.5,derelictBlast:.10};
+    const now=context.currentTime;
+    if(now-(eventTimes.get(kind)??-100)<(gaps[kind]??.035))return;
+    eventTimes.set(kind,now);counts[kind]=(counts[kind]||0)+1;
+    const strength=clamp(intensity,0,1),variation=.96+Math.random()*.08;
+    const play=(f,e,d,g,p=pan,type='sine',delay=0,bus='effects')=>tone(f*variation,e*variation,d,g*strength,p,type,delay,bus);
+    const hiss=(d,g,f=600,type='lowpass',delay=0,bus='effects')=>noise(d,g*strength,pan,f,type,delay,bus);
     switch(kind){
-      case 'sonar': tone(780,620,.52,.14,pan);tone(620,500,.48,.045,-pan,'sine',.22);break;
-      case 'echo': if(context.currentTime-lastEcho>.13){lastEcho=context.currentTime;tone(1100,950,.13,.035,pan);}break;
-      case 'pickup':tone(410,620,.15,.10,pan);tone(640,850,.18,.07,pan,'sine',.08);break;
-      case 'recorder':tone(330,440,.35,.1,pan);tone(660,880,.4,.08,pan,'sine',.16);break;
-      case 'mine':tone(210,95,.2,.14,pan,'triangle');break;
-      case 'explosion':tone(100,24,.65,.25,pan,'triangle');tone(270,35,.32,.08,pan,'sawtooth');break;
-      case 'damage':tone(140,55,.27,.16,pan,'triangle');break;
-      case 'shield':tone(240,540,.22,.10,pan);break;
-      case 'dock':[0,1,2].forEach((i)=>tone([330,440,660][i],[330,440,660][i],.34,.085,0,'sine',i*.12));break;
-      case 'breach':tone(100,490,.5,.11,0,'triangle');break;
-      case 'splash':tone(250,32,.7,.20,0,'triangle');tone(620,90,.4,.04,0);break;
-      case 'lights':tone(170,310,.09,.035,0);break;
+      case 'sonar':play(780,620,.52,.14);play(620,500,.48,.045,-pan,'sine',.22);break;
+      case 'echo':play(1100,950,.13,.035);break;
+      case 'pickup':play(410,620,.15,.10);play(640,850,.18,.07,pan,'sine',.08);break;
+      case 'recorder':play(330,440,.35,.1);play(660,880,.4,.08,pan,'sine',.16);break;
+      case 'mine':play(210,95,.2,.14,pan,'triangle');hiss(.13,.07,1500,'bandpass');break;
+      case 'explosion':play(100,24,.65,.25,pan,'triangle');hiss(.5,.2,450);break;
+      case 'derelictBlast':play(68,20,1.15,.27,pan,'triangle');hiss(.9,.26,310);hiss(.43,.09,1850,'bandpass',.18);play(240,70,.38,.065,pan,'triangle',.3);break;
+      case 'damage':play(140,55,.27,.16,pan,'triangle');hiss(.13,.08,1100,'bandpass');break;
+      case 'shield':play(240,540,.22,.10);break;
+      case 'dock':hiss(.24,.11,800,'bandpass');play(110,64,.2,.12,0,'triangle');[0,1,2].forEach(i=>play([330,440,660][i],[330,440,660][i],.34,.085,0,'sine',.13+i*.12));break;
+      case 'breach':hiss(.55,.15,1800);play(100,490,.5,.09,0,'triangle');break;
+      case 'splash':hiss(.9,.24,600);play(100,32,.7,.13,0,'triangle');break;
+      case 'lights':play(170,310,.09,.035);break;
+      // Spatial background details go through the ambience bus, not the effects slider.
+      case 'chain':play(178,165,.6,.055,pan,'triangle',0,'ambience');play(420,330,.16,.022,pan,'sine',.24,'ambience');break;
+      case 'ventWarning':hiss(.95,.085,440,'lowpass',0,'ambience');play(62,84,1.15,.045,pan,'sine',0,'ambience');break;
+      case 'ventErupt':hiss(1.8,.18,720,'lowpass',0,'ambience');play(70,39,1.7,.055,pan,'triangle',0,'ambience');break;
+      case 'kelp':hiss(.75,.045,1000,'bandpass',0,'ambience');break;
+      case 'schoolRush':hiss(.33,.045,1600,'bandpass',0,'ambience');break;
+      case 'wreckGroan':play(83,49,1.8,.055,pan,'triangle',0,'ambience');play(139,112,1.4,.024,pan,'sine',.2,'ambience');break;
+      case 'harbour':play(54,54,1.6,.025,pan,'triangle',0,'ambience');play(220,196,.38,.019,pan,'sine',.4,'ambience');break;
     }
   }
+
   function suspend(){
     active=false;
     if(!context)return;
@@ -96,6 +125,6 @@
     if(data.threat&&now-lastThreat>4.6){lastThreat=now;tone(95,70,.6,.09,data.pan||0,'triangle');tone(120,80,.5,.045,data.pan||0,'sine',.25);}
     if(data.pressure>.86&&!data.harbour&&now-lastCreak>9){lastCreak=now;tone(75,48,.9,.08,Math.sin(now),'triangle');}
   }
-  const status=()=>({buildId:BUILD,...settings,available:Boolean(window.AudioContext||window.webkitAudioContext),unlocked,state:context?.state||'not-started',blocked,voices:voices.size,active});
+  const status=()=>({buildId:BUILD,...settings,available:Boolean(window.AudioContext||window.webkitAudioContext),unlocked,state:context?.state||'not-started',blocked,voices:voices.size,active,eventCounts:{...counts},maxVoices:28});
   window.AbyssAudio={unlock,event,tick,suspend,configure,settings:()=>({...settings}),status};
 })();

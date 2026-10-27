@@ -1,4 +1,4 @@
-> Historical design notes. For current v0.14 behaviour, use README.md and LIVING-DEPTHS-v0.14.0.md. Active-dive saving, charts and sound supersede earlier limitations here.
+> Historical design notes. For current v0.15 behaviour, use README.md and WILD-WATERS-v0.15.0.md. Encounter persistence, wildlife, active-dive saving, charts and sound supersede earlier limitations here.
 
 # The Abyss Below: current design
 

@@ -1,27 +1,24 @@
 # The Abyss Below
 
-## v0.14.0: Living Depths
+## v0.15.0: Wild Waters
 
-A dependency-free Canvas/JavaScript submarine expedition game for desktop and mobile browsers/PWAs. This release adds active-dive save/resume, a persistent exploration chart, five visual environments with currents and landmarks, procedural sound, and a compact instrument HUD. The five-level campaign, twelve upgrade systems, twenty achievements, finite resources and paid ammunition remain intact.
+A dependency-free Canvas/JavaScript submarine expedition game for desktop and mobile browsers/PWAs. This release adds persistent abandoned contact mines, four harmless schooling fish designs, pulsing vent fields, reactive seabed organisms and richer procedural audio.
 
 ## Install the update
 
-1. On v0.13 or an older build, **dock and bank cargo, then quit the active dive before updating**. That build cannot supply the new full expedition snapshot.
-2. Extract the update ZIP and copy its contents into the existing repository root, replacing matching files. Do not upload the ZIP itself or introduce an extra parent directory.
-3. Publish `index.html`, `styles.css`, **`audio.js`**, `game.js`, `version-sync.js`, `service-worker.js`, `manifest.webmanifest` and `version.json` together. Keep the existing icons. Partial deployments are rejected by the version checker.
-4. Reopen online after the hosting deployment completes. Look for **v0.14.0 / Living Depths** and use CHECK AGAIN. SYNC VERIFIED requires published hashes, loaded code/style/audio markers and the controlling offline worker to match.
-5. Keep the same host path and browser profile. Do not clear site data or select New Game to update. This package does not automatically push or deploy a repository.
+Bank cargo and quit the current dive first. Extract the update ZIP into the existing v0.14.0 repository root, replacing the matching files. Publish `index.html`, `styles.css`, `audio.js`, `game.js`, `version-sync.js`, `service-worker.js`, `manifest.webmanifest` and `version.json` together; keep the icons. Do not upload the ZIP itself or nest the files inside another directory.
 
-## Living Depths features
+Reopen online after deployment and look for **v0.15.0 / Wild Waters**. CHECK AGAIN verifies published hashes, loaded code/styles/audio and the controlling worker. This package does not push to GitHub or deploy automatically. Keep the same host/path and browser profile; do not clear site data, uninstall or start New Game to update.
 
-- **Compact HUD:** a thin identity rail, live numeric gauges, system readiness and contextual warnings. The map and telemetry controls sit beside pause. The detail panel has twelve exact readings, fullscreen/help controls and sound settings. The measured 390 x 844 portrait HUD is 31.7% shorter than v0.13.
-- **Five environments:** coral/seagrass, pale mineral formations, kelp/overgrowth, cathedral-like columns and basalt/fissures. Each level has three chartable landmarks. Scenery uses an independent seed and does not move existing deposits or rocks. Deep darkness and sonar rules remain intact.
-- **Currents:** visible, bounded horizontal flows that affect the submarine and predators, with a sheltered harbour/central route. Currents are weaker than standard quiet-running thrust.
-- **Survey map:** M or the top map icon opens a paused side-view chart. Explore or scan to reveal terrain; discovered contacts persist, predator dots expire, and surveyed water can receive a waypoint. Pan, pinch/wheel zoom, centre and overview controls are provided.
-- **Sound:** original procedural engine/water/boost layers and event cues, with separate effects/ambience sliders, mute and sonar preview. Pause/backgrounding suspends audio. No downloaded sound assets or microphone permissions are needed.
-- **Save/resume:** Continue restores the actual expedition paused, including position, cargo, mines, enemies, timers and ammunition. Automatic checkpoints occur around every five simulation seconds and after important actions. Intentional Quit/defeat still use recovery pods.
+## Wild Waters
 
-Read **LIVING-DEPTHS-v0.14.0.md** for detailed mechanics, storage behaviour and caveats. Previous release guides are historical; their old reload-loss instructions no longer describe v0.14.
+* Rusted contact mines sway on tethers, damage predators and the submarine, and remain destroyed permanently. Sonar and the survey chart reveal discovered hazards. Harbour, resource and recorder approaches are protected.
+* Silver Darts, Sunstripe Reeflets, Ribbonfins and Violet Glassfish swim in groups of 6–14. Fish separate around the vessel, scatter from predators/boost/sonar and regroup. They do not collide, offer loot or fill the chart with icons.
+* Vent chimneys warn before pulsing. Early bubble seeps are harmless; deeper plumes cause damage and push the submarine and predators upward.
+* Anemones, fan corals, crabs and tube colonies respond to light, movement and currents.
+* Environmental sound adds local chains, vents, kelp, school movement, wrecks and harbour machinery. Explosions, docking and water transitions have richer effects.
+
+Read **WILD-WATERS-v0.15.0.md** for rules, migration and caveats. The compact HUD, maps, currents, active-dive resume, mobile zoom and existing controls remain. No new currencies, upgrade costs or automatic ammo refills were introduced.
 
 ## Five-level campaign
 
@@ -92,6 +89,6 @@ All existing flashlight, boost, shield, magnet, disruption and paid ammunition s
 
 Serve the folder over HTTP for local development, for example `python -m http.server 8000`. Normal local-preview version status is not a verified hosted release.
 
-After editing any runtime asset, run `python tests/build_release.py` before publishing. Run the current suite with `python tests/run_v0140.py --jobs 1`; see **tests/README-v0.14.0.md** for dependencies and limitations. Historical tests/reports describe earlier rules and are not current acceptance evidence.
+After editing any runtime asset, run `python tests/build_release.py` before publishing. Run the current suite with `python tests/run_v0150.py --jobs 1`; see **tests/README-v0.15.0.md** for dependencies and limitations. Historical tests/reports describe earlier rules and are not current acceptance evidence.
 
-**VERIFICATION-v0.14.0.md** records the actual test outcomes. Physical Android hardware, real hosted/offline updating and a full human campaign playthrough are not verified. This remains a browser/PWA source release, not a signed Android app bundle.
+**VERIFICATION-v0.15.0.md** records the actual test outcomes. Physical Android hardware, real hosted/offline updating and a full human campaign playthrough are not verified. This remains a browser/PWA source release, not a signed Android app bundle.

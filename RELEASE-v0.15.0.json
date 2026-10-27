@@ -1,0 +1,139 @@
+{
+  "version": "0.15.0",
+  "name": "Wild Waters",
+  "build_id": "0.15.0-wild-waters-1",
+  "base_version": "0.14.0",
+  "date": "2026-10-27",
+  "runtime_manifest": "version.json",
+  "campaign_schema": 3,
+  "canonical_save_key": "the-abyss-below-campaign-v3",
+  "levels": [
+    {
+      "id": "sunbreak-shelf",
+      "floor_m": 300,
+      "recorders": 2,
+      "scrap_units": 84,
+      "crystal_units": 36
+    },
+    {
+      "id": "glassbone-rift",
+      "floor_m": 600,
+      "recorders": 3,
+      "scrap_units": 130,
+      "crystal_units": 70
+    },
+    {
+      "id": "drowned-gardens",
+      "floor_m": 1000,
+      "recorders": 4,
+      "scrap_units": 170,
+      "crystal_units": 100
+    },
+    {
+      "id": "midnight-cathedral",
+      "floor_m": 1400,
+      "recorders": 5,
+      "scrap_units": 210,
+      "crystal_units": 130
+    },
+    {
+      "id": "calypso-abyss",
+      "floor_m": 1800,
+      "recorders": 6,
+      "scrap_units": 250,
+      "crystal_units": 160
+    }
+  ],
+  "economy": {
+    "fixed_scrap_credit_value": 15192,
+    "fixed_crystals": 496,
+    "upgrade_tree_credits": 12223,
+    "upgrade_tree_crystals": 432,
+    "paid_steps": 51,
+    "ammo_round_credits": 12,
+    "hull_iii": {
+      "credits": 297,
+      "crystals": 10
+    },
+    "crystal_guard": "Every required hull gate counts only stocks reachable before that pressure upgrade"
+  },
+  "achievements": {
+    "count": 20,
+    "entry_points": [
+      "main menu",
+      "pause menu"
+    ],
+    "scope": "campaign",
+    "currency_rewards": false
+  },
+  "encounters": {
+    "mines": [
+      8,
+      16,
+      28,
+      42,
+      58
+    ],
+    "vent_fields": [
+      5,
+      9,
+      15,
+      21,
+      28
+    ],
+    "schools": [
+      12,
+      22,
+      36,
+      48,
+      62
+    ],
+    "fish_per_school": [
+      6,
+      14
+    ],
+    "species": [
+      "Silver Dart",
+      "Sunstripe Reeflet",
+      "Ribbonfin",
+      "Violet Glassfish"
+    ],
+    "cleared_mines_persist": true,
+    "new_currency": false
+  },
+  "verification": "VERIFICATION-v0.15.0.md",
+  "guide": "WILD-WATERS-v0.15.0.md",
+  "package_checks": {
+    "build_id": "0.15.0-wild-waters-1",
+    "timestamp_utc": "2026-10-27T20:22:07.706428+00:00",
+    "runtime_assets": [
+      "index.html",
+      "styles.css",
+      "audio.js",
+      "game.js",
+      "version-sync.js",
+      "service-worker.js",
+      "manifest.webmanifest",
+      "icon-192.png",
+      "icon-512.png",
+      "icon-maskable-512.png"
+    ],
+    "complete": "PASS",
+    "overlay": "PASS",
+    "base_archive": "the-abyss-below-v0.14.0-complete.zip",
+    "suites_passed": 17,
+    "live_offline": "BLOCKED"
+  },
+  "runtime_hashes": {
+    "index.html": "75a30b31e36aed2d49e48fdc0fd50c13d7a4250863e94bae039a82982bc42014",
+    "styles.css": "dd1d330a174bd8f06c058a2895034ac731119a1151f7262d30656079d8049006",
+    "audio.js": "5a423f79222d3bb1ecc2107ce351826d521e77124e2352c2d2f76e928e8c9ef3",
+    "game.js": "d69f20657fa263a5c25483ab44b34eab3dcfa51f04241e9bc76ee440e357bfe4",
+    "version-sync.js": "7f7a0781ddbd0f9885b3bde7134d9f6aacb5d54b93e0e18c3f58b12b6c4c1c15",
+    "service-worker.js": "8eee8a2f0fcefb9ba01166e61cc9cc3c75d8f6eaf802df2da170462c5cba7dac",
+    "manifest.webmanifest": "02ae4faeec5656f3d0067f32396e1fb87058c75ad7cfe4fc5982964d236083e4",
+    "icon-192.png": "eb31e497f47e2fb14048f1a26f16f41c15de0d786b0be4a35afcbdfc4cc0c216",
+    "icon-512.png": "48b550a89b9352f43df53d834abaf802ba51b37ffd6289dda0ac4870f26bf822",
+    "icon-maskable-512.png": "48b550a89b9352f43df53d834abaf802ba51b37ffd6289dda0ac4870f26bf822"
+  }
+}

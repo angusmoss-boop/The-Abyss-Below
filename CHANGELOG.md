@@ -1,3 +1,16 @@
+# v0.15.0 / Wild Waters
+
+- Added deterministic persistent contact-mine layouts and swept hull/predator triggers. Mine clears survive dock cycles, level switching and reload. Protected approaches and old-save arrival safeguards.
+- Added four fish designs, schooling/separation, obstacle avoidance, current influence, sonar/boost/predator startle and viewport-limited simulation.
+- Added structured pulsing vents with visible warning, upward flow, harmless first-level seeps, deeper thermal damage and chart/sonar integration.
+- Added retracting anemones/tube colonies, current-sensitive fan corals and retreating crabs on existing terrain.
+- Expanded procedural sound with distinct abandoned blasts, chains, vents, schools, kelp, harbour machinery, wrecks and docking clamps. Independent audio buses, distance, limits and mute retained.
+- Extended active snapshots with wildlife and validated per-level encounter data without changing resource placements, economy or canonical save key.
+- Prevented unrelated remote environmental kills/noise from rewarding dock camping; avoided initial predator spawns on mines.
+- Maintained compact controls, all prior mechanics and version/checksum/worker wiring.
+
+Previous releases below are historical.
+
 # Changelog
 
 ## v0.14.0 | Living Depths

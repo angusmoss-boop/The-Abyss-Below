@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const BUILD = Object.freeze({version:'0.14.0',name:'Living Depths',id:'0.14.0-living-depths-1'});
+  const BUILD = Object.freeze({version:'0.15.0',name:'Wild Waters',id:'0.15.0-wild-waters-1'});
   window.AbyssBuild=BUILD;
   const $ = id => document.getElementById(id);
   const canvas = $('gameCanvas');
@@ -14,7 +14,7 @@
     if(!value||value.version!==1)return freshSurvey();
     const point=p=>p&&Number.isFinite(p.x)&&p.x>=SURVEY.left&&p.x<=SURVEY.right&&Number.isFinite(p.y)&&p.y>=70&&p.y<=18120;
     return {version:1,cells:Array.isArray(value.cells)?[...new Set(value.cells.filter(x=>typeof x==='string'&&/^\d{1,2}:\d{1,3}$/.test(x)).slice(0,12000))]:[],
-      contacts:Object.fromEntries(Object.entries(value.contacts||{}).filter(([k,c])=>k.length<100&&point(c)&&['scrap','crystal','air','recorder','recovery','wreck','landmark','station'].includes(c.type)).slice(0,4000).map(([k,c])=>[k,{x:c.x,y:c.y,type:c.type,label:String(c.label||'').slice(0,80),collected:c.collected===true}])),
+      contacts:Object.fromEntries(Object.entries(value.contacts||{}).filter(([k,c])=>k.length<100&&point(c)&&['scrap','crystal','air','recorder','recovery','wreck','landmark','station','derelict','thermal'].includes(c.type)).slice(0,4000).map(([k,c])=>[k,{x:c.x,y:c.y,type:c.type,label:String(c.label||'').slice(0,80),collected:c.collected===true}])),
       waypoint:point(value.waypoint)?{x:value.waypoint.x,y:value.waypoint.y}:null};
   }
   // Surface and harbour rules are shared by rendering, physics and AI.
@@ -59,7 +59,7 @@
   const currentLevel=()=>LEVELS.find(l=>l.id===LEVEL_ID)||LEVELS[0];
   const cleanCount=v=>Number.isFinite(v)&&v>=0?Math.floor(v):0;
   const freshField = () => ({schema:3,seed:(Math.random()*0xffffffff)>>>0,cycle:0,
-    looted:[],health:{},loot:null,drops:[],secured:[],recoveries:[],recoverySerial:0,pendingCargo:null,floorReached:false,awaitingDock:false,survey:freshSurvey()});
+    looted:[],health:{},loot:null,drops:[],secured:[],recoveries:[],recoverySerial:0,pendingCargo:null,floorReached:false,awaitingDock:false,survey:freshSurvey(),wild:null});
   let field=freshField(),campaignId='campaign-'+Date.now().toString(36)+'-'+field.seed.toString(36);
   let campaignLevels={},storageHealthy=true,storageRecovery=false,migratedLegacy=false;
   const readJSON=key=>{try{return JSON.parse(localStorage.getItem(key)||'null');}catch(_){return null;}};
@@ -77,7 +77,7 @@
       drops:Array.isArray(data.drops)?data.drops.filter(n=>validNode(n)&&n.type==='scrap'&&/^drop-/.test(n.id)).map(normalise):[],
       secured:Array.isArray(data.secured)?[...new Set(data.secured.filter(n=>Number.isInteger(n)&&n>=0&&n<6))]:[],
       recorderDepths:Array.isArray(data.recorderDepths)&&data.recorderDepths.length===6&&data.recorderDepths.every(n=>Number.isFinite(n)&&n>0&&n<1800)?[...data.recorderDepths]:null,
-      survey:normaliseSurvey(data.survey),legacyLayout:data.legacyLayout===true,crystalTopUp:data.crystalTopUp===true,recoveries,recoverySerial:cleanCount(data.recoverySerial),pendingCargo:cargo(data.pendingCargo),floorReached:data.floorReached===true,awaitingDock:data.awaitingDock===true};
+      survey:normaliseSurvey(data.survey),wild:validateWild(data.wild),legacyLayout:data.legacyLayout===true,crystalTopUp:data.crystalTopUp===true,recoveries,recoverySerial:cleanCount(data.recoverySerial),pendingCargo:cargo(data.pendingCargo),floorReached:data.floorReached===true,awaitingDock:data.awaitingDock===true};
   }
   function addRecovery(f,cargo){
     if(!cargo||!(cargo.scrap||cargo.crystal))return;
@@ -381,7 +381,7 @@
   function populateWorld(){
     scene.items=[];scene.predators=[];scene.mines=[];scene.blasts=[];
     sonarWaves=[];sonarTerrainEchoes=[];
-    for(const kind of ['rocks','wrecks','vents'])for(const object of scene[kind])object.revealUntil=0;
+    for(const kind of ['rocks','wrecks','vents','derelictMines','ventFields','schools'])for(const object of (scene[kind]||[]))object.revealUntil=0;
     const looted=new Set(field.looted);
     for(const w of scene.wrecks){
       if(!saved.secured.includes(w.index))scene.items.push(makeItem(w.x,w.y,'recorder',{id:'recorder-'+w.index,index:w.index}));
@@ -419,7 +419,7 @@
       const point=populationPoint(r,y,{lane}),id='enemy-'+scene.predators.length;
       const health=field.health[id]??Math.round(PREDATOR_TIERS[tier].health*currentLevel().health);
       const enemy=createPredator({id,tier,...point,homeX:point.x,homeY:y,vx:0,vy:0,phase:r()*TAU,aggression:0,lastHit:-10,alertUntil:0,forgetUntil:0,revealUntil:0,health});
-      enemy.dead=enemy.health<=0;keepPredatorOutsideHarbour(enemy);scene.predators.push(enemy);
+      enemy.dead=enemy.health<=0;keepPredatorOutsideHarbour(enemy);avoidWildSpawn(enemy);scene.predators.push(enemy);
     };
     if(field.legacyLayout){
       // Preserve legacy predator IDs and damage/deaths until the next real docking cycle.
@@ -457,7 +457,7 @@
       const y=r()*MAX_WORLD_Y;
       scene.dust.push({x:lerp(leftAt(y)-120,rightAt(y)+120,r()),y,phase:r()*TAU,size:.5+r()*1.7});
     }
-    populateWorld();buildEnvironment();hydrateSurvey();persistField();
+    populateWorld();buildEnvironment();hydrateSurvey();buildWildWaters();persistField();
   }
   function refreshDockPopulation(){
     field.cycle++;field.health={};
@@ -471,7 +471,7 @@
     loadedActive=null;running=false;buildingWorld=true;createWorld();buildingWorld=false;dockVisitActive=!field.awaitingDock;
     player={x:600,y:160,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing:-Math.PI/2,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,quiet:false,damageCooldown:0,scanCooldown:0,boost:boostCapacity(),boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,cargo:{scrap:0,crystal:0,recorders:[]},lastRepair:-100,mineAmmo:0,mineCooldown:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,trip:{deepest:0,hullDamage:0}};
     resupplyMines();
-    sonarWaves=[];sonarTerrainEchoes=[];surfaceEffects=[];clock=0;lastZone='';eventLines=[];useHoldTimer=0;victoryShown=saved.secured.length===RECORDERS_TOTAL;pointerSilent=false;resetPilotInput();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
+    sonarWaves=[];sonarTerrainEchoes=[];surfaceEffects=[];clock=0;for(const m of scene.derelictMines||[])Object.assign(m,mineLocation(m));lastZone='';eventLines=[];useHoldTimer=0;victoryShown=saved.secured.length===RECORDERS_TOTAL;pointerSilent=false;resetPilotInput();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
     addEvent('Dive systems initialised.');
     addEvent(currentLevel().name+' · '+RECORDERS_TOTAL+' recorders · '+currentLevel().depth.toLocaleString('en-GB')+' m seabed.');
     running=true;paused=false;showingDock=false;
@@ -547,7 +547,7 @@
       const d=distance(origin,object);
       if(d<=range+100)contacts.push({kind,object,previousDistance:d,hit:false});
     };
-    for(const kind of ['items','predators','rocks','wrecks','vents','mines','landmarks'])for(const object of (scene[kind]||[]))add(kind,object);
+    for(const kind of ['items','predators','rocks','wrecks','vents','mines','landmarks','derelictMines','ventFields','schools'])for(const object of (scene[kind]||[]))add(kind,object);
     for(let y=Math.floor((camera.y-30)/24)*24;y<=camera.y+viewport.h+30;y+=24){
       if(y<120)continue;
       for(const side of [-1,1])add('wall',{x:side<0?leftAt(y):rightAt(y),y,side});
@@ -579,6 +579,7 @@
           if(['items','predators'].includes(contact.kind))window.AbyssAudio?.event('echo',clamp((object.x-player.x)/300,-1,1));
           object.revealUntil=Math.max(object.revealUntil||0,clock+wave.echoSeconds);
           object.echoDuration=wave.echoSeconds;
+          if(contact.kind==='schools'){object.sonarUntil=clock+1.4;object.sonarX=wave.x;object.sonarY=wave.y;object.revealUntil=clock+Math.min(2,wave.echoSeconds);}
           if(contact.kind==='predators'){
             object.alertUntil=Math.max(object.alertUntil||0,clock+5);
             if(wave.disruption&&d<=DISRUPTOR.range[wave.disruption]){
@@ -643,12 +644,12 @@
     const t=(-b-Math.sqrt(discriminant))/(2*a);
     return t>=0&&t<=1?armedFraction+(1-armedFraction)*t:null;
   }
-  function damagePredator(enemy,amount){
+  function damagePredator(enemy,amount,credited=true){
     if(!predatorAlive(enemy)||!Number.isFinite(amount)||amount<=0)return;
     enemy.health=Math.max(0,enemy.health-amount);enemy.lastDamaged=clock;
     if(typeof enemy.id==='string')field.health[enemy.id]=enemy.health;
     if(enemy.health===0){
-      enemy.dead=true;enemy.aggression=0;enemy.alertUntil=0;player.kills++;addStat('kills',1);if(enemy.tier==='reaper')addStat('reaperKills',1);checkAchievements();
+      enemy.dead=true;enemy.aggression=0;enemy.alertUntil=0;if(credited){player.kills++;addStat('kills',1);if(enemy.tier==='reaper')addStat('reaperKills',1);checkAchievements();}
       const quantity=PREDATOR_SALVAGE[enemy.tier]||2;
       const id='drop-'+field.cycle+'-'+(enemy.id??('fixture-'+idCounter++));
       if(!field.drops.some(n=>n.id===id)){
@@ -658,7 +659,7 @@
         const drop={...point,id,type:'scrap',quantity};
         field.drops.push(drop);scene.items.push(makeItem(point.x,point.y,'scrap',{...drop,predatorDrop:true}));
       }
-      addEvent(PREDATOR_TIERS[enemy.tier].name+' neutralised · '+quantity+' scrap to recover');
+      if(credited||distance(player,enemy)<500)addEvent(PREDATOR_TIERS[enemy.tier].name+' neutralised · '+quantity+' scrap to recover');
     }else{
       enemy.aggression=Math.max(.5,enemy.aggression);enemy.alertUntil=clock+4;enemy.forgetUntil=0;
     }
@@ -998,8 +999,8 @@
     openDialog('SIGNAL LOST // RECOVERY AVAILABLE','VESSEL LOST',`<div class="briefing"><p>${reason}</p><p>Your unbanked scrap and crystals are in a persistent recovery pod near the loss position. Undelivered recorders return to their wrecks. Banked currencies, upgrades and achievements remain saved.</p><p><strong>Selected level:</strong> ${currentLevel().name}<br><strong>Best depth:</strong> ${saved.bestDepth} m · <strong>Secured recorders:</strong> ${saved.secured.length}/${RECORDERS_TOTAL}</p></div>`, '<div class="dialog-actions"><button class="primary-btn" id="retryBtn">LAUNCH RESCUE VESSEL <span>→</span></button><button class="alt-btn" id="defeatMenuBtn">MAIN MENU</button></div>');
     $('retryBtn').addEventListener('click',newDive);$('defeatMenuBtn').addEventListener('click',()=>returnToMenu(false));
   }
-  function takeDamage(amount,reason='Hull breach') {
-    if(player.damageCooldown>0)return;
+  function takeDamage(amount,reason='Hull breach',independentImpact=false) {
+    if(player.damageCooldown>0&&!independentImpact)return;
     const absorbed=Math.min(player.shield||0,amount);
     player.shield=Math.max(0,(player.shield||0)-absorbed);
     if(shieldCapacity()>0){player.shieldDelay=SHIELD.delay;player.shieldFlashUntil=clock+.45;}
@@ -1126,6 +1127,7 @@
     simulationStepping=true;
     clock+=dt;
     if(!player)return;
+    player.previousX=player.x;player.previousY=player.y;
     player.scanCooldown=Math.max(0,player.scanCooldown-dt);
     player.mineCooldown=Math.max(0,player.mineCooldown-dt);
     player.damageCooldown=Math.max(0,player.damageCooldown-dt);
@@ -1144,7 +1146,7 @@
     const thrustPower=hasInput&&player.battery>.5?1:0;
     const divisor=Math.max(1,magnitude);
     const water=currentAt(player.x,player.y);
-    const desiredX=x/divisor*maxSpeed*thrustPower+water.x,desiredY=y/divisor*maxSpeed*thrustPower;
+    const desiredX=x/divisor*maxSpeed*thrustPower+water.x,desiredY=y/divisor*maxSpeed*thrustPower+ventFlowAt(player.x,player.y);
     const factor=1-Math.exp(-(3.5+saved.upgrades.engine*.2)*dt);
     if(player.airborne){
       // Momentum carries the leap. Neither held steering nor boost can make the sub fly.
@@ -1224,14 +1226,15 @@
       const es=chase?tier.speed:tier.patrolSpeed;
       const waterAtEnemy=currentAt(enemy.x,enemy.y);
       enemy.vx=lerp(enemy.vx,(tx-enemy.x)/ed*es+waterAtEnemy.x,1-Math.exp(-dt*2));
-      enemy.vy=lerp(enemy.vy,(ty-enemy.y)/ed*es,1-Math.exp(-dt*2));
+      enemy.vy=lerp(enemy.vy,(ty-enemy.y)/ed*es+ventFlowAt(enemy.x,enemy.y),1-Math.exp(-dt*2));
       enemy.x=clamp(enemy.x+enemy.vx*dt,leftAt(enemy.y)+34,rightAt(enemy.y)-34);
       enemy.y=clamp(enemy.y+enemy.vy*dt,SURFACE.y+34,MAX_WORLD_Y-30);
       keepPredatorOutsideHarbour(enemy);
       // Tier-3 encounters never leak into the upper 800 m, even in pursuit.
       if(enemy.tier==='reaper'&&enemy.y<8120){enemy.y=8120;enemy.vy=Math.max(0,enemy.vy);enemy.aggression=0;enemy.alertUntil=0;enemy.forgetUntil=clock+1;}
     }
-    // Resolve armed mines before bites: a hunter killed on this frame cannot attack.
+    // Resolve both mine types before bites: a hunter killed on this frame cannot attack.
+    updateWildWaters(dt);if(!running)return;
     updateMines(dt);
     for(const enemy of scene.predators){
       const tier=PREDATOR_TIERS[enemy.tier];
@@ -1303,7 +1306,9 @@
       gl.addColorStop(0,'#2ef1de60');gl.addColorStop(1,'#2ef1de00');ctx.fillStyle=gl;ctx.beginPath();ctx.arc(vent.x,vent.y,48,0,TAU);ctx.fill();
       for(let j=0;j<5;j++){const yy=vent.y-((clock*(17+j*3)+j*11+vent.phase*9)%110);const xx=vent.x+Math.sin(yy*.1+j)*10;ctx.beginPath();ctx.arc(xx,yy,1+j%2,0,TAU);ctx.fillStyle='#76dfd46a';ctx.fill();}
     }
+    drawWildLife();
     for(const rock of scene.rocks)if(onscreen(rock.x,rock.y,rock.radius+20))drawRock(rock);
+    drawWildSeabed();
     for(const wreck of scene.wrecks)if(onscreen(wreck.x,wreck.y))drawWreck(wreck);
     if(headlightsActive())drawLightBeam();
     for(const item of scene.items)if(!item.collected&&onscreen(item.x,item.y)){
@@ -1336,7 +1341,7 @@
     // World illumination stays black at 1,000 m. Sonar is a separate, timed
     // instrument echo layer: silhouettes only, never an ambient-light reset.
     applyDepthDarkness(ambient);
-    drawSonarEchoes();
+    drawSonarEchoes();drawWildEchoes();
     if(environmentEnabled){ctx.save();ctx.translate(-camera.x,-camera.y);for(const l of environment.landmarks)if(l.revealUntil>clock&&onscreen(l.x,l.y,200)){ctx.globalAlpha=clamp((l.revealUntil-clock)/sonarEchoSeconds(),0,.9);drawLandmark(l,true);}ctx.restore();}
     drawMouseTarget();
     drawEdgeArrows();
@@ -1539,10 +1544,10 @@
   function drawMineBlast(blast){
     const age=clamp((clock-blast.birth)/.65,0,1),r=Math.max(2,blast.radius*Math.sqrt(age));
     ctx.save();ctx.translate(blast.x,blast.y);ctx.globalAlpha=1-age;
-    const g=ctx.createRadialGradient(0,0,0,0,0,r);g.addColorStop(0,'#fff0bca0');g.addColorStop(.35,'#ffc67458');g.addColorStop(1,'#ef815800');
+    const g=ctx.createRadialGradient(0,0,0,0,0,r);g.addColorStop(0,blast.derelict?'#ffe4caaa':'#fff0bca0');g.addColorStop(.35,blast.derelict?'#c9806666':'#ffc67458');g.addColorStop(1,'#ef815800');
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.fill();
     ctx.strokeStyle='#ffe1a4';ctx.lineWidth=2*(1-age)+.5;ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.stroke();
-    for(let i=0;i<10;i++){const a=i*TAU/10;ctx.fillStyle='#a7e3df';ctx.beginPath();ctx.arc(Math.cos(a)*r*.7,Math.sin(a)*r*.7,2*(1-age)+.5,0,TAU);ctx.fill();}
+    for(let i=0;i<10;i++){const a=i*TAU/10;ctx.fillStyle=blast.derelict?'#d3aa83':'#a7e3df';ctx.beginPath();ctx.arc(Math.cos(a)*r*.7,Math.sin(a)*r*.7,2*(1-age)+.5,0,TAU);ctx.fill();}
     ctx.restore();
   }
   function drawPredatorHealth(enemy,local=false){
@@ -1979,9 +1984,13 @@
       <li><strong>Three threat tiers:</strong> common blue drifters; rarer purple stalkers below 400 m; rare crimson reapers below 800 m. Base health is 100 / 200 / 400 HP; later campaign levels scale health and damage upward. Reaper chase speed matches Mk IV magnetic thrusters exactly: normal thrust cannot pull away in open water. Boost to create distance, or leave mines in its path. All tiers retain finite pursuit ranges. Health bars respect darkness and sonar visibility.</li>
       <li><strong>Exploration:</strong> mobile sees 43% farther in each direction; PC zoom is unchanged. The trench is three times wider, with more obstacles and hunters but fewer salvage pieces and much rarer crystals. The three clear navigation lanes keep descent routes open.</li>
       <li><strong>Flashlight Mk I–IV:</strong> the standard Mk I lamp reaches 26 m. Dock upgrades extend this to 36 / 48 / 62 m and widen the beam. The lamp draws power slowly only while on; battery upgrades improve efficiency. Switch it off with <kbd>L</kbd> / LIGHTS to conserve energy.</li>
-      <li><strong>Adaptive ship systems:</strong> the Salvage Magnet extends USE / hold E for visible scrap and crystals, including predator drops, at a small power cost. It cannot recover through rocks or fetch distant recorders/caches. The Kinetic Shield absorbs bites and rock impacts, but not pressure or oxygen loss; recharge starts after 8 seconds without impacts, uses battery power and pauses during boost. The Sonic Disruptor adds a short stun to nearby predators on sonar-wave arrival, with shorter stuns for stronger tiers. Low battery falls back to a normal scan.</li>
-      <li><strong>Persistent campaign resources:</strong> salvage and crystals are placed once for this campaign level. Collected deposits never return, even after docking or reloading. Scrap and crystal deposits each yield 2 units. Across five fresh levels, fixed resources provide 15,192 credits worth of scrap and 496 crystals. Scrap banks at 18 credits per unit; crystals stay a separate currency. All paid ship upgrades cost both. If an optional purchase would consume the last crystals needed for the current recorder gate, the shop reserves them for the hull instead. Predators drop 2 / 4 / 8 scrap when destroyed; collect and dock to bank it. Predators and supply caches refresh on a genuine return to dock after departure. Drops persist until collected. Secured recorders never respawn. Lost, quit or interrupted dives leave recoverable scrap and crystal pods; undelivered recorders return to their wrecks. Active dives now autosave every five simulation seconds and after important actions. Continue restores the ship, cargo, enemies, mines and timers paused. Explicit QUIT or defeat still creates a recovery pod. Twenty achievements are available from the main and pause menus. New Game resets all five levels and achievements.</li>
-      <li><strong>Living Depths:</strong> each level has its own seeded scenery, landmark silhouettes and visible current bands. The harbour and central route are sheltered. All scenery respects total darkness. Press <kbd>M</kbd> or the map icon for a paused, permanent survey chart; drag to pan, pinch or use +/− to zoom, and tap surveyed water to set a waypoint. Resources are charted only after discovery and predator contacts expire. The sliders icon opens detailed vessel telemetry. Sound settings are in the main and pause menus.</li>
+      <li><strong>Adaptive ship systems:</strong> the Salvage Magnet extends USE / hold E for visible scrap and crystals, including predator drops, at a small power cost. It cannot recover through rocks or fetch distant recorders/caches. The Kinetic Shield absorbs bites, rock impacts, contact-mine blasts and hot vent damage, but not pressure or oxygen loss; recharge starts after 8 seconds without impacts, uses battery power and pauses during boost. The Sonic Disruptor adds a short stun to nearby predators on sonar-wave arrival, with shorter stuns for stronger tiers. Low battery falls back to a normal scan.</li>
+      <li><strong>Persistent campaign resources:</strong> salvage and crystals are placed once for this campaign level. Collected deposits never return, even after docking or reloading. Scrap and crystal deposits each yield 2 units. Across five fresh levels, fixed resources provide 15,192 credits worth of scrap and 496 crystals. Scrap banks at 18 credits per unit; crystals stay a separate currency. All paid ship upgrades cost both. If an optional purchase would consume the last crystals needed for the current recorder gate, the shop reserves them for the hull instead. Predators drop 2 / 4 / 8 scrap when destroyed; collect and dock to bank it. Predators and supply caches refresh on a genuine return to dock after departure. Drops persist until collected. Secured recorders never respawn. Lost or deliberately quit dives leave recoverable scrap and crystal pods; undelivered recorders return to their wrecks. Active dives now autosave every five simulation seconds and after important actions. Continue restores the ship, cargo, enemies, mines and timers paused. Explicit QUIT or defeat still creates a recovery pod. Twenty achievements are available from the main and pause menus. New Game resets all five levels and achievements.</li>
+      <li><strong>Exploration systems:</strong> each level has its own seeded scenery, landmark silhouettes and visible current bands. The harbour and central route are sheltered. All scenery respects total darkness. Press <kbd>M</kbd> or the map icon for a paused, permanent survey chart; drag to pan, pinch or use +/− to zoom, and tap surveyed water to set a waypoint. Resources are charted only after discovery and predator contacts expire. The sliders icon opens detailed vessel telemetry. Sound settings are in the main and pause menus.</li>
+      <li><strong>Abandoned contact mines:</strong> rusty horned spheres sway on chains. Touching one detonates it, harming nearby predators and the submarine. Your own deployed mines remain safe to the ship. Sonar reveals the tether and the chart remembers the hazard. Cleared contact mines never return, even after docking. The harbour, central route, fixed deposits, recorder approaches and recovery pods are kept clear.</li>
+      <li><strong>Wildlife:</strong> Silver Darts, Sunstripe Reeflets, Ribbonfins and Violet Glassfish form harmless schools. Gentle piloting parts the school; boost, nearby predators and passing sonar scatter it before it regroups. Fish cannot be collected and do not clutter the chart. Anemones, fan corals, crabs and tube colonies react to lights, movement and currents.</li>
+      <li><strong>Vent fields:</strong> rising bubbles and a rumble warn for three seconds before a three-second plume. Active vents push the ship and predators upward. Sunbreak Shelf bubble seeps are harmless; hotter vents in later levels damage the ship while inside. Wait for a quiet phase or take a different route. The chart records discovered vents, not their live phase. New scenery never defeats darkness.</li>
+      <li><strong>Environmental sound:</strong> nearby chains, vents, kelp, school movement, wreck groans and harbour machinery use the ambience slider. Explosions, docking clamps and interaction sounds use effects. Mute and both volume controls remain in SOUND SETTINGS; visible hazard warnings work without audio.</li>
       <li><kbd>Esc</kbd> / <strong>PAUSE</strong> freezes the dive. MENU saves it across sessions; QUIT abandons the dive and leaves a recovery pod. NEW GAME asks before erasing saved progress. Reloading preserves the last successful active-dive snapshot. Continue restores paused; the ocean does not advance while you are away. Clearing browser data still removes local saves.</li>
     </ul></div>`;
     openDialog('OPERATIONS MANUAL // NEREID','PILOT BRIEFING',body,'<div class="dialog-actions"><button id="briefDone" class="alt-btn">UNDERSTOOD</button></div>');
@@ -2175,7 +2184,7 @@
     });
     window.addEventListener('appinstalled',()=>{installPrompt=null;installButton.classList.add('hidden');});
   }
-  // === Living Depths / atomic active-expedition snapshots ===
+  // === Wild Waters / atomic active-expedition snapshots ===
   function validateActiveDive(value){
     if(!value||value.schema!==1||!LEVELS.some(l=>l.id===value.levelId)||!Number.isInteger(value.seed)||!Number.isInteger(value.cycle)||!Number.isFinite(value.clock)||value.clock<0)return null;
     const p=value.player,l=LEVELS.find(l=>l.id===value.levelId),bottom=120+l.depth*10;
@@ -2195,10 +2204,10 @@
     // become stable collection indices, then are rebound after world generation.
     const waves=sonarWaves.map(({contacts,...wave})=>({...wave,contacts:contacts.map(c=>({kind:c.kind,hit:c.hit,previousDistance:c.previousDistance,
       index:scene[c.kind]?.indexOf(c.object)??-1,object:['wall','floor'].includes(c.kind)?c.object:null}))}));
-    const terrain=[];for(const kind of ['rocks','wrecks','vents','landmarks'])(scene[kind]||[]).forEach((o,i)=>{if(o.revealUntil>clock)terrain.push({kind,i,revealUntil:o.revealUntil,echoDuration:o.echoDuration});});
+    const terrain=[];for(const kind of ['rocks','wrecks','vents','landmarks','derelictMines','ventFields','schools'])(scene[kind]||[]).forEach((o,i)=>{if(o.revealUntil>clock)terrain.push({kind,i,revealUntil:o.revealUntil,echoDuration:o.echoDuration});});
     return {schema:1,build:BUILD.version,levelId:LEVEL_ID,seed:field.seed,cycle:field.cycle,clock,idCounter,dockVisitActive,
       player:{...player},items:scene.items,predators:scene.predators,mines:scene.mines,blasts:scene.blasts,waves,echoes:sonarTerrainEchoes,terrain,
-      events:eventLines.slice(0,3),threatContacts:surveyThreats,surfaceEffects};
+      events:eventLines.slice(0,3),threatContacts:surveyThreats,surfaceEffects,wildlife:captureWildlife()};
   }
   function restoreActiveDive(){
     const snapshot=loadedActive;if(!snapshot)return false;
@@ -2208,6 +2217,7 @@
     player=JSON.parse(JSON.stringify(snapshot.player));player.trip=player.trip||{deepest:depthOf(player.y),hullDamage:0};
     scene.items=JSON.parse(JSON.stringify(snapshot.items));scene.predators=JSON.parse(JSON.stringify(snapshot.predators));
     scene.mines=JSON.parse(JSON.stringify(snapshot.mines)).filter(m=>!m.detonated);scene.blasts=JSON.parse(JSON.stringify(snapshot.blasts));
+    restoreWildlife(snapshot.wildlife);for(const m of scene.derelictMines||[])Object.assign(m,mineLocation(m));
     for(const t of snapshot.terrain){const o=scene[t.kind]?.[t.i];if(o){o.revealUntil=t.revealUntil;o.echoDuration=t.echoDuration;}}
     sonarTerrainEchoes=JSON.parse(JSON.stringify(snapshot.echoes));
     sonarWaves=snapshot.waves.map(w=>({...w,contacts:w.contacts.map(c=>({...c,object:['wall','floor'].includes(c.kind)?c.object:scene[c.kind]?.[c.index]})).filter(c=>c.object)}));
@@ -2297,7 +2307,7 @@
           ctx.beginPath();ctx.moveTo(k*4,8);ctx.quadraticCurveTo(k*6+sway,-size*.45,k*12+sway,-size*(.5+(k+2)*.08));ctx.stroke();
           if(d.variant%2===0){ctx.beginPath();ctx.moveTo(k*6+sway*.6,-size*.3);ctx.lineTo(k*10+10,-size*.52);ctx.stroke();}
         }
-        if(d.variant===1){for(let k=0;k<4;k++){const x=Math.sin(clock*.23+d.phase)*size+k*14,y=-size*.7+Math.sin(clock+k)*4;ctx.fillStyle='#8dcbbe8a';ctx.beginPath();ctx.ellipse(x,y,5,2,0,0,TAU);ctx.fill();ctx.beginPath();ctx.moveTo(x-4,y);ctx.lineTo(x-8,y-3);ctx.lineTo(x-8,y+3);ctx.fill();}}
+
       }else if(index===1){
         for(let k=-1;k<=1;k++){const h=size*(.8+Math.abs(Math.sin(d.phase+k))*.8),x=k*size*.23;
           ctx.fillStyle='#9eb9cc22';ctx.strokeStyle='#b4cbdc8a';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x-9,9);ctx.lineTo(x-6,-h*.7);ctx.lineTo(x+2,-h);ctx.lineTo(x+10,-h*.55);ctx.lineTo(x+9,9);ctx.closePath();ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(x+2,-h);ctx.lineTo(x+1,8);ctx.stroke();}
@@ -2344,6 +2354,356 @@
     ctx.restore();
   }
 
+  // === Wild Waters: independent seeded encounters, never resource rerolls ===
+  const WILD = Object.freeze({mineCounts:[8,16,28,42,58],ventCounts:[5,9,15,21,28],schoolCounts:[12,22,36,48,62],
+    mineRadius:16,blastRadius:118,mineHullDamage:[24,32,40,48,56],mineEnemyDamage:[110,140,180,230,280],
+    maxActiveSchools:12,maxFishPerSchool:14});
+  const FISH = Object.freeze([
+    {name:'SILVER DART',body:'#b2d9e8',edge:'#42687e',fin:'#6b9bb7',speed:38,size:7,shape:'dart'},
+    {name:'SUNSTRIPE REEFLET',body:'#edba68',edge:'#b67543',fin:'#efcf85',speed:23,size:8,shape:'reef'},
+    {name:'RIBBONFIN',body:'#73d5c3',edge:'#418f95',fin:'#9a8bc5',speed:29,size:9,shape:'ribbon'},
+    {name:'VIOLET GLASSFISH',body:'#b6aad6',edge:'#70698f',fin:'#8e9bc5',speed:21,size:8,shape:'glass'}
+  ]);
+  let wildEnabled=true,wildActiveSchools=0,wildSoundTimers={},wildRockIndex=new Map(),wildRockSource=null;
+  function validateWild(data){
+    if(!data||data.version!==1||!Array.isArray(data.mines)||data.mines.length>80||!Array.isArray(data.vents)||data.vents.length>40)return null;
+    const finite=(o,keys)=>o&&keys.every(k=>Number.isFinite(o[k]));
+    if(!data.mines.every(m=>/^derelict-\d+$/.test(m.id)&&finite(m,['anchorX','anchorY','tether','phase','sway'])&&m.anchorY>70&&m.anchorY<18200&&Math.abs(m.anchorX)<3000&&m.tether>=40&&m.tether<=120&&m.sway>=0&&m.sway<=22))return null;
+    if(!data.vents.every(v=>/^thermal-\d+$/.test(v.id)&&finite(v,['x','y','rx','height','period','phase','damage','lift'])&&v.y>70&&v.y<18200&&Math.abs(v.x)<3000&&v.rx>=16&&v.rx<=60&&v.height>=70&&v.height<=200&&v.period>=10&&v.period<=30&&v.damage>=0&&v.damage<=12&&v.lift>=0&&v.lift<=65))return null;
+    if(new Set(data.mines.map(m=>m.id)).size!==data.mines.length||new Set(data.vents.map(v=>v.id)).size!==data.vents.length)return null;
+    const list=(a,pattern)=>Array.isArray(a)?[...new Set(a.filter(v=>typeof v==='string'&&pattern.test(v)))].slice(0,80):[];
+    return {version:1,mines:data.mines.map(m=>({id:m.id,anchorX:m.anchorX,anchorY:m.anchorY,tether:m.tether,phase:m.phase,sway:m.sway})),
+      vents:data.vents.map(v=>({id:v.id,x:v.x,y:v.y,rx:v.rx,height:v.height,period:v.period,phase:v.phase,damage:v.damage,lift:v.lift})),
+      cleared:list(data.cleared,/^derelict-\d+$/),retired:list(data.retired,/^derelict-\d+$/),sheltered:list(data.sheltered,/^thermal-\d+$/)};
+  }
+  function nearbyWildRocks(x,y){
+    if(wildRockSource!==scene.rocks){
+      wildRockSource=scene.rocks;wildRockIndex=new Map();
+      for(const rock of scene.rocks){const pad=rock.radius+82;
+        for(let cy=Math.floor((rock.y-pad)/180);cy<=Math.floor((rock.y+pad)/180);cy++)for(let cx=Math.floor((rock.x-pad)/180);cx<=Math.floor((rock.x+pad)/180);cx++){
+          const key=cx+':'+cy;if(!wildRockIndex.has(key))wildRockIndex.set(key,[]);wildRockIndex.get(key).push(rock);
+        }
+      }
+    }
+    return wildRockIndex.get(Math.floor(x/180)+':'+Math.floor(y/180))||[];
+  }
+  function wildClear(x,y,radius=12){
+    if(y-radius<SURFACE.y||y+radius>MAX_WORLD_Y||x-radius<leftAt(y)+8||x+radius>rightAt(y)-8)return false;
+    for(const rock of radius<=80?nearbyWildRocks(x,y):scene.rocks){
+      if(Math.abs(x-rock.x)>rock.radius+radius+5||Math.abs(y-rock.y)>rock.radius+radius+5)continue;
+      if(insidePolygon(x,y,rock.vertices))return false;
+      for(let i=0;i<rock.vertices.length;i++){const p=segmentClosest(x,y,rock.vertices[i],rock.vertices[(i+1)%rock.vertices.length]);if(Math.hypot(x-p.x,y-p.y)<radius)return false;}
+    }
+    return true;
+  }
+  function hazardClear(x,y,radius=130){
+    if(y<570||distance({x,y},HARBOUR)<HARBOUR.exclusionRadius+160)return false;
+    // Keep the full central route and every essential objective/recovery approach open.
+    for(const yy of [y-90,y,y+90])if(Math.abs(x-laneAt(yy,1))<125)return false;
+    if(scene.wrecks.some(w=>distance({x,y},w)<radius+70))return false;
+    if((field.loot||[]).some(n=>distance({x,y},n)<radius))return false;
+    if(field.recoveries.some(n=>distance({x,y},n)<radius+50))return false;
+    return true;
+  }
+  function mineLocation(m,time=clock){
+    const swing=Math.sin(time*.65+m.phase)*m.sway+Math.sin(time*.23+m.phase)*m.sway*.2;
+    return {x:m.anchorX+swing,y:m.anchorY-m.tether+Math.abs(swing)*.12};
+  }
+  function buildWildWaters(){
+    wildEnabled=true;wildSoundTimers={};wildActiveSchools=0;
+    const levelIndex=Math.max(0,LEVELS.findIndex(l=>l.id===LEVEL_ID));
+    const r=randGen((field.seed^0x57494c44)>>>0);
+    if(!field.wild){
+      field.wild={version:1,mines:[],vents:[],cleared:[],retired:[],sheltered:[]};
+      const anchors=scene.rocks.map(rock=>rock.vertices.reduce((a,b)=>a.y<b.y?a:b)).filter(p=>p.y>700);
+      for(let i=0;i<28;i++)anchors.push({x:lerp(leftAt(MAX_WORLD_Y)+80,rightAt(MAX_WORLD_Y)-80,(i+.5)/28),y:MAX_WORLD_Y});
+      // Seeded shuffle operates on a separate array. No collision/resource RNG is consumed.
+      for(let i=anchors.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[anchors[i],anchors[j]]=[anchors[j],anchors[i]];}
+      for(const a of anchors){
+        if(field.wild.mines.length>=WILD.mineCounts[levelIndex])break;
+        const tether=64+r()*39,sway=10+r()*7,x=a.x,y=a.y-tether;
+        if(!hazardClear(x,y,135)||![-1,0,1].every(k=>wildClear(x+k*sway*1.2,y,23)))continue;
+        if(field.wild.mines.some(m=>Math.hypot(m.anchorX-x,m.anchorY-m.tether-y)<250))continue;
+        field.wild.mines.push({id:'derelict-'+field.wild.mines.length,anchorX:x,anchorY:a.y,tether,phase:r()*TAU,sway});
+      }
+      for(const a of anchors){
+        if(field.wild.vents.length>=WILD.ventCounts[levelIndex])break;
+        const height=95+r()*55+levelIndex*8,rx=24+r()*13,x=a.x,y=a.y;
+        if(!hazardClear(x,y-height*.5,125)||!wildClear(x,y-35,18)||!wildClear(x,y-height*.8,rx+10))continue;
+        if(field.wild.mines.some(m=>Math.hypot(m.anchorX-x,m.anchorY-m.tether-(y-height*.5))<210)||field.wild.vents.some(v=>Math.hypot(v.x-x,v.y-y)<230))continue;
+        field.wild.vents.push({id:'thermal-'+field.wild.vents.length,x,y,rx,height,period:14+r()*6,phase:r()*14,damage:levelIndex===0?0:2+levelIndex*1.5,lift:32+levelIndex*7});
+      }
+    }
+    const removed=new Set([...field.wild.cleared,...field.wild.retired]);
+    scene.derelictMines=field.wild.mines.map(m=>({...m,...mineLocation(m),detonated:removed.has(m.id),revealUntil:0}));
+    scene.ventFields=field.wild.vents.map(v=>({...v,disabled:field.wild.sheltered.includes(v.id),revealUntil:0}));
+    // Only a migration/arrival safeguard, never an unlimited underwater invulnerability aura.
+    for(const pod of field.recoveries)protectWildArrival(pod,150);
+    if(loadedActive?.levelId===LEVEL_ID&&!loadedActive.wildlife)protectWildArrival(loadedActive.player,145);
+    for(const enemy of scene.predators)avoidWildSpawn(enemy);
+    const fishRandom=randGen((field.seed^0x46495348)>>>0);
+    scene.schools=[];scene.benthos=[];
+    const habitats=[[0,1,0,1,2],[0,0,2,1],[2,2,0,3],[3,2,3,0],[3,3,2,0]][levelIndex];
+    for(let i=0;i<WILD.schoolCounts[levelIndex];i++){
+      const y=440+(i+fishRandom())/WILD.schoolCounts[levelIndex]*(MAX_WORLD_Y-620);
+      const point=populationPoint(fishRandom,y),species=habitats[i%habitats.length];
+      scene.schools.push(makeSchool('school-'+i,point.x,point.y,species,fishRandom));
+    }
+    const benthicRandom=randGen((field.seed^0x52454546)>>>0);
+    for(const rock of scene.rocks){
+      if(benthicRandom()>.46)continue;
+      const p=rock.vertices.reduce((a,b)=>a.y<b.y?a:b);
+      scene.benthos.push({x:p.x,y:p.y-1,kind:Math.floor(benthicRandom()*4),size:11+benthicRandom()*13,phase:benthicRandom()*TAU,retreat:0,level:levelIndex});
+    }
+    for(let n=0;n<16;n++)scene.benthos.push({x:lerp(leftAt(MAX_WORLD_Y)+60,rightAt(MAX_WORLD_Y)-60,(n+.5)/16),y:MAX_WORLD_Y-3,kind:n%4,size:12+benthicRandom()*15,phase:benthicRandom()*TAU,retreat:0,level:levelIndex});
+  }
+  function avoidWildSpawn(enemy){
+    const nearby=()=> (scene.derelictMines||[]).some(m=>!m.detonated&&Math.hypot(enemy.x-m.anchorX,enemy.y-(m.anchorY-m.tether))<95);
+    if(!nearby())return;
+    const original=enemy.x;
+    for(const offset of [140,-140,230,-230,320,-320]){
+      enemy.x=clamp(original+offset,leftAt(enemy.y)+45,rightAt(enemy.y)-45);
+      if(!nearby()&&wildClear(enemy.x,enemy.y,30)){enemy.homeX=enemy.x;enemy.vx=0;enemy.vy=0;return;}
+    }
+    enemy.x=original;
+  }
+  function protectWildArrival(point,radius=145){
+    if(!field.wild||!point)return;
+    for(const m of (scene.derelictMines||[]))if(!m.detonated&&Math.hypot(point.x-m.anchorX,point.y-(m.anchorY-m.tether))<radius+m.sway){
+      m.detonated=true;if(!field.wild.retired.includes(m.id))field.wild.retired.push(m.id);
+      const contact=field.survey.contacts['derelictMines:'+m.id];if(contact)contact.collected=true;
+    }
+    for(const v of (scene.ventFields||[]))if(!v.disabled&&Math.abs(point.x-v.x)<v.rx+radius&&point.y>v.y-v.height-radius&&point.y<v.y+radius){
+      v.disabled=true;if(!field.wild.sheltered.includes(v.id))field.wild.sheltered.push(v.id);
+    }
+  }
+  function makeSchool(id,x,y,species,r){
+    const count=6+Math.floor(r()*9),heading=r()*TAU,spec=FISH[species],fish=[];
+    for(let i=0;i<count;i++){
+      let px=x,py=y;
+      for(let k=0;k<24;k++){const nx=x+(r()-.5)*78,ny=y+(r()-.5)*52;if(wildClear(nx,ny,9)){px=nx;py=ny;break;}}
+      fish.push({x:px,y:py,vx:Math.cos(heading)*spec.speed,vy:Math.sin(heading)*spec.speed,angle:heading,size:.72+r()*.45,phase:r()*TAU});
+    }
+    return {id,x,y,homeX:x,homeY:y,species,heading,phase:r()*TAU,fear:0,sonarUntil:0,revealUntil:0,fish};
+  }
+  function sweptDistance(ax,ay,bx,by){const dx=bx-ax,dy=by-ay,d=dx*dx+dy*dy,t=d?clamp(-(ax*dx+ay*dy)/d,0,1):0;return Math.hypot(ax+dx*t,ay+dy*t);}
+  function derelictContact(m,actor,dt,radius=15,offset=0){
+    const before=mineLocation(m,clock-dt),after=mineLocation(m,clock),angle=actor.facing||0;
+    const ox=Math.cos(angle)*offset,oy=Math.sin(angle)*offset;
+    return sweptDistance((actor.previousX??actor.x)+ox-before.x,(actor.previousY??actor.y)+oy-before.y,actor.x+ox-after.x,actor.y+oy-after.y)<=WILD.mineRadius+radius;
+  }
+  function detonateDerelict(m,playerContact=false,enemyContacts=[]){
+    if(m.detonated)return false;
+    m.detonated=true;
+    if(!field.wild.cleared.includes(m.id))field.wild.cleared.push(m.id);
+    const contact=field.survey.contacts['derelictMines:'+m.id];if(contact)contact.collected=true;
+    const level=Math.max(0,LEVELS.findIndex(l=>l.id===LEVEL_ID));
+    scene.blasts.push({x:m.x,y:m.y,birth:clock,radius:WILD.blastRadius,derelict:true});
+    wildSound('derelictBlast',m,900,0);
+    for(const enemy of scene.predators)if(predatorAlive(enemy)&&(distance(enemy,m)<WILD.blastRadius+12||enemyContacts.includes(enemy)))damagePredator(enemy,WILD.mineEnemyDamage[level],!inHarbour(player)&&distance(player,m)<600);
+    for(const enemy of scene.predators)if(predatorAlive(enemy)&&distance(enemy,m)<420){enemy.alertUntil=clock+4;enemy.forgetUntil=0;}
+    if(!player.airborne&&!inHarbour(player)&&(playerContact||distance(player,m)<WILD.blastRadius+24)){
+      // Distinct contact explosions are not silently cancelled by a recent bite's immunity window.
+      takeDamage(WILD.mineHullDamage[level],'Abandoned mine blast',true);
+    }
+    if(distance(player,m)<280)player.noise=Math.min(100,player.noise+35);persist();
+    if(running&&distance(player,m)<500)announce('ABANDONED MINE DETONATED',1.7);
+    return true;
+  }
+  function ventStage(v,time=clock){
+    if(v.disabled)return {name:'dormant',power:0,phase:0};
+    const phase=((time+v.phase)%v.period+v.period)%v.period;
+    if(phase<7)return {name:'quiet',power:0,phase};
+    if(phase<10)return {name:'warning',power:(phase-7)/3,phase};
+    if(phase<13)return {name:'active',power:Math.min(1,(phase-10)*4,(13-phase)*3),phase};
+    return {name:'settling',power:Math.max(0,1-(phase-13)/2),phase};
+  }
+  function inVent(v,x,y){return x>v.x-v.rx&&x<v.x+v.rx&&y<v.y-8&&y>v.y-v.height;}
+  function ventFlowAt(x,y){
+    if(!wildEnabled||y<SURFACE.y||Math.hypot(x-HARBOUR.x,y-HARBOUR.y)<HARBOUR.exclusionRadius)return 0;
+    let flow=0;
+    for(const v of scene.ventFields||[]){if(inVent(v,x,y)){const stage=ventStage(v);if(stage.name==='active')flow-=v.lift*stage.power*(1-Math.abs(x-v.x)/(v.rx*1.3));}}
+    return Math.max(-62,flow);
+  }
+  function wildSound(kind,point,range=350,cooldown=2){
+    if(!player||!running||paused||document.hidden)return;
+    const d=distance(point,player);if(d>range)return;
+    if(clock<(wildSoundTimers[kind]??-100))return;
+    wildSoundTimers[kind]=clock+cooldown;
+    window.AbyssAudio?.event(kind,clamp((point.x-player.x)/260,-1,1),clamp(1-d/range,.08,1));
+  }
+  function updateWildWaters(dt){
+    if(!wildEnabled)return;
+    for(const m of scene.derelictMines||[]){
+      Object.assign(m,mineLocation(m));if(m.detonated)continue;
+      const playerContact=!player.airborne&&!inHarbour(player)&&SHIP_OFFSETS.some(o=>derelictContact(m,player,dt,SHIP_RADIUS,o));
+      const enemyContacts=scene.predators.filter(e=>predatorAlive(e)&&derelictContact(m,e,dt,e.tier==='reaper'?23:e.tier==='apex'?19:14));
+      if(playerContact||enemyContacts.length){detonateDerelict(m,playerContact,enemyContacts);if(!running)return;}
+      else if(distance(m,player)<235)wildSound('chain',m,280,6.5);
+    }
+    for(const v of scene.ventFields||[]){
+      const stage=ventStage(v),previous=ventStage(v,clock-dt);
+      if(stage.name==='warning')wildSound('ventWarning',v,380,2.5);
+      if(stage.name==='active'&&previous.name!=='active')wildSound('ventErupt',v,480,1);
+      if(stage.name==='active'&&stage.power>.2&&inVent(v,player.x,player.y)&&v.damage>0&&clock-(player.ventHitAt??-100)>.85){
+        player.ventHitAt=clock;takeDamage(v.damage,'Thermal plume');if(!running)return;
+      }
+    }
+    scene.predators=scene.predators.filter(predatorAlive);
+    updateFishSchools(dt);updateBenthos(dt);
+    if(inHarbour(player))wildSound('harbour',HARBOUR,440,10);
+    if(depthOf(player.y)>350){const wreck=scene.wrecks.find(w=>distance(w,player)<270);if(wreck)wildSound('wreckGroan',wreck,380,11);}
+  }
+  function updateFishSchools(dt){
+    const visible=(scene.schools||[]).filter(s=>onscreen(s.x,s.y,300)).sort((a,b)=>distance(a,player)-distance(b,player)).slice(0,WILD.maxActiveSchools);
+    wildActiveSchools=visible.length;
+    for(const s of visible){
+      const spec=FISH[s.species],nearRock=scene.rocks.filter(r=>Math.abs(r.x-s.x)<r.radius+200&&Math.abs(r.y-s.y)<r.radius+200);
+      const threats=scene.predators.filter(e=>predatorAlive(e)&&distance(e,s)<230);
+      const threat=threats.sort((a,b)=>distance(a,s)-distance(b,s))[0];
+      const pd=distance(player,s),boostFear=player.boosting&&pd<220,sonarFear=s.sonarUntil>clock,predatorFear=Boolean(threat&&distance(threat,s)<175);
+      const wasFrightened=s.fear>.4,targetFear=boostFear||sonarFear||predatorFear?1:pd<100?.25:0;
+      s.fear=lerp(s.fear,targetFear,Math.min(1,dt*(targetFear>s.fear?5:.6)));
+      if(!wasFrightened&&s.fear>.4&&boostFear)wildSound('schoolRush',s,230,4);
+      let desired=s.heading+Math.sin(clock*.31+s.phase)*.07;
+      if(threat&&predatorFear)desired=Math.atan2(s.y-threat.y,s.x-threat.x);
+      else if(boostFear||pd<90)desired=Math.atan2(s.y-player.y,s.x-player.x);
+      else if(sonarFear)desired=Math.atan2(s.y-(s.sonarY??player.y),s.x-(s.sonarX??player.x));
+      else if(Math.hypot(s.x-s.homeX,s.y-s.homeY)>190)desired=Math.atan2(s.homeY-s.y,s.homeX-s.x);
+      s.heading=lerpAngle(s.heading,desired,Math.min(1,dt*(s.fear> .3?3.2:.9)));
+      const water=currentAt(s.x,s.y),speed=spec.speed*(1+s.fear*1.8);
+      let nx=s.x+(Math.cos(s.heading)*speed+water.x*.55)*dt,ny=s.y+(Math.sin(s.heading)*speed+ventFlowAt(s.x,s.y)*.5)*dt;
+      if(wildClear(nx,ny,24)){s.x=nx;s.y=ny;}else{s.heading+=dt*3;}
+      for(let i=0;i<s.fish.length;i++){
+        const f=s.fish[i],spread=1+s.fear*.75,formX=Math.cos(s.heading+Math.PI*.5)*(i%3-1)*12*spread-Math.cos(s.heading)*Math.floor(i/3)*10;
+        const formY=Math.sin(s.heading+Math.PI*.5)*(i%3-1)*12*spread-Math.sin(s.heading)*Math.floor(i/3)*10;
+        let tx=Math.cos(s.heading)*speed+(s.x+formX-f.x)*1.4,ty=Math.sin(s.heading)*speed+(s.y+formY-f.y)*1.4;
+        for(const g of s.fish){if(g===f)continue;const dx=f.x-g.x,dy=f.y-g.y,d2=dx*dx+dy*dy;if(d2>0&&d2<144){tx+=dx/d2*45;ty+=dy/d2*45;}}
+        const fd=distance(f,player);if(fd<65){const strength=(65-fd)*1.8;tx+=(f.x-player.x)/(fd||1)*strength;ty+=(f.y-player.y)/(fd||1)*strength;}
+        for(const rock of nearRock){const dx=f.x-rock.x,dy=f.y-rock.y,d=Math.hypot(dx,dy),edge=rock.radius+22;if(d<edge){tx+=dx/(d||1)*(edge-d)*3;ty+=dy/(d||1)*(edge-d)*3;}}
+        f.vx=lerp(f.vx,tx+water.x*.4,Math.min(1,dt*3));f.vy=lerp(f.vy,ty,Math.min(1,dt*3));
+        const fs=Math.hypot(f.vx,f.vy),cap=speed*1.9;if(fs>cap){f.vx*=cap/fs;f.vy*=cap/fs;}
+        nx=f.x+f.vx*dt;ny=f.y+f.vy*dt;
+        if(wildClear(nx,ny,6)){f.x=nx;f.y=ny;}else{f.vx*=-.5;f.vy*=-.5;}
+        if(Math.hypot(f.vx,f.vy)>2)f.angle=lerpAngle(f.angle,Math.atan2(f.vy,f.vx),Math.min(1,dt*6));
+      }
+    }
+  }
+  function updateBenthos(dt){
+    for(const b of scene.benthos||[]){
+      if(!onscreen(b.x,b.y,120))continue;
+      const d=distance(player,b),lit=headlightsActive()&&beamIntersects(b.x,b.y,12);
+      const alarm=player.boosting&&d<190?1:d<70?1:lit&&d<230?.8:0;
+      b.retreat=lerp(b.retreat,alarm,Math.min(1,dt*(alarm>b.retreat?5:.65)));
+      if(b.kind===1&&d<70&&Math.hypot(player.vx,player.vy)>35)wildSound('kelp',b,150,3.8);
+    }
+  }
+  function drawDerelict(m,echo=false){
+    if(m.detonated)return;
+    const p=mineLocation(m);ctx.save();
+    ctx.lineWidth=echo?1.1:1.5;ctx.strokeStyle=echo?'#f4af7b':'#6e807d';
+    if(!echo){ctx.setLineDash([3,3]);}
+    ctx.beginPath();ctx.moveTo(p.x,p.y+12);ctx.quadraticCurveTo(m.anchorX-8,m.anchorY-m.tether*.4,m.anchorX,m.anchorY);ctx.stroke();ctx.setLineDash([]);
+    if(!echo){ctx.fillStyle='#34464b';ctx.beginPath();ctx.moveTo(m.anchorX-14,m.anchorY);ctx.lineTo(m.anchorX-8,m.anchorY-6);ctx.lineTo(m.anchorX+9,m.anchorY-6);ctx.lineTo(m.anchorX+15,m.anchorY);ctx.closePath();ctx.fill();}
+    ctx.translate(p.x,p.y);ctx.rotate(Math.sin(clock*.65+m.phase)*.10);
+    ctx.strokeStyle=echo?'#ffc28e':'#bd926e';ctx.lineWidth=echo?1.2:2;
+    for(let i=0;i<8;i++){const a=i*TAU/8;ctx.beginPath();ctx.moveTo(Math.cos(a)*12,Math.sin(a)*12);ctx.lineTo(Math.cos(a)*20,Math.sin(a)*20);ctx.stroke();if(!echo){ctx.fillStyle='#9c805e';ctx.beginPath();ctx.arc(Math.cos(a)*20,Math.sin(a)*20,2,0,TAU);ctx.fill();}}
+    ctx.beginPath();ctx.arc(0,0,13,0,TAU);
+    if(!echo){const g=ctx.createRadialGradient(-5,-5,1,0,0,16);g.addColorStop(0,'#6f7c78');g.addColorStop(.5,'#4b5c5d');g.addColorStop(1,'#19292e');ctx.fillStyle=g;ctx.fill();}
+    ctx.stroke();
+    if(!echo){ctx.strokeStyle='#ba864980';ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,0,9,.3,2.1);ctx.stroke();ctx.fillStyle='#bb705970';ctx.fillRect(-7,-5,4,3);ctx.fillRect(3,5,3,2);}
+    ctx.strokeStyle=echo?'#ffd0a2':'#efbf7d';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,-5);ctx.lineTo(4,3);ctx.lineTo(-4,3);ctx.closePath();ctx.stroke();ctx.fillStyle=ctx.strokeStyle;ctx.fillRect(-.5,-2,1,3);
+    if(echo){ctx.font='bold 8px monospace';ctx.textAlign='center';ctx.fillText('CONTACT MINE',0,-28);}
+    ctx.restore();
+  }
+  function drawVentField(v,echo=false){
+    const stage=ventStage(v);ctx.save();ctx.translate(v.x,v.y);
+    ctx.strokeStyle=echo?'#eabb91':'#626d67';ctx.fillStyle='#273332';ctx.lineWidth=1.3;
+    ctx.beginPath();ctx.moveTo(-23,0);ctx.lineTo(-13,-18);ctx.lineTo(-6,-13);ctx.lineTo(0,-26);ctx.lineTo(9,-15);ctx.lineTo(13,-19);ctx.lineTo(24,0);ctx.closePath();if(!echo)ctx.fill();ctx.stroke();
+    const hot=stage.name==='active',warning=stage.name==='warning';
+    if(echo){ctx.setLineDash([3,5]);ctx.beginPath();ctx.moveTo(-v.rx,-25);ctx.lineTo(-v.rx,-v.height);ctx.lineTo(v.rx,-v.height);ctx.lineTo(v.rx,-25);ctx.stroke();ctx.setLineDash([]);ctx.font='8px monospace';ctx.textAlign='center';ctx.fillStyle=ctx.strokeStyle;ctx.fillText(v.damage>0?'THERMAL VENT':'BUBBLE SEEP',0,14);}
+    else{
+      const count=hot?24:warning?10:5,progress=hot?1:warning?.45:.2;
+      if(hot){const g=ctx.createLinearGradient(0,0,0,-v.height);g.addColorStop(0,v.damage>0?'#b7906640':'#9ad4d13b');g.addColorStop(1,'#b8d1cf00');ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(-10,-12);ctx.quadraticCurveTo(-v.rx*1.4,-v.height*.5,-v.rx*.7,-v.height);ctx.lineTo(v.rx*.8,-v.height);ctx.quadraticCurveTo(v.rx*1.4,-v.height*.5,10,-12);ctx.fill();}
+      for(let i=0;i<count;i++){const phase=(clock*(hot?.8:.24)+i*.137+v.phase)%1,yy=-18-phase*v.height*progress,xx=Math.sin(i*2.1+clock*.8)*v.rx*phase;
+        ctx.strokeStyle=hot?'#b8c7bc77':warning?'#d5b79680':'#88c6bb60';ctx.lineWidth=.8;ctx.beginPath();ctx.arc(xx,yy,1.5+(i%4)*.65,0,TAU);ctx.stroke();}
+      if(warning){ctx.fillStyle='#d8b682';ctx.globalAlpha=.45+Math.sin(clock*5)*.2;ctx.beginPath();ctx.ellipse(0,-17,7,3,0,0,TAU);ctx.fill();}
+    }
+    ctx.restore();
+  }
+  function drawFish(s,f,echo=false){
+    const spec=FISH[s.species],size=spec.size*f.size;
+    ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.angle);ctx.scale(size/8,size/8);
+    ctx.globalAlpha*=echo?.65:s.species===3?.72:.95;
+    const tail=Math.sin(clock*(s.fear>.3?17:9)+f.phase)*3;
+    ctx.fillStyle=echo?'#92d5d1':spec.fin;ctx.strokeStyle=echo?'#a2e0da':spec.edge;ctx.lineWidth=.75;
+    ctx.beginPath();ctx.moveTo(-5,0);ctx.lineTo(-11,tail-4);ctx.lineTo(-9,tail);ctx.lineTo(-11,tail+4);ctx.closePath();ctx.fill();
+    if(spec.shape==='ribbon'){
+      ctx.strokeStyle=echo?'#92d5d1':spec.fin;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-6,-1);ctx.bezierCurveTo(-12,tail-3,-18,tail+5,-24,tail+1);ctx.moveTo(-1,2);ctx.quadraticCurveTo(-7,9+tail,-14,6+tail);ctx.stroke();
+    }
+    ctx.fillStyle=echo?'#9edbd4':spec.body;
+    ctx.beginPath();
+    if(spec.shape==='glass'){ctx.moveTo(7,0);ctx.quadraticCurveTo(0,-2,-1,-7);ctx.lineTo(-6,0);ctx.lineTo(-1,7);ctx.quadraticCurveTo(0,2,7,0);}
+    else{const h=spec.shape==='reef'?5:spec.shape==='ribbon'?2.8:2.3;ctx.moveTo(8,0);ctx.bezierCurveTo(2,-h,-4,-h,-6,0);ctx.bezierCurveTo(-4,h,2,h,8,0);}
+    ctx.fill();if(!echo)ctx.stroke();
+    if(!echo){
+      if(spec.shape==='reef'){ctx.strokeStyle='#665b4f';ctx.lineWidth=1.5;for(const x of [-2,1]){ctx.beginPath();ctx.moveTo(x,-3.7);ctx.lineTo(x-.5,3.7);ctx.stroke();}}
+      else if(spec.shape==='dart'){ctx.strokeStyle='#e4f4ee';ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(-4,-.4);ctx.lineTo(5,-.4);ctx.stroke();}
+      ctx.fillStyle='#172f36';ctx.beginPath();ctx.arc(4.6,-.6,.8,0,TAU);ctx.fill();
+    }
+    ctx.restore();
+  }
+  function drawBenthos(b){
+    const amount=1-b.retreat*.88,size=b.size,sway=Math.sin(clock*.8+b.phase)*5,colors=['#cba295','#76ac94','#b38e75','#aea9cb'];
+    ctx.save();ctx.translate(b.x,b.y);ctx.strokeStyle=colors[b.kind];ctx.fillStyle=colors[b.kind];ctx.globalAlpha=.8;ctx.lineWidth=1.3;
+    if(b.kind===0){ // Anemone tentacles fold into a low, rounded crown.
+      ctx.beginPath();ctx.ellipse(0,-2,9,4,0,0,TAU);ctx.fill();
+      for(let j=-3;j<=3;j++){ctx.beginPath();ctx.moveTo(j*2,-2);ctx.quadraticCurveTo(j*4+sway,-size*.45*amount,j*4+sway*.6,-size*amount+Math.abs(j)*2);ctx.stroke();}
+    }else if(b.kind===1){ // A delicate fan bending in the current, not a new collider.
+      const lean=sway+clamp(currentAt(b.x,b.y).x*.2,-7,7)+b.retreat*5;
+      ctx.strokeStyle='#80afa0';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(lean,-size);ctx.stroke();
+      for(let j=-3;j<=3;j++){ctx.beginPath();ctx.moveTo(lean*.35,-size*.35);ctx.quadraticCurveTo(lean+j*3,-size*.7,lean+j*5,-size+Math.abs(j)*1.6);ctx.stroke();}
+    }else if(b.kind===2){ // Crab retreats into its rock crevice.
+      ctx.translate(b.retreat*14,2*b.retreat);ctx.scale(amount,amount);ctx.beginPath();ctx.ellipse(0,-3,6,3.6,0,0,TAU);ctx.fill();
+      for(const side of [-1,1]){for(let j=0;j<3;j++){ctx.beginPath();ctx.moveTo(side*4,-3);ctx.lineTo(side*(9+j),-5+j*3+Math.sin(clock*7+b.phase+j)*b.retreat);ctx.stroke();}ctx.beginPath();ctx.moveTo(side*4,-4);ctx.lineTo(side*9,-10);ctx.lineTo(side*7,-12);ctx.stroke();}
+    }else{
+      for(let j=-2;j<=2;j++){const h=(size+Math.sin(b.phase+j)*5)*amount;ctx.strokeStyle='#707b82';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(j*4,0);ctx.lineTo(j*4,-size*.45);ctx.stroke();ctx.strokeStyle='#c1b5ce';ctx.lineWidth=.9;
+        for(let k=-1;k<=1;k++){ctx.beginPath();ctx.moveTo(j*4,-size*.4);ctx.quadraticCurveTo(j*4+k*5+sway*.3,-h,j*4+k*5,-h-3);ctx.stroke();}}
+    }
+    ctx.restore();
+  }
+  function drawWildLife(){
+    if(!wildEnabled)return;
+    for(const s of scene.schools||[])if(onscreen(s.x,s.y,160))for(const f of s.fish)if(onscreen(f.x,f.y,25))drawFish(s,f);
+  }
+  function drawWildSeabed(){
+    if(!wildEnabled)return;
+    for(const b of scene.benthos||[])if(onscreen(b.x,b.y,65))drawBenthos(b);
+    for(const v of scene.ventFields||[])if(onscreen(v.x,v.y,v.height))drawVentField(v);
+    for(const m of scene.derelictMines||[])if(onscreen(m.anchorX,m.anchorY,m.tether+40))drawDerelict(m);
+  }
+  function drawWildEchoes(){
+    if(!wildEnabled)return;
+    ctx.save();ctx.translate(-camera.x,-camera.y);
+    for(const m of scene.derelictMines||[])if(!m.detonated&&m.revealUntil>clock&&onscreen(m.x,m.y,150)){ctx.globalAlpha=clamp((m.revealUntil-clock)/(m.echoDuration||4.5),0,.85);drawDerelict(m,true);}
+    for(const v of scene.ventFields||[])if(v.revealUntil>clock&&onscreen(v.x,v.y,v.height)){ctx.globalAlpha=clamp((v.revealUntil-clock)/(v.echoDuration||4.5),0,.8);drawVentField(v,true);}
+    for(const s of scene.schools||[])if(s.revealUntil>clock&&onscreen(s.x,s.y,150)){ctx.globalAlpha=clamp((s.revealUntil-clock)/2,0,.5);for(const f of s.fish)drawFish(s,f,true);}
+    ctx.restore();
+  }
+  function captureWildlife(){return {version:1,schools:(scene.schools||[]).map(s=>({...s,fish:s.fish.map(f=>({...f}))})),benthos:(scene.benthos||[]).map(b=>b.retreat)};}
+  function restoreWildlife(data){
+    if(!data||data.version!==1)return;
+    if(Array.isArray(data.schools))for(const s of scene.schools||[]){
+      const found=data.schools.find(v=>v?.id===s.id);
+      const point=p=>p&&['x','y','vx','vy','angle','size','phase'].every(k=>Number.isFinite(p[k]))&&Math.abs(p.x)<3000&&p.y>70&&p.y<MAX_WORLD_Y&&p.size>0&&p.size<2;
+      if(found&&['x','y','heading','fear'].every(k=>Number.isFinite(found[k]))&&Array.isArray(found.fish)&&found.fish.length<=14&&found.fish.every(point)){
+        for(const key of ['x','y','heading','fear','sonarUntil','sonarX','sonarY','revealUntil'])if(Number.isFinite(found[key]))s[key]=found[key];
+        s.fish=found.fish.map(f=>({...f}));
+      }
+    }
+    if(Array.isArray(data.benthos))for(const [i,b] of (scene.benthos||[]).entries())b.retreat=clamp(Number(data.benthos[i])||0,0,1);
+  }
+
   // === Persistent, partial survey chart; no remote omniscient loot or enemies ===
   let surveyCells=new Set(),surveyThreats=[],surveyTimer=0,sonarSurveyTimer=0;
   let explorerReturnPause=false,explorerReturnFocus=null;
@@ -2373,10 +2733,10 @@
       surveyThreats=surveyThreats.filter(c=>c.id!==id&&c.until>clock);
       surveyThreats.push({id,x:object.x,y:object.y,tier:object.tier,until:clock+SURVEY.contactLife});return;
     }
-    if(!['items','wrecks','landmarks'].includes(kind))return;
-    const type=kind==='items'?object.type:kind==='wrecks'?'wreck':'landmark';
+    if(!['items','wrecks','landmarks','derelictMines','ventFields'].includes(kind))return;
+    const type=kind==='items'?object.type:kind==='wrecks'?'wreck':kind==='derelictMines'?'derelict':kind==='ventFields'?'thermal':'landmark';
     const id=kind+':'+(object.id??object.index);
-    field.survey.contacts[id]={x:object.x,y:object.y,type,label:kind==='landmarks'?object.name:type==='recorder'?'RECORDER '+(object.index+1):type==='recovery'?'RECOVERY POD':type.toUpperCase(),collected:Boolean(object.collected)};
+    field.survey.contacts[id]={x:object.x,y:object.y,type,label:kind==='derelictMines'?'CONTACT MINE':kind==='ventFields'?'THERMAL VENT':kind==='landmarks'?object.name:type==='recorder'?'RECORDER '+(object.index+1):type==='recovery'?'RECOVERY POD':type.toUpperCase(),collected:Boolean(object.collected||object.detonated)};
   }
   function surveyVisibleWater(){
     if(!player||!field.survey)return;
@@ -2386,8 +2746,8 @@
     markSurveyCell(player.x,Math.max(SURFACE.y,player.y));
     if(radius)chartArea(player.x,player.y,radius);
     if(headlightsActive())chartArea(player.x,player.y,flashlightSpec().length,(x,y)=>beamIntersects(x,y,0));
-    for(const kind of ['items','predators','wrecks','landmarks'])for(const object of (scene[kind]||[])){
-      if(object.collected||object.dead)continue;
+    for(const kind of ['items','predators','wrecks','landmarks','derelictMines','ventFields'])for(const object of (scene[kind]||[])){
+      if(object.collected||object.dead||object.detonated)continue;
       const d=distance(player,object);
       const inBeam=headlightsActive()&&beamIntersects(object.x,object.y,0);
       if(d<radius||inBeam||object.revealUntil>clock)rememberSurveyObject(kind,object);
@@ -2479,6 +2839,8 @@
       if(id.startsWith('items:')){const object=scene.items.find(o=>'items:'+o.id===id);if(object)collected=object.collected;else if(contact.type==='recorder')collected=saved.secured.includes(Number(id.split('-').at(-1)));}
       g.save();g.translate(p.x,p.y);g.lineWidth=1.4;
       if(collected){g.strokeStyle='#6f9b9477';g.beginPath();g.moveTo(-3,0);g.lineTo(0,3);g.lineTo(5,-4);g.stroke();}
+      else if(contact.type==='derelict'){g.strokeStyle='#e6a477';g.beginPath();g.arc(0,0,4,0,TAU);for(let i=0;i<4;i++){const a=i*TAU/4;g.moveTo(Math.cos(a)*4,Math.sin(a)*4);g.lineTo(Math.cos(a)*7,Math.sin(a)*7);}g.stroke();}
+      else if(contact.type==='thermal'){g.strokeStyle='#b9cba6';g.beginPath();g.moveTo(-5,4);g.lineTo(0,-5);g.lineTo(5,4);g.stroke();}
       else if(contact.type==='recorder'||contact.type==='recovery'){g.strokeStyle=contact.type==='recorder'?'#f2cb87':'#f39476';g.beginPath();g.moveTo(0,-6);g.lineTo(5,0);g.lineTo(0,6);g.lineTo(-5,0);g.closePath();g.stroke();}
       else if(contact.type==='landmark'||contact.type==='station'||contact.type==='wreck'){
         g.strokeStyle=contact.type==='station'?'#92e4d4':'#afa6ce';g.strokeRect(-5,-5,10,10);
@@ -2573,6 +2935,12 @@
   function updateLivingHUD(){
     const force=currentAt(player.x,player.y),pin=field.survey.waypoint;
     if(force.strength>5&&$('statusStat').textContent==='NOMINAL'){$('statusStat').textContent='CURRENT '+(force.x>0?'→':'←')+' '+(force.strength/10).toFixed(1)+'m/s';$('statusStat').className='status-warning';}
+    if(wildEnabled&&($('statusStat').textContent==='NOMINAL'||$('statusStat').textContent.startsWith('CURRENT '))){
+      const nearbyVent=(scene.ventFields||[]).find(v=>!v.disabled&&Math.abs(player.x-v.x)<v.rx+90&&player.y>v.y-v.height-70&&player.y<v.y+25&&(v.revealUntil>clock||ambientLightAt(player.y)>.08||beamIntersects(v.x,v.y,20)));
+      if(nearbyVent){const phase=ventStage(nearbyVent);if(['warning','active'].includes(phase.name)){$('statusStat').textContent=phase.name==='warning'?'VENT BUILDING':'ACTIVE PLUME';$('statusStat').className='status-warning';}}
+      const nearbyMine=(scene.derelictMines||[]).find(m=>!m.detonated&&distance(m,player)<95&&(m.revealUntil>clock||ambientLightAt(player.y)>.08||beamIntersects(m.x,m.y,12)));
+      if(nearbyMine){$('statusStat').textContent='CONTACT MINE NEARBY';$('statusStat').className='status-danger';}
+    }
     const hint=$('waypointHint');hint.classList.toggle('hidden',!pin);
     if(pin){const d=distance(player,pin)/10;hint.textContent='⌖ '+(d<6?'WAYPOINT REACHED':Math.round(d)+' m TO PIN')+' · '+depthOf(pin.y)+' m DEPTH';}
     if(!storageHealthy){$('statusStat').textContent='SAVE FAILED · KEEP APP OPEN';$('statusStat').className='status-danger';}
@@ -2612,7 +2980,7 @@
   window.AbyssDiagnostics={state:()=>({airborne:Boolean(player.airborne),dockSafe:inHarbour(player),surfaceY:SURFACE.y,splashCount:surfaceEffects.length,version:BUILD.version,versionName:BUILD.name,buildId:BUILD.id,shield:player.shield,shieldCapacity:shieldCapacity(),shieldDelay:player.shieldDelay,magnetRange:magnetRange(),magnetPower:magnetPower(),disruptorMark:saved.upgrades.disruptor,scanPowerCost:scanPowerCost(),upgradeOpen:$('upgradeDialog').open,storageHealthy,campaignId,levelId:LEVEL_ID,levelName:currentLevel().name,crystals:saved.crystals,totalRecorders:totalRecorders(),achievements:ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length,recoveryPods:field.recoveries.length,levelComplete:levelComplete(LEVEL_ID),boostCapacity:boostCapacity(),boostUnlocked:boostUnlocked(),boostMultiplier:boostMultiplier(),boostSeconds:boostCapacity()/BOOST.drain,joystickVisible:$('mobileJoystick').classList.contains('engaged'),zoom:viewport.zoom,flashlightMark:saved.upgrades.flashlight,flashlightLength:flashlightSpec().length,flashlightAngle:flashlightSpec().halfAngle*360/Math.PI,flashlightPowerRate:flashlightPowerRate(),worldWidth:widthAt(player.y)*2,populationCycle:field.cycle,mineAmmo:player.mineAmmo,mineCapacity:mineCapacity(),minePower:saved.upgrades.minePower,mineCapacityMark:saved.upgrades.mineCapacity,mineDamage:mineDamage(),mineCooldown:player.mineCooldown,deployedMines:scene.mines.length,kills:player.kills,normalSpeed:normalSpeedAt(saved.upgrades.engine),maxNormalSpeed:normalSpeedAt(THRUST.maxMark),ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),inputMode:touchControls?'touch':'desktop',vesselLabel:vesselLabel(),boost:player.boost,boosting:player.boosting,boostLocked:player.boostLocked,boostNeedsRelease:player.boostNeedsRelease,boostRechargeDelay:player.boostRechargeDelay,boostPowerRate:boostPowerRate(),boostRechargeRate:boostRechargeRate(),scanCooldown:player.scanCooldown,sonarCost:sonarCost(),mouseHeld:mouseHelm.pointerId!==null,boostHeld,facing:player.facing,hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,hasSavedDive:Boolean(loadedActive),lastSaveWall,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier==='common').length,reaperCount:scene.predators.filter(e=>e.tier==='reaper').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
   if(location.search.includes('testmode=1')||window.ABYSS_TEST_MODE===true){
     window.AbyssDiagnostics.fixture=({x=600,y=700,rocks=[],predators=[],items=[]}={})=>{
-      environmentEnabled=false;player.x=x;player.y=y;player.vx=0;player.vy=0;player.airborne=y<SURFACE.y;player.surfaceCooldownUntil=0;player.facing=0;player.noise=0;
+      environmentEnabled=false;wildEnabled=false;player.x=x;player.y=y;player.vx=0;player.vy=0;player.airborne=y<SURFACE.y;player.surfaceCooldownUntil=0;player.facing=0;player.noise=0;
       scene.rocks=rocks.map(rock=>({...rock,vertices:rockPolygon(rock)}));
       scene.predators=predators.map(enemy=>createPredator({...enemy,tier:enemy.tier||'common',vx:0,vy:0,homeX:enemy.x,homeY:enemy.y,phase:0,aggression:enemy.aggression??0,alertUntil:enemy.alertUntil??0,forgetUntil:0,lastHit:-10}));
       scene.mines=[];scene.blasts=[];
@@ -2639,7 +3007,7 @@
     window.AbyssDiagnostics.renderWorld=()=>{const before=running;running=false;render();running=before;};
     window.AbyssDiagnostics.debug=()=>({clock,field:JSON.parse(JSON.stringify(field)),mines:scene.mines.map(m=>({...m})),blasts:scene.blasts.map(b=>({...b})),sonarWaves:sonarWaves.map(({contacts,...w})=>({...w,contacts:contacts.map(c=>({kind:c.kind,hit:c.hit,x:c.object.x,y:c.object.y}))})),camera:{...camera},viewport:{...viewport},sonarTerrainEchoes:sonarTerrainEchoes.map(e=>({...e})),rocks:scene.rocks.map(e=>({...e})),vents:scene.vents.map(e=>({...e})),player:{...player},saved:{...saved,upgrades:{...saved.upgrades}},campaignLevels:JSON.parse(JSON.stringify(campaignLevels)),levels:LEVELS.map((l,i)=>({...l,unlocked:levelUnlocked(i),complete:levelComplete(l.id),resources:resourceProgress(l.id)})),wrecks:scene.wrecks.map(w=>({...w})),predators:scene.predators.map(e=>({...e})),items:scene.items.map(i=>({...i}))});
     window.AbyssDiagnostics.simulationFixture=({depth=500,facing=Math.PI/2,lights=false,battery=maxBattery(),boost=null,upgrades={},items=[],predators=[],rocks=[],wrecks=[],vents=[],mines=[],mineAmmo=null}={})=>{
-      environmentEnabled=false;resetPilotInput();Object.assign(saved.upgrades,upgrades);beamTexture=buildBeamTexture();
+      environmentEnabled=false;wildEnabled=false;resetPilotInput();Object.assign(saved.upgrades,upgrades);beamTexture=buildBeamTexture();
       const y=120+depth*10,x=centerAt(y);
       player={...player,x,y,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing,lights,battery,boost:boost??boostCapacity(),hull:maxHull(),oxygen:maxOxygen(),noise:0,quiet:false,boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,damageCooldown:0,scanCooldown:0,mineAmmo:mineAmmo??(saved.upgrades.minePower?mineCapacity():0),mineCooldown:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,trip:{deepest:0,hullDamage:0},cargo:{scrap:0,crystal:0,recorders:[]}};
       saved.mineAmmo=player.mineAmmo;
@@ -2690,6 +3058,22 @@
     window.AbyssDiagnostics.openSurvey=openSurvey;
     window.AbyssDiagnostics.setWaypoint=setWaypoint;
     window.AbyssDiagnostics.restore=restoreActiveDive;
+    window.AbyssDiagnostics.wild=()=>JSON.parse(JSON.stringify({enabled:wildEnabled,rules:WILD,species:FISH,activeSchools:wildActiveSchools,field:field.wild,mines:scene.derelictMines||[],vents:(scene.ventFields||[]).map(v=>({...v,stage:ventStage(v)})),schools:scene.schools||[],benthos:scene.benthos||[]}));
+    window.AbyssDiagnostics.enableWild=()=>{buildWildWaters();render();};
+    window.AbyssDiagnostics.wildFixture=({mines=[],vents=[],schools=[],benthos=[]}={})=>{
+      wildEnabled=true;wildSoundTimers={};const x=player.x,y=player.y;
+      field.wild={version:1,mines:mines.map((m,i)=>({id:'derelict-'+i,anchorX:x+(m.dx||0),anchorY:y+(m.dy||0)+80,tether:80,phase:0,sway:0,...m})),vents:vents.map((v,i)=>({id:'thermal-'+i,x:x+(v.dx||0),y:y+(v.dy||0),rx:30,height:130,period:16,phase:0,damage:5,lift:46,...v})),cleared:[],retired:[],sheltered:[]};
+      scene.derelictMines=field.wild.mines.map(m=>({...m,...mineLocation(m),detonated:false,revealUntil:0}));scene.ventFields=field.wild.vents.map(v=>({...v,revealUntil:0,disabled:false}));
+      scene.schools=schools.map((v,i)=>makeSchool('school-'+i,x+(v.dx||0),y+(v.dy||0),v.species||0,randGen(i+42)));
+      scene.benthos=benthos.map(v=>({x:x+(v.dx||0),y:y+(v.dy||0),kind:0,size:18,phase:0,retreat:0,level:0,...v}));render();
+    };
+    window.AbyssDiagnostics.ventAt=(x,y)=>ventFlowAt(x,y);
+    window.AbyssDiagnostics.wildClear=(x,y,r=6)=>wildClear(x,y,r);
+    window.AbyssDiagnostics.setClock=t=>{clock=t;for(const m of scene.derelictMines||[])Object.assign(m,mineLocation(m));render();};
+    window.AbyssDiagnostics.face=angle=>{player.facing=angle;render();};
+    window.AbyssDiagnostics.setFear=value=>{for(const s of scene.schools||[])s.fear=value;render();};
+    window.AbyssDiagnostics.pulseWild=dt=>{clock+=dt;updateWildWaters(dt);updateUI();render();};
+
     window.AbyssDiagnostics.grantCredits=(value)=>{saved.credits=Math.max(0,Math.floor(value));persist();updateUI();};
   }
 })();
