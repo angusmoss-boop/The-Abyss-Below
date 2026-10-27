@@ -1,0 +1,32 @@
+{
+  "id": "./",
+  "name": "The Abyss Below",
+  "short_name": "Abyss Below",
+  "description": "Pilot the NEREID into an uncharted ocean trench. Find lost flight recorders, evade predators and upgrade your sub.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#061019",
+  "theme_color": "#06121d",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

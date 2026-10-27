@@ -6,7 +6,7 @@
   const radar = $('radarCanvas');
   const rctx = radar.getContext('2d');
   const TAU = Math.PI * 2;
-  const SAVE_KEY = 'the-abyss-below-v01';
+  const SAVE_KEY = 'the-abyss-below-v01'; // Keep unchanged so v0.1 progress survives updates.
   const ZONES = [
     {start:0, name:'THE SHALLOWS', code:'01', color:'#5ca1b2'},
     {start:95, name:'MIDNIGHT RIFT', code:'02', color:'#639dbf'},
@@ -53,7 +53,11 @@
   let scene = {rocks:[],items:[],predators:[],vents:[],dust:[],wrecks:[]};
   let player = null;
   const keys = new Set();
-  const mobileKeys = new Set();
+  // Joystick is analogue (-1..1 on each axis). Cruise stores the last steering vector.
+  const joystick = {x:0,y:0,pointerId:null};
+  const cruiseHeading = {x:0,y:0};
+  let cruiseEnabled=false;
+  let installPrompt=null;
   let running = false, paused = false, showingDock = false;
   let camera = {x:0,y:0};
   let viewport = {w:700,h:550,dpr:1};
@@ -102,7 +106,7 @@
   function newDive() {
     createWorld();
     player={x:600,y:160,vx:0,vy:0,facing:-Math.PI/2,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,quiet:false,damageCooldown:0,scanCooldown:0,cargo:{scrap:0,crystal:0,recorders:[]},lastRepair:-100};
-    sonarWaves=[];clock=0;lastZone='';eventLines=[];victoryShown=saved.secured.length===3;pointerSilent=false;mobileKeys.clear();keys.clear();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
+    sonarWaves=[];clock=0;lastZone='';eventLines=[];victoryShown=saved.secured.length===3;pointerSilent=false;resetJoystick(true);keys.clear();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
     addEvent('Dive systems initialised.');
     addEvent('Three recorders lost below.');
     running=true;paused=false;showingDock=false;
@@ -172,7 +176,7 @@
     showDock();
   }
   function openDialog(kicker,title,body,footer='') {
-    paused=true;
+    paused=true;resetJoystick(true);
     $('modalKicker').textContent=kicker;$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modalFooter').innerHTML=footer;
     $('modalOverlay').classList.remove('hidden');$('pauseBtn').textContent='▶ RESUME';
   }
@@ -225,15 +229,18 @@
     if(!player)return;
     player.scanCooldown=Math.max(0,player.scanCooldown-dt);
     player.damageCooldown=Math.max(0,player.damageCooldown-dt);
-    const x=Number(keys.has('d')||keys.has('arrowright')||mobileKeys.has('right'))-Number(keys.has('a')||keys.has('arrowleft')||mobileKeys.has('left'));
-    const y=Number(keys.has('s')||keys.has('arrowdown')||mobileKeys.has('down'))-Number(keys.has('w')||keys.has('arrowup')||mobileKeys.has('up'));
-    const magnitude=Math.hypot(x,y)||1;
-    const hasInput=x!==0||y!==0;
+    const keyX=Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft'));
+    const keyY=Number(keys.has('s')||keys.has('arrowdown'))-Number(keys.has('w')||keys.has('arrowup'));
+    const steering=joystick.pointerId!==null?joystick:cruiseEnabled?cruiseHeading:{x:0,y:0};
+    const x=clamp(keyX+steering.x,-1,1),y=clamp(keyY+steering.y,-1,1);
+    const magnitude=Math.hypot(x,y);
+    const hasInput=magnitude>.04;
     const quiet=keys.has('shift')||pointerSilent;
     player.quiet=quiet;
     const maxSpeed=(quiet?68:146)*(1+saved.upgrades.engine*.17);
     const thrustPower=hasInput&&player.battery>.5?1:0;
-    const desiredX=x/magnitude*maxSpeed*thrustPower,desiredY=y/magnitude*maxSpeed*thrustPower;
+    const divisor=Math.max(1,magnitude);
+    const desiredX=x/divisor*maxSpeed*thrustPower,desiredY=y/divisor*maxSpeed*thrustPower;
     const factor=1-Math.exp(-(3.5+saved.upgrades.engine*.2)*dt);
     player.vx=lerp(player.vx,desiredX,factor);player.vy=lerp(player.vy,desiredY,factor);
     if(Math.hypot(player.vx,player.vy)>9)player.facing=lerpAngle(player.facing,Math.atan2(player.vy,player.vx),Math.min(1,dt*5));
@@ -506,11 +513,12 @@
       prompt.textContent=close.type==='station'?'[ E / USE ] DOCK & UPGRADE':close.type==='recorder'?'[ E / USE ] RECOVER BLACK BOX':close.type==='air'?'[ E / USE ] CLAIM SUPPLY CACHE':'[ E / USE ] SALVAGE '+close.type.toUpperCase();prompt.classList.remove('hidden');
     } else prompt.classList.add('hidden');
     $('mobileSilent').classList.toggle('active',pointerSilent);$('mobileLights').textContent=player.lights?'LIGHTS ON':'LIGHTS OFF';
+    const cruiseButton=$('mobileCruise');cruiseButton.classList.toggle('active',cruiseEnabled);cruiseButton.setAttribute('aria-pressed',String(cruiseEnabled));cruiseButton.textContent=cruiseEnabled?'CRUISE ON':'CRUISE OFF';
     drawRadar();
   }
-  function togglePause(){if(!running)return;if(!$('modalOverlay').classList.contains('hidden')){closeDialog();return;}paused=!paused;$('pauseBtn').textContent=paused?'▶ RESUME':'Ⅱ PAUSE';if(paused)announce('GAME PAUSED',3600);else $('notification').classList.add('hidden');}
+  function togglePause(){if(!running)return;if(!$('modalOverlay').classList.contains('hidden')){closeDialog();return;}paused=!paused;if(paused)resetJoystick(true);$('pauseBtn').textContent=paused?'▶ RESUME':'Ⅱ PAUSE';if(paused)announce('GAME PAUSED',3600);else $('notification').classList.add('hidden');}
   function briefing(){
-    const body=`<div class="briefing"><p>You pilot the <strong>NEREID MK-I</strong>, a salvage submarine. Retrieve three <strong>golden flight recorders</strong> from wrecks in the trench and dock at the surface to save them.</p><ul><li><kbd>W A S D</kbd> or <kbd>↑ ← ↓ →</kbd> moves the sub. On phones, use the virtual directional pad.</li><li><kbd>Q</kbd> uses active sonar to reveal salvage and threats. Sonar <strong>consumes energy and attracts predators</strong>.</li><li><kbd>E</kbd> recovers nearby scrap, crystals, oxygen caches and recorders. At the station, it banks cargo and opens upgrades.</li><li><kbd>Shift</kbd> moves slowly and quietly to avoid attracting predators. On phones, toggle <strong>SILENT</strong>.</li><li><kbd>R</kbd> repairs 30 hull for two scrap. <kbd>L</kbd> toggles external lamps to conserve energy.</li><li><kbd>Esc</kbd> pauses. Always return to the surface to bank progress, refill oxygen, recharge and upgrade the ship.</li></ul><p><strong>Warning:</strong> Diving beneath your depth rating gradually damages the hull. Ship upgrades let you venture deeper. Damage or suffocation costs unbanked cargo, not your permanent progress.</p></div>`;
+    const body=`<div class="briefing"><p>You pilot the <strong>NEREID MK-I</strong>, a salvage submarine. Retrieve three <strong>golden flight recorders</strong> from wrecks in the trench and dock at the surface to save them.</p><ul><li><kbd>W A S D</kbd> or <kbd>↑ ← ↓ →</kbd> moves the sub. On phones, <strong>drag the joystick</strong> in any direction. Tilt slightly for gentle thrust or to the edge for full speed. Toggle <strong>CRUISE</strong> to keep going after letting go. Turn cruise off to stop thrust.</li><li><kbd>Q</kbd> uses active sonar to reveal salvage and threats. Sonar <strong>consumes energy and attracts predators</strong>.</li><li><kbd>E</kbd> recovers nearby scrap, crystals, oxygen caches and recorders. At the station, it banks cargo and opens upgrades.</li><li><kbd>Shift</kbd> moves slowly and quietly to avoid attracting predators. On phones, toggle <strong>SILENT</strong>.</li><li><kbd>R</kbd> repairs 30 hull for two scrap. <kbd>L</kbd> toggles external lamps to conserve energy.</li><li><kbd>Esc</kbd> pauses. Always return to the surface to bank progress, refill oxygen, recharge and upgrade the ship.</li></ul><p><strong>Warning:</strong> Diving beneath your depth rating gradually damages the hull. Ship upgrades let you venture deeper. Damage or suffocation costs unbanked cargo, not your permanent progress.</p></div>`;
     openDialog('OPERATIONS MANUAL // NEREID','PILOT BRIEFING',body,'<div class="dialog-actions"><button id="briefDone" class="alt-btn">UNDERSTOOD</button></div>');
     $('briefDone').addEventListener('click',closeDialog);
   }
@@ -527,16 +535,82 @@
       if(k==='q')scan();else if(k==='e')interact();else if(k==='r')repair();else if(k==='l')toggleLights();else if(k==='escape')togglePause();
     });
     window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-    window.addEventListener('blur',()=>{keys.clear();mobileKeys.clear();});
-    document.querySelectorAll('[data-hold]').forEach(button=>{
-      const direction=button.dataset.hold;
-      const down=e=>{e.preventDefault();mobileKeys.add(direction);button.setPointerCapture?.(e.pointerId);};
-      const up=e=>{e.preventDefault();mobileKeys.delete(direction);};
-      button.addEventListener('pointerdown',down);button.addEventListener('pointerup',up);button.addEventListener('pointercancel',up);button.addEventListener('lostpointercapture',()=>mobileKeys.delete(direction));
+    window.addEventListener('blur',()=>{keys.clear();resetJoystick(true);});
+    document.addEventListener('visibilitychange',()=>{if(document.hidden){keys.clear();resetJoystick(true);}});
+    const stick=$('mobileJoystick');
+    stick.addEventListener('pointerdown',e=>{
+      if(joystick.pointerId!==null||!running||paused)return;
+      e.preventDefault();joystick.pointerId=e.pointerId;
+      stick.setPointerCapture(e.pointerId);
+      stick.classList.add('engaged');
+      steerJoystick(e);
+    });
+    stick.addEventListener('pointermove',e=>{
+      if(e.pointerId!==joystick.pointerId)return;
+      e.preventDefault();steerJoystick(e);
+    });
+    const release=e=>{
+      if(e.pointerId!==joystick.pointerId)return;
+      e.preventDefault();resetJoystick(false);
+    };
+    stick.addEventListener('pointerup',release);
+    stick.addEventListener('pointercancel',release);
+    stick.addEventListener('lostpointercapture',e=>{if(e.pointerId===joystick.pointerId)resetJoystick(false);});
+    $('mobileCruise').addEventListener('click',()=>{
+      if(!running||paused)return;
+      cruiseEnabled=!cruiseEnabled;
+      if(cruiseEnabled){cruiseHeading.x=joystick.x;cruiseHeading.y=joystick.y;}
+      else{cruiseHeading.x=0;cruiseHeading.y=0;}
+      updateUI();
     });
     $('mobileSonar').addEventListener('click',scan);$('mobileInteract').addEventListener('click',interact);$('mobileRepair').addEventListener('click',repair);$('mobileLights').addEventListener('click',toggleLights);
     $('mobileSilent').addEventListener('click',()=>{pointerSilent=!pointerSilent;updateUI();});
     window.addEventListener('resize',()=>{resize();updateUI();});
+    setupInstall();
+  }
+  function steerJoystick(e){
+    const rect=$('mobileJoystick').getBoundingClientRect();
+    const radius=Math.min(rect.width,rect.height)*.32;
+    const dx=e.clientX-(rect.left+rect.width/2),dy=e.clientY-(rect.top+rect.height/2);
+    const distance=Math.hypot(dx,dy);
+    const amount=Math.min(1,distance/radius);
+    // Small neutral zone avoids unintended drifting when the stick is centred.
+    if(amount<.13){joystick.x=0;joystick.y=0;}
+    else{
+      const throttle=(amount-.13)/.87;
+      joystick.x=dx/(distance||1)*throttle;
+      joystick.y=dy/(distance||1)*throttle;
+      if(cruiseEnabled){cruiseHeading.x=joystick.x;cruiseHeading.y=joystick.y;}
+    }
+    const thumb=$('joystickThumb');
+    thumb.style.transform=`translate3d(${joystick.x*radius}px,${joystick.y*radius}px,0)`;
+  }
+  function resetJoystick(cancelCruise=false){
+    joystick.pointerId=null;joystick.x=0;joystick.y=0;
+    $('mobileJoystick').classList.remove('engaged');
+    $('joystickThumb').style.transform='translate3d(0,0,0)';
+    if(cancelCruise){cruiseEnabled=false;cruiseHeading.x=0;cruiseHeading.y=0;}
+    const button=$('mobileCruise');
+    button.classList.toggle('active',cruiseEnabled);
+    button.setAttribute('aria-pressed',String(cruiseEnabled));
+    button.textContent=cruiseEnabled?'CRUISE ON':'CRUISE OFF';
+  }
+  function setupInstall(){
+    // GitHub Pages (HTTPS) supports installation and the offline service worker.
+    if('serviceWorker' in navigator && (location.protocol==='https:' || ['localhost','127.0.0.1'].includes(location.hostname))){
+      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
+    }
+    const installButton=$('installBtn');
+    window.addEventListener('beforeinstallprompt',event=>{
+      event.preventDefault();installPrompt=event;installButton.classList.remove('hidden');
+    });
+    installButton.addEventListener('click',async()=>{
+      if(!installPrompt)return;
+      const prompt=installPrompt;installPrompt=null;
+      installButton.classList.add('hidden');
+      try{await prompt.prompt();}catch(_){}
+    });
+    window.addEventListener('appinstalled',()=>{installPrompt=null;installButton.classList.add('hidden');});
   }
   function frame(now){
     if(!previousTime)previousTime=now;
@@ -551,5 +625,5 @@
   camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
   updateUI();requestAnimationFrame(frame);
   // Tiny inspection hook for automated smoke tests. Does not mutate gameplay.
-  window.AbyssDiagnostics={state:()=>({running,paused,depth:depthOf(player.y),hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length})};
+  window.AbyssDiagnostics={state:()=>({running,paused,depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
 })();
