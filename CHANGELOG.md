@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.11.0 · Adaptive Systems (27 October 2026)
+
+- Replaced the long dock list with twelve name-only tiles in a fixed three-column grid. Added separate native upgrade pop-ups with current/next stats, mark progression, field notes, exact price, credit balance, maximum-tier and affordability states. Buying stays in the pop-up; closing returns to the catalogue without unpausing. Preserved the paid Ammunition tab.
+- Redesigned the station with compact vessel/credits summaries, segmented service tabs, restrained glass panels, accessible focus treatment, scrollable catalogue/content and a pinned undock/purchase footer. Reduced header height in short landscape layouts. Added nested-modal keyboard isolation and focus restoration.
+- Added Salvage Magnet Mk I-IV: 10/14/18/22 m range, 1.2/1.0/0.8/0.6 power per remote pickup, 80/130/200/300 CR. USE and held E recover visible resource deposits and kill drops across clear water. Rocks/walls block the link; unlit/unrevealed deep resources cannot be pulled. Close pickups stay free. Recorders and supply caches keep their old range. The immutable resource map is not moved.
+- Added Kinetic Shield Mk I-IV: 20/35/50/70 HP, recharge 2/3/4/5 HP/sec after 8 sec without impact, cost 0.35 power per restored point, prices 100/180/280/420 CR. Absorbs bites and impacts, spills excess damage into hull and does not bypass pressure/oxygen damage. Recharge pauses during boost or near-empty power. Added a fitted-only top SHIELD instrument without new touch actions.
+- Added Sonic Disruptor Mk I-IV: 18/22/26/30 m radius, 1.2/1.6/2.0/2.4 sec Drifter stun, 3/4/5/6 extra sonar power, 90/160/250/380 CR. Stuns arrive with the sonar wave, stop movement/bites and expire. Stalkers/Reapers get 80%/60% duration. Normal sonar remains available when extra disruption power is unaffordable. Existing cooldown and echo visibility apply.
+- Kept old upgrade prices, map layout, finite loot, predator refresh rules, paid ammo and thruster progression. Existing v0.10 campaigns migrate unchanged except three new unfitted module fields. Full upgrade-tree cost becomes 11,924 CR; fixed map value remains 8,640 CR. No active-dive save was added.
+- Added systems/dock tests, adapted the retained campaign/input/gameplay suites to the real pop-up purchase flow, captured real UI screenshots and verified actual archived v0.10 save migration. Real HTTP/offline testing remains environment-blocked, not reported as passed. See VERIFICATION-v0.11.0.md.
+
 ## v0.10.0: Persistent Depths (2026-10-27)
 
 - Title menu now shows running version, release name and a truthful deployment/cache verification state. Added no-store release manifest fetches, runtime checksums, build markers, offline/unverified/partial-update states, manual checks and guarded update loading.

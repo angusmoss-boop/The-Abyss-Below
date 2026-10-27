@@ -1,0 +1,198 @@
+{
+  "version": "0.11.0",
+  "name": "Adaptive Systems",
+  "build_id": "0.11.0-adaptive-systems-1",
+  "base_version": "0.10.0",
+  "date": "2026-10-27",
+  "runtime_manifest": "version.json",
+  "new_runtime_files": [],
+  "campaign_schema": 2,
+  "canonical_save_key": "the-abyss-below-campaign-v2",
+  "migration": {
+    "v010_profile": "retained",
+    "v010_owned_ammunition": "retained",
+    "level_seed_layout_and_depletion": "retained exactly",
+    "new_system_defaults": {
+      "magnet": 0,
+      "shield": 0,
+      "disruptor": 0
+    },
+    "active_dive": "not persisted"
+  },
+  "dock": {
+    "columns": 3,
+    "name_only_tiles": 12,
+    "native_details_popup": true,
+    "paid_upgrade_steps": 51
+  },
+  "new_systems": {
+    "magnet": {
+      "range_m": [
+        10,
+        14,
+        18,
+        22
+      ],
+      "remote_power": [
+        1.2,
+        1,
+        0.8,
+        0.6
+      ],
+      "prices": [
+        80,
+        130,
+        200,
+        300
+      ]
+    },
+    "shield": {
+      "capacity": [
+        20,
+        35,
+        50,
+        70
+      ],
+      "recharge_per_second": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "recharge_delay": 8,
+      "power_per_point": 0.35,
+      "prices": [
+        100,
+        180,
+        280,
+        420
+      ]
+    },
+    "disruptor": {
+      "radius_m": [
+        18,
+        22,
+        26,
+        30
+      ],
+      "stun_seconds": [
+        1.2,
+        1.6,
+        2,
+        2.4
+      ],
+      "tier_duration_multipliers": [
+        1,
+        0.8,
+        0.6
+      ],
+      "extra_sonar_power": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "prices": [
+        90,
+        160,
+        250,
+        380
+      ]
+    }
+  },
+  "balance": {
+    "untouched_resource_credits": 8640,
+    "complete_upgrade_tree_credits": 11924,
+    "ammo_round_credits": 12
+  },
+  "verification": {
+    "build": "0.11.0-adaptive-systems-1",
+    "completed_at": "2026-10-27T15:57:32.416287+00:00",
+    "results": [
+      {
+        "suite": "systems",
+        "command": [
+          "/opt/pyvenv/bin/python",
+          "tests/v0110_systems_test.py"
+        ],
+        "exit_code": 0,
+        "status": "PASS"
+      },
+      {
+        "suite": "dock",
+        "command": [
+          "/opt/pyvenv/bin/python",
+          "tests/v0110_dock_test.py"
+        ],
+        "exit_code": 0,
+        "status": "PASS"
+      },
+      {
+        "suite": "release",
+        "command": [
+          "/opt/pyvenv/bin/python",
+          "tests/v0110_release_test.py"
+        ],
+        "exit_code": 0,
+        "status": "PASS"
+      },
+      {
+        "suite": "campaign",
+        "command": [
+          "/opt/pyvenv/bin/python",
+          "tests/v0110_campaign_test.py"
+        ],
+        "exit_code": 0,
+        "status": "PASS"
+      },
+      {
+        "suite": "touch",
+        "command": [
+          "/opt/pyvenv/bin/python",
+          "tests/v0110_touch_test.py"
+        ],
+        "exit_code": 0,
+        "status": "PASS"
+      },
+      {
+        "suite": "regression",
+        "command": [
+          "/opt/pyvenv/bin/python",
+          "tests/v0110_regression_test.py"
+        ],
+        "exit_code": 0,
+        "status": "PASS"
+      },
+      {
+        "suite": "sync",
+        "command": [
+          "node",
+          "tests/v0110_sync_test.mjs"
+        ],
+        "exit_code": 0,
+        "status": "PASS"
+      },
+      {
+        "suite": "worker",
+        "command": [
+          "node",
+          "tests/v0110_worker_test.mjs"
+        ],
+        "exit_code": 0,
+        "status": "PASS"
+      }
+    ],
+    "limitations": [
+      "Browser renderer exercised via in-memory production assets, not a hosted navigation.",
+      "Network/service-worker boundaries are mocked; no live offline/update integration claim.",
+      "Physical Android/iOS and full-campaign balance playthrough not tested."
+    ]
+  },
+  "live_pwa": {
+    "status": "BLOCKED_OR_FAILED",
+    "error": "Page.goto: net::ERR_BLOCKED_BY_ADMINISTRATOR at http://127.0.0.1:42469/\nCall log:\n  - navigating to \"http://127.0.0.1:42469/\", waiting until \"load\"\n",
+    "limitations": [
+      "No successful live offline integration claim"
+    ]
+  }
+}

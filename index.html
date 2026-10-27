@@ -1,18 +1,18 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta name="abyss-build" content="0.10.0-persistent-depths-1">
+  <meta name="abyss-build" content="0.11.0-adaptive-systems-1">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#06121d" />
   <meta name="description" content="The Abyss Below: a submarine exploration and survival game." />
   <title>The Abyss Below | Deepwater Expedition</title>
-  <link rel="manifest" href="manifest.webmanifest?v=0.10.0" />
+  <link rel="manifest" href="manifest.webmanifest?v=0.11.0" />
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="stylesheet" href="styles.css?v=0.10.0" />
+  <link rel="stylesheet" href="styles.css?v=0.11.0" />
 </head>
 <body>
   <div class="app">
@@ -45,6 +45,7 @@
                 <div class="instrument-tab capability sonar-tab" id="sonarMeter"><div class="capability-head"><span class="instrument-label">SONAR</span><strong id="sonarText">READY</strong></div><div class="instrument-track"><i id="sonarBar"></i></div><small id="sonarStatus">WIDEBAND SCANNER</small></div>
                 <div class="instrument-tab capability boost-tab" id="boostMeter"><div class="capability-head"><span class="instrument-label">BOOST</span><strong id="boostValue">100%</strong></div><div class="instrument-track"><i id="boostBar"></i></div><small id="boostStatus">READY</small></div>
                 <div class="instrument-tab capability mine-tab" id="mineReadout"><div class="capability-head"><span class="instrument-label">MINES</span><strong id="mineAmmoValue">NOT FITTED</strong></div><div class="instrument-track"><i id="mineBar"></i></div><small id="mineState">BUY AT DOCK</small></div>
+                <div class="instrument-tab capability shield-tab hidden" id="shieldMeter"><div class="capability-head"><span class="instrument-label">SHIELD</span><strong id="shieldValue">0/0</strong></div><div class="instrument-track"><i id="shieldBar"></i></div><small id="shieldStatus">CHARGED</small></div>
               </div>
             </div>
             <div class="cockpit-context"><span id="coordsText">01 · THE SHALLOWS</span><span id="statusStat" class="status-safe">NOMINAL</span></div>
@@ -90,10 +91,10 @@
         <button id="dockBtn" class="dock-btn" disabled>◈ RETURN TO STATION TO UPGRADE</button>
       </aside>
     </main>
-    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.10.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
+    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.11.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
   </div>
   <div class="overlay" id="menuOverlay"><div class="menu-card"><div class="menu-kicker">TRANSMISSION // 0001</div><div class="menu-icon">⌁</div><h1>THE ABYSS<br><span>BELOW</span></h1><section class="version-card" aria-label="Game build and update status">
-  <div class="version-heading"><strong id="menuVersion">v0.10.0</strong><span id="menuVersionName">Persistent Depths</span></div>
+  <div class="version-heading"><strong id="menuVersion">v0.11.0</strong><span id="menuVersionName">Adaptive Systems</span></div>
   <div class="sync-indicator" id="syncIndicator" data-state="checking"><span class="sync-dot" aria-hidden="true"></span><strong id="syncStatus" role="status">CHECKING DEPLOYMENT</strong></div>
   <p id="syncDetail">Checking the latest published build. Your campaign stays on this device.</p>
   <div class="version-actions"><button id="checkVersionBtn" class="version-btn">CHECK AGAIN</button><button id="updateVersionBtn" class="version-btn hidden">LOAD UPDATE</button></div>
@@ -112,8 +113,24 @@
       <div class="pause-note">MENU suspends this dive · QUIT abandons unbanked cargo</div>
     </div>
   </div>
-  <div class="overlay hidden" id="modalOverlay"><div class="dialog-card"><div class="dialog-top"><div id="modalKicker" class="menu-kicker">FIELD BRIEFING</div><button id="modalClose" class="close-btn">✕</button></div><h2 id="modalTitle">PILOT BRIEFING</h2><div id="modalBody"></div><div id="modalFooter"></div></div></div>
-  <script src="game.js?v=0.10.0" defer></script>
-  <script src="version-sync.js?v=0.10.0" defer></script>
+  <div class="overlay hidden" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="dialog-card"><div class="dialog-top"><div id="modalKicker" class="menu-kicker">FIELD BRIEFING</div><button id="modalClose" class="close-btn">✕</button></div><h2 id="modalTitle">PILOT BRIEFING</h2><div id="modalBody"></div><div id="modalFooter"></div></div></div>
+  <dialog id="upgradeDialog" class="upgrade-detail" aria-labelledby="upgradeTitle" aria-describedby="upgradeDescription">
+    <div class="upgrade-detail-top"><span id="upgradeCategory">SHIP SYSTEM</span><button id="upgradeDetailClose" class="close-btn" aria-label="Close upgrade details">✕</button></div>
+    <div class="upgrade-detail-body">
+      <div class="upgrade-fit" id="upgradeFit">STANDARD / NOT UPGRADED</div>
+      <h2 id="upgradeTitle">SYSTEM DETAILS</h2>
+      <p id="upgradeDescription"></p>
+      <div class="upgrade-tier-track" id="upgradeTierTrack" aria-label="Installed upgrade marks"></div>
+      <div id="upgradeStats"></div>
+      <div class="upgrade-tactical"><span>FIELD NOTES</span><p id="upgradeTacticalNote"></p></div>
+    </div>
+    <div class="upgrade-detail-footer">
+      <div class="upgrade-purchase-meta"><span id="upgradeBalance"></span><span id="upgradeFeedback" role="status" aria-live="polite"></span></div>
+      <button id="upgradePurchase" class="primary-btn">INSTALL UPGRADE</button>
+      <p id="upgradePriceNote"></p>
+    </div>
+  </dialog>
+  <script src="game.js?v=0.11.0" defer></script>
+  <script src="version-sync.js?v=0.11.0" defer></script>
 </body>
 </html>

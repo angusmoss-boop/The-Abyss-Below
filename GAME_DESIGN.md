@@ -1,6 +1,6 @@
 # The Abyss Below: Current Game Design
 
-## v0.10.0: Persistent Depths
+## v0.11.0: Adaptive Systems
 
 This document describes the current build. Historical changelog entries describe old behaviour, not additional active rules.
 
@@ -16,7 +16,7 @@ The original banked profile, rank progression, repair cost, flashlight, sonar, s
 
 ### Finite resources, renewable enemies
 
-There are 180 scrap deposits and 24 crystal clusters, each yielding two units, plus 30 resupply caches. Scrap banks at 18 credits per unit, crystals at 45. The map's untouched deposit economy is 8,640 credits. The complete upgrade tree costs 9,354 credits. This deliberately funds most equipment without requiring more map clutter, while renewable kill drops cover remaining costs and consumables. These are arithmetic balance checks, not a claim of a completed campaign playtest.
+There are 180 scrap deposits and 24 crystal clusters, each yielding two units, plus 30 resupply caches. Scrap banks at 18 credits per unit, crystals at 45. The map's untouched deposit economy is 8,640 credits. The complete upgrade tree costs 11,924 credits. This deliberately funds most equipment without requiring more map clutter, while renewable kill drops cover remaining costs and consumables. These are arithmetic balance checks, not a claim of a completed campaign playtest.
 
 Resource IDs, coordinates, quantities and collected flags are stored per level and persist between docks/reloads. Existing v0.9 current-cycle positions are migrated without reshuffling. The eight shallow starter bundles support first upgrades. Existing collected resources do not return after the update. Unbanked resources consumed by repairs or lost on death/quit/reload are lost; their deposits remain depleted.
 
@@ -28,7 +28,19 @@ The refreshed field contains 138 Drifters, 33 Stalkers and 15 Reapers, maintaini
 
 Mine warheads Mk I-IV deal 60/110/180/240 damage. Independent racks hold 2/4/6/8 rounds. Paid ammunition costs 12 credits per round, regardless of warhead mark. Unlocking a launcher or a larger rack supplies no rounds. A round uses current fitted warhead power when deployed. Mines arm after 0.65 seconds, have a 1.1-second deployment cooldown, damage multiple nearby predators and cannot damage the submarine. Deployed mines are cleared at population refresh and are not restored across reloads.
 
-A new Ammunition dock tab offers one round or all missing affordable rounds. Every purchase atomically deducts credits and adds owned stock. Every deployment persists the spent round. Docking, rescue, launch, upgrades and caches never create ammunition. Unspent purchased rounds survive death/reload.
+The Ammunition dock tab offers one round or all missing affordable rounds. Every purchase atomically deducts credits and adds owned stock. Every deployment persists the spent round. Docking, rescue, launch, upgrades and caches never create ammunition. Unspent purchased rounds survive death/reload.
+
+### Refit catalogue and adaptive systems
+
+The dock presents twelve name-only system tiles in exactly three columns. A native child dialog contains all tiers, costs, current/next statistics, tactical descriptions and the purchase action. Closing it never resumes the dive. Shop tabs and undock controls stay reachable in short landscape layouts. Every paid upgrade is applied to the canonical profile; max-level and insufficient-credit purchases are guarded. Owned ammunition is never increased by refitting.
+
+Three optional Mk I-IV systems complement the original nine paths. All ship behaviour derives from the saved upgrade marks; there are no new mandatory action buttons.
+
+- Salvage Magnet: 10/14/18/22 m recovery versus the ordinary 6 m; 1.2/1.0/0.8/0.6 power per remote pickup; prices 80/130/200/300. USE/E gathers scrap, crystals and kill drops one at a time. Close pickups stay free. Requires usable light or sonar echo and a clear path. Rocks/walls block it. Recorders/caches remain close-use objects. Persistent resource positions are never moved.
+- Kinetic Shield: 20/35/50/70 HP; recharge 2/3/4/5 HP/s after 8 seconds without impact; 0.35 battery per recovered point; prices 100/180/280/420. Takes predator/rock damage before the hull. Pressure and oxygen loss bypass it. Boost and very low battery suspend recharge. Docking restores it. The fitted-only top HUD meter occupies a fourth capability slot, not a new row on portrait screens.
+- Sonic Disruptor: local radii 18/22/26/30 m; Drifter stuns 1.2/1.6/2.0/2.4 s; extra scan costs 3/4/5/6; prices 90/160/250/380. Stalker/Reaper durations are 80%/60%. Status applies at wave arrival; stunned predators neither move nor bite. Scan visibility is still screen-wide and uses the ordinary cooldown. Without enough extra power, scanning falls back to a non-disrupting ordinary ping.
+
+The new paths add 2,570 credits of optional purchases. The full 51-level paid tree costs 11,924 credits. The untouched fixed map still contains 8,640 credits, approximately 72.46% before ammo/repairs/losses; renewable predator drops fund the remainder. No loot quantity, layout, depletion or respawn rule changes in this release.
 
 ### Thruster-based boost
 
@@ -50,4 +62,4 @@ The menu's sync check fetches the hosted release manifest and six runtime assets
 
 ### Validation priorities
 
-Current tests cover true mobile pointer input, layout, purchase flows, deterministic migration, permanent depletion, kill rewards, all engine marks, all warhead/predator combinations, collisions and canvas-level lighting. Network/worker boundaries are mocked separately. Physical hardware, a hosted update/offline round trip and full-campaign tuning still require playtesting. See the verification report for the actual evidence and limitations.
+Current tests cover true mobile pointer input, three-column and nested modal layout, all 51 paid purchase levels, all three systems at every mark, stun tier resistance, recharge/battery limits, deterministic v0.10/v0.9 migration, permanent depletion, kill rewards, all engine marks, all warhead/predator combinations, collisions and canvas-level lighting. Network/worker boundaries are mocked separately. Physical hardware, a hosted update/offline round trip and full-campaign tuning still require playtesting. See the verification report for the actual evidence and limitations.

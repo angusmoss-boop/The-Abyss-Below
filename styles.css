@@ -1,5 +1,5 @@
 /* Shell, dock and menu skin. */
-:root{--abyss-build:"0.10.0-persistent-depths-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
+:root{--abyss-build:"0.11.0-adaptive-systems-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
 body{background:radial-gradient(ellipse at 40% -20%,#12344a 0%,#061019 65%)}
@@ -89,13 +89,7 @@ footer .muted{color:#5d8495}
 .briefing kbd{display:inline-block;background:#153d4c;color:#8be6d6;border:1px solid #2c6271;border-radius:3px;padding:1px 6px;font-family:monospace}
 .briefing ul{padding-left:21px}
 .briefing li{margin:7px 0}
-.upgrade-list{display:flex;flex-direction:column;gap:9px;max-height:54vh;overflow:auto;padding-right:5px}
-.upgrade{display:flex;justify-content:space-between;align-items:center;gap:13px;border:1px solid #315466;background:#0b2431;padding:12px;border-radius:4px}
-.upgrade h3{margin:0 0 5px;font-size:13px}
-.upgrade p{margin:0;color:#8cabbc;font-size:11px;line-height:1.5}
-.upgrade small{font-size:10px;color:#6dbdbd}
-.upgrade button{flex-shrink:0;background:#19515a;color:#baf6e9;border:1px solid #367d81;border-radius:4px;padding:11px;font-weight:800;font-size:11px;min-width:86px}
-.upgrade button:disabled{opacity:.35;cursor:not-allowed}
+
 .dialog-info{font-size:12px;color:#a1c9d5;line-height:1.6;margin:12px 0}
 .dialog-actions{display:flex;gap:10px;margin-top:18px}
 .dialog-actions button{flex:1}
@@ -297,7 +291,7 @@ body.game-focus .desktop-keybinds{bottom:calc(15px + env(safe-area-inset-bottom,
  .touch-ui .viewport .interaction-prompt{bottom:calc(15px + env(safe-area-inset-bottom,0px));max-width:160px;font-size:8px;padding:8px 10px}
 }
 
-/* v0.10.0: floating helm, persistent campaign and dock stores. */
+/* v0.11.0: floating helm, persistent campaign and dock stores. */
 .floating-joystick{--floating-radius:44px;position:absolute;z-index:10;pointer-events:none;display:none;width:calc(var(--floating-radius)*2 + 18px);height:calc(var(--floating-radius)*2 + 18px);transform:translate(-50%,-50%);border:1px solid #d1eeee60;border-radius:50%;background:#c8f7f006;contain:layout style;}
 .touch-ui .floating-joystick.engaged{display:block}
 .floating-thumb{position:absolute;left:calc(50% - 13px);top:calc(50% - 13px);width:26px;height:26px;border:1px solid #d5fff0a8;background:#b9f5e91c;border-radius:50%;pointer-events:none;will-change:transform}
@@ -336,3 +330,99 @@ body.game-focus .desktop-keybinds{bottom:calc(15px + env(safe-area-inset-bottom,
 .ammo-purchases button{width:100%;min-width:0;margin:0;font-size:10px;padding:14px 8px;min-height:48px}
 .ammo-purchases button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:540px){.overlay{padding:12px}.menu-card{padding:20px 18px}.menu-icon{font-size:39px;margin:4px 0}.version-card{padding:11px 12px;margin:13px auto}.version-heading{font-size:11px}.version-card p{font-size:10px}.menu-card h1{font-size:38px}.menu-card>p{font-size:11px}.menu-feature-list{font-size:8px}.ammo-purchases{gap:7px}}
+
+
+/* v0.11.0 / Adaptive Systems: a compact three-column refit catalogue. */
+.dock-overlay{padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:#020b13e6}
+.dock-overlay .dialog-card{width:min(100%,780px);max-width:780px;max-height:calc(100dvh - 24px);padding:0;overflow:hidden;display:flex;flex-direction:column;border:1px solid #426775;border-radius:20px;background:radial-gradient(ellipse at 100% 0,#17445266,transparent 55%),linear-gradient(145deg,#0c2230,#071722);box-shadow:0 32px 120px #000b}
+.dock-overlay .dialog-top{padding:19px 25px 0;flex:none}
+.dock-overlay .menu-kicker{font-size:9px;letter-spacing:2px;color:#8ebbbb}
+.dock-overlay .dialog-card>h2{margin:8px 25px 15px;font-size:24px;letter-spacing:1.2px;line-height:1.1;flex:none}
+.dock-overlay #modalBody{min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.dock-overlay #modalFooter{flex:none;border-top:1px solid #5b7f8a30;background:#06131c88}
+.dock-intro{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 25px 17px;flex:none}
+.dock-online{font:700 9px ui-monospace,monospace;color:#a2d5cc;letter-spacing:1px;display:flex;align-items:center;gap:7px}
+.dock-online i{width:5px;height:5px;border-radius:50%;background:#88dfbf;box-shadow:0 0 10px #88dfbf66}
+.dock-intro p{margin:8px 0 0;color:#94afb9;font-size:12px;line-height:1.3}
+.dock-credit{text-align:right;display:flex;flex-direction:column;gap:4px;flex:none}
+.dock-credit>span{font:700 8px ui-monospace,monospace;letter-spacing:1px;color:#8ca9b4}
+.dock-credit>strong{font:600 27px ui-monospace,monospace;letter-spacing:-1px;color:#c9f4df}
+.dock-overlay .dock-balance{display:grid;grid-template-columns:1.4fr 1fr 1fr;margin:0 25px;padding:12px 0;background:none;border:0;border-top:1px solid #5b7f8a35;border-bottom:1px solid #5b7f8a35;border-radius:0;gap:8px;font:600 8px ui-monospace,monospace;letter-spacing:.6px;color:#809fac;flex:none}
+.dock-balance span{display:flex;align-items:center;gap:7px;min-width:0}.dock-balance b{font-size:11px;color:#cfdee4;white-space:nowrap;font-weight:650}
+.dock-overlay .dock-tabs{margin:16px 25px 13px;padding:4px;background:#06131bb0;border:1px solid #34536088;border-radius:11px;gap:5px;flex:none}
+.dock-overlay .dock-tabs button{border:0;border-radius:7px;background:transparent;color:#8da9b5;font-size:10px;min-height:42px;padding:12px;letter-spacing:1.1px;transition:background .15s}
+.dock-overlay .dock-tabs button[aria-selected="true"]{background:#21434a;color:#d4f9ed;box-shadow:inset 0 1px #99e1ca18,0 1px 5px #0004}
+.dock-overlay #dockPanel{min-height:0;overflow:auto;padding:0 25px 22px;scrollbar-width:thin;scrollbar-color:#385765 transparent;overscroll-behavior:contain}
+.dock-grid-caption{display:flex;justify-content:space-between;gap:6px;font:650 8px ui-monospace,monospace;letter-spacing:1px;color:#829fac;margin:4px 0 11px}
+.upgrade-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.upgrade-tile{position:relative;min-width:0;min-height:86px;display:flex;justify-content:center;align-items:center;padding:18px 10px;background:linear-gradient(135deg,#18334199,#0b202bd9);border:1px solid #4d718353;border-radius:11px;color:#cee1e6;text-align:center;transition:background .15s,border-color .15s,transform .15s;box-shadow:inset 0 1px #d4f6ff05}
+.upgrade-tile::after{content:'';position:absolute;bottom:9px;right:9px;width:7px;height:7px;border-right:1px solid #80bcba55;border-bottom:1px solid #80bcba55;border-radius:0 0 3px 0;pointer-events:none}
+.upgrade-tile span{font-size:11px;font-weight:750;letter-spacing:.7px;line-height:1.6;max-width:180px;overflow-wrap:normal}
+.upgrade-tile:hover{background:linear-gradient(130deg,#254d58,#102d38);border-color:#7fbabda6;color:#ecfffa}
+.upgrade-tile:active{transform:scale(.98);background:#234a51}
+.upgrade-tile:focus-visible,.dock-tabs button:focus-visible,.close-btn:focus-visible{outline:2px solid #9de9d5;outline-offset:3px}
+.dock-departure{padding:16px 25px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.dock-departure>span{font-size:10px;color:#849eac;line-height:1.7}
+.dock-departure .primary-btn{width:182px;max-width:45%;flex:none;margin:0;border-radius:8px;font-size:11px;padding:13px 17px;min-height:47px;background:#b0e9d6;letter-spacing:1.2px}
+.dock-overlay .ammo-shop{max-width:490px;margin:auto;padding:13px 0 0}.dock-overlay .ammo-symbol{font-size:38px}
+
+/* The upgrade pop-up is a native modal: only the top dialog receives focus/input. */
+.upgrade-detail{--module:#a7e8d2;--module-bg:#16362f;width:min(560px,calc(100vw - 24px));max-width:none;max-height:calc(100dvh - 24px);margin:auto;padding:0;border:1px solid #66838d99;border-radius:18px;overflow:hidden;background:radial-gradient(ellipse at 90% 0,#244c5c70,transparent 50%),#0a1d29;color:#d6e5ea;box-shadow:0 35px 130px #000d;font-family:inherit}
+.upgrade-detail:not([open]){display:none}.upgrade-detail[open]{display:flex;flex-direction:column}
+.upgrade-detail::backdrop{background:#01070dc9;backdrop-filter:blur(7px)}
+.upgrade-detail[data-group="defence"]{--module:#a7cdf3;--module-bg:#172d42}.upgrade-detail[data-group="tactical"]{--module:#d3b9ef;--module-bg:#30273f}
+.upgrade-detail-top{padding:18px 23px 10px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none}
+.upgrade-detail-top>span{font:650 9px ui-monospace,monospace;letter-spacing:1.4px;color:#a0b4c0}
+.upgrade-detail .close-btn,.dock-overlay .close-btn{display:flex;align-items:center;justify-content:center;width:40px;height:40px;flex:none;border:1px solid #66818f66;border-radius:9px;background:#132e3c99;color:#b8d2dd;font-size:15px}
+.upgrade-detail-body{padding:0 25px 20px;overflow:auto;min-height:0;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#385765 transparent}
+.upgrade-fit{display:inline-flex;align-items:center;color:var(--module);font:700 8px ui-monospace,monospace;letter-spacing:1px;margin:0 0 9px;padding:6px 9px;background:var(--module-bg);border:1px solid #a3c8d02b;border-radius:5px}
+.upgrade-detail h2{font-size:27px;letter-spacing:.6px;line-height:1.18;margin:0 0 12px;color:#edf8fa;max-width:450px}
+.upgrade-detail #upgradeDescription{font-size:12px;color:#a3bac7;line-height:1.8;margin:0 0 18px}
+.upgrade-tier-track{display:flex;gap:5px;margin:0 0 18px}.upgrade-tier-track span{flex:1;text-align:center;padding:8px 1px;border:1px solid #52697655;border-radius:5px;font:700 8px ui-monospace,monospace;letter-spacing:.3px;color:#78929e;background:#0a1923;min-width:0}
+.upgrade-tier-track .fitted{color:var(--module);border-color:#8dafb077;background:var(--module-bg)}.upgrade-tier-track .next{border-color:var(--module);color:#e5f7f4}
+.upgrade-comparison{width:100%;border-collapse:collapse;table-layout:fixed;margin:0;font-size:11px}
+.upgrade-comparison thead th{font-size:8px;font-weight:650;color:#829eac;letter-spacing:.6px;padding:10px 0;border-bottom:1px solid #55738270;text-align:right}
+.upgrade-comparison th:first-child{width:43%;text-align:left}.upgrade-comparison tbody th{font-weight:500;color:#adc1ca;line-height:1.5}
+.upgrade-comparison td,.upgrade-comparison tbody th{padding:11px 0;border-bottom:1px solid #55738233;font-size:11px}
+.upgrade-comparison td{text-align:right;font:650 11px ui-monospace,monospace;color:#b6c8d0;white-space:normal;overflow-wrap:break-word}
+.upgrade-comparison th:not(:first-child),.upgrade-comparison td{padding-left:6px}.upgrade-comparison td.improved{color:var(--module)}
+.upgrade-tactical{margin-top:18px;border-left:2px solid var(--module);background:#afcde305;padding:10px 12px}.upgrade-tactical>span{font:650 8px ui-monospace,monospace;letter-spacing:1px;color:var(--module)}.upgrade-tactical p{font-size:11px;color:#9bb4c1;line-height:1.75;margin:6px 0 0}
+.upgrade-detail-footer{flex:none;background:#071722;border-top:1px solid #48657466;padding:15px 25px 13px}
+.upgrade-purchase-meta{display:flex;justify-content:space-between;gap:10px;font:650 8px ui-monospace,monospace;letter-spacing:.3px;margin-bottom:12px;color:#a3bdc9;line-height:1.6}.upgrade-purchase-meta>span:first-child{flex:none}#upgradeFeedback{color:var(--module);text-align:right}
+.upgrade-detail-footer .primary-btn{max-width:none;justify-content:center;padding:15px 10px;min-height:49px;font-size:11px;letter-spacing:.75px;border-radius:8px;background:var(--module);color:#082833}
+.upgrade-detail-footer .primary-btn:disabled{opacity:1;background:#19313f;color:#8ca6b4;cursor:not-allowed;border:1px solid #45617166}
+#upgradePriceNote{font-size:9px;color:#8fa9b8;margin:10px 0 0;text-align:center;line-height:1.5}
+.shield-tab{--accent:#a7cdf3}.capability-group.with-shield{grid-template-columns:repeat(4,minmax(0,1fr))}
+@container cockpit (min-width:860px){.cockpit-systems.with-shield{grid-template-columns:repeat(9,minmax(0,1fr))}}
+@media(max-width:540px){
+ .dock-overlay .dialog-card{border-radius:15px}.dock-overlay .dialog-top{padding:12px 15px 0}.dock-overlay .menu-kicker{font-size:7px;letter-spacing:1px}.dock-overlay .dialog-card>h2{font-size:20px;margin:5px 15px 12px;letter-spacing:.8px}
+ .dock-intro{padding:0 15px 13px}.dock-online{font-size:7px;letter-spacing:.6px}.dock-intro p{font-size:10px;margin-top:7px}.dock-credit>span{font-size:7px}.dock-credit>strong{font-size:24px}
+ .dock-overlay .dock-balance{margin:0 15px;font-size:6px;letter-spacing:.2px;gap:5px;padding:11px 0}.dock-balance span{gap:5px}.dock-balance b{font-size:9px}
+ .dock-overlay .dock-tabs{margin:13px 15px 12px}.dock-overlay .dock-tabs button{font-size:9px;letter-spacing:.7px;padding:10px 5px}
+ .dock-overlay #dockPanel{padding:0 15px 15px}.dock-grid-caption{font-size:7px;letter-spacing:.5px;margin:1px 0 10px}.upgrade-grid{gap:7px}.upgrade-tile{min-height:78px;padding:12px 5px;border-radius:9px}.upgrade-tile span{font-size:9px;letter-spacing:.35px;line-height:1.65}.upgrade-tile::after{bottom:7px;right:7px;width:5px;height:5px}
+ .dock-departure{padding:12px 15px;gap:9px}.dock-departure>span{font-size:8px}.dock-departure .primary-btn{font-size:10px;min-height:44px;padding:10px 13px;max-width:44%}
+ .upgrade-detail-top{padding:12px 17px 8px}.upgrade-detail-top>span{font-size:8px;letter-spacing:.9px}.upgrade-detail-body{padding:0 18px 17px}.upgrade-detail h2{font-size:24px}.upgrade-detail #upgradeDescription{font-size:11px;line-height:1.8;margin-bottom:15px}.upgrade-comparison tbody th,.upgrade-comparison td{font-size:10px}.upgrade-comparison thead th{font-size:7px}.upgrade-comparison th:first-child{width:39%}
+ .upgrade-detail-footer{padding:13px 18px 12px}.upgrade-tactical p{font-size:10px}.upgrade-tier-track span{font-size:7px}.upgrade-purchase-meta{font-size:7px}.upgrade-detail-footer .primary-btn{font-size:10px}
+ .capability-group.with-shield .capability-head{gap:3px}.capability-group.with-shield .capability-head strong{font-size:9px}.capability-group.with-shield .capability>small{font-size:5.5px;letter-spacing:.1px}
+}
+@media(max-width:360px){.upgrade-tile span{font-size:8px;letter-spacing:.15px}.upgrade-grid{gap:6px}.upgrade-tile{min-height:74px}.dock-overlay #dockPanel{padding-left:12px;padding-right:12px}.dock-online{font-size:6px}.dock-credit>span{font-size:6px}.dock-balance span{flex-wrap:wrap;row-gap:2px}.upgrade-purchase-meta{flex-wrap:wrap;gap:3px}.capability-group.with-shield .capability-head{flex-direction:column;align-items:flex-start;gap:3px}.capability-group.with-shield .capability>small{display:none}}
+@media(orientation:landscape) and (max-height:540px){
+ .touch-ui .cockpit-systems.with-shield{grid-template-columns:repeat(9,minmax(0,1fr))}
+ .dock-overlay .dialog-top{padding-top:8px}.dock-overlay .dialog-card>h2{font-size:18px;margin-top:0;margin-bottom:8px}.dock-intro{padding-bottom:9px}.dock-intro p{display:none}.dock-credit{flex-direction:row;align-items:center;gap:10px}.dock-credit>strong{font-size:21px}.dock-overlay .dock-balance{padding:7px 0}.dock-overlay .dock-tabs{margin-top:9px;margin-bottom:9px}.dock-overlay .dock-tabs button{min-height:36px;padding:8px}.dock-departure{padding-top:8px;padding-bottom:8px}.dock-departure>span{font-size:8px}.dock-departure .primary-btn{min-height:38px;padding:8px 15px}.upgrade-tile{min-height:68px}
+ .upgrade-detail-top{padding:8px 18px 4px}.upgrade-detail-body{padding:0 20px 14px}.upgrade-detail h2{font-size:22px}.upgrade-detail-footer{padding:9px 20px}.upgrade-purchase-meta{margin-bottom:7px}.upgrade-detail-footer .primary-btn{min-height:40px;padding:10px}#upgradePriceNote{margin-top:6px}
+}
+@media(prefers-reduced-motion:reduce){.upgrade-tile,.dock-overlay .dock-tabs button{transition:none}}
+/* Compact dock header on short screens leaves room for the actual catalogue. */
+@media(orientation:landscape) and (max-height:540px){
+ .dock-overlay .dialog-card{position:relative}
+ .dock-overlay .dialog-top{padding:11px 25px 0;min-height:23px}
+ .dock-overlay .dialog-top .close-btn{position:absolute;right:15px;top:10px;width:34px;height:34px}
+ .dock-overlay .dialog-card>h2{margin:4px 25px 10px;font-size:17px;max-width:55%}
+ .dock-overlay .dock-intro{position:absolute;top:19px;right:67px;padding:0}
+ .dock-overlay .dock-intro>div:first-child{display:none}
+ .dock-overlay .dock-credit>span{font-size:7px}.dock-overlay .dock-credit>strong{font-size:22px}
+ .dock-overlay .dock-balance{padding:7px 0}
+ .dock-overlay .dock-tabs{margin-top:8px;margin-bottom:8px}
+ .dock-overlay .dock-grid-caption{margin-top:1px;margin-bottom:8px}
+}
+@media(min-width:361px) and (max-width:540px){.upgrade-tile span{font-size:10px}.dock-overlay .dock-balance{font-size:7px}}
