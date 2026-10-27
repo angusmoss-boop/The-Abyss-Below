@@ -1,0 +1,22 @@
+{
+  "pause_loop": {
+    "duration": 40,
+    "peak": 0.09940577298402786,
+    "rms": 0.02928589179721218,
+    "seam": 0.0003730040043592453
+  },
+  "pause_signal_peak": 0.011463446542620659,
+  "preview_signal_peak": 0.03960772231221199,
+  "muted_signal_peak": 0,
+  "pause_stop_schedules": [
+    {
+      "at": 1.3367006802721089,
+      "now": 0.9317006802721088
+    },
+    {
+      "at": 1.3367006802721089,
+      "now": 0.9317006802721088
+    }
+  ],
+  "notes": "Real Chromium Web Audio node/time-domain checks. Not human listening or phone-speaker evidence."
+}

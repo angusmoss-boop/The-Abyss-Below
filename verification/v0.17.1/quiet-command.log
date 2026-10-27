@@ -1,0 +1,3 @@
+PASS four measured before/after control footprints; larger icons, no rendered labels, vertical weapon ordering, grey unfitted equipment and real dock unlock transitions
+PASS actual v0.17 saves in all three slots preserve resources, regeneration state, active dive, stock, achievements and all credit/crystal prices
+PASS pause: .38s gameplay fade, no abrupt stops or context suspension, 40s stereo theme, quiet loop seam; background fades to zero before suspend; rapid resume cancels pending suspension; no duplicate music; independent sound preview and mute

@@ -1,0 +1,74 @@
+[
+  {
+    "width": 320,
+    "height": 568,
+    "before": {
+      "x": 8,
+      "y": 327,
+      "width": 151,
+      "height": 228
+    },
+    "after": {
+      "x": 8,
+      "y": 396,
+      "width": 194,
+      "height": 160
+    },
+    "rail_icon_before": 17,
+    "rail_icon_after": 25.75
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "before": {
+      "x": 14,
+      "y": 575,
+      "width": 182,
+      "height": 252
+    },
+    "after": {
+      "x": 10,
+      "y": 664,
+      "width": 202,
+      "height": 168
+    },
+    "rail_icon_before": 20,
+    "rail_icon_after": 26.875
+  },
+  {
+    "width": 568,
+    "height": 320,
+    "before": {
+      "x": 16,
+      "y": 138,
+      "width": 240,
+      "height": 173
+    },
+    "after": {
+      "x": 10,
+      "y": 152,
+      "width": 195,
+      "height": 160
+    },
+    "rail_icon_before": 17,
+    "rail_icon_after": 25.75
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "before": {
+      "x": 16,
+      "y": 208,
+      "width": 240,
+      "height": 173
+    },
+    "after": {
+      "x": 10,
+      "y": 222,
+      "width": 195,
+      "height": 160
+    },
+    "rail_icon_before": 17,
+    "rail_icon_after": 25.75
+  }
+]

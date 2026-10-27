@@ -1,0 +1,257 @@
+{
+  "build": "0.17.1-quiet-command-1",
+  "results": [
+    {
+      "suite": "quiet-command",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 29.04,
+      "command": [
+        "tests/v0171_patch_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:33:30.180333+00:00"
+    },
+    {
+      "suite": "economy",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 19.43,
+      "command": [
+        "tests/v0171_economy_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:33:20.567144+00:00"
+    },
+    {
+      "suite": "economy-migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 15.66,
+      "command": [
+        "tests/v0171_economy_migration_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:33:16.803000+00:00"
+    },
+    {
+      "suite": "combat-touch",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 7.33,
+      "command": [
+        "tests/v0171_combat_touch_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:33:24.132644+00:00"
+    },
+    {
+      "suite": "campaign-slots",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 14.44,
+      "command": [
+        "tests/v0171_slots_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:33:35.005590+00:00"
+    },
+    {
+      "suite": "weapons-damage",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 13.02,
+      "command": [
+        "tests/v0171_weapons_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:33:37.155432+00:00"
+    },
+    {
+      "suite": "music",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 8.2,
+      "command": [
+        "tests/v0171_music_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:33:38.376315+00:00"
+    },
+    {
+      "suite": "wild-mechanics",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 36.85,
+      "command": [
+        "tests/v0171_wild_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:34:11.852104+00:00"
+    },
+    {
+      "suite": "wild-migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 5.05,
+      "command": [
+        "tests/v0171_wild_migration_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:33:42.210390+00:00"
+    },
+    {
+      "suite": "audio-signal",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 14.34,
+      "command": [
+        "tests/v0171_audio_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:33:52.719577+00:00"
+    },
+    {
+      "suite": "regression",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 17.92,
+      "command": [
+        "tests/v0171_regression_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:34:00.129302+00:00"
+    },
+    {
+      "suite": "systems",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 17.08,
+      "command": [
+        "tests/v0171_systems_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:34:09.795605+00:00"
+    },
+    {
+      "suite": "resume",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 21.47,
+      "command": [
+        "tests/v0171_resume_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:34:21.601544+00:00"
+    },
+    {
+      "suite": "survey",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 18.21,
+      "command": [
+        "tests/v0171_survey_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:34:28.001261+00:00"
+    },
+    {
+      "suite": "harbour",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 20.51,
+      "command": [
+        "tests/v0171_harbour_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:34:32.366020+00:00"
+    },
+    {
+      "suite": "geometry",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 13.58,
+      "command": [
+        "tests/v0171_world_achievements_test.py",
+        "--geometry-only"
+      ],
+      "completed_utc": "2026-10-27T22:34:35.183779+00:00"
+    },
+    {
+      "suite": "achievements",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 20.52,
+      "command": [
+        "tests/v0171_world_achievements_test.py",
+        "--achievements-only"
+      ],
+      "completed_utc": "2026-10-27T22:34:48.521932+00:00"
+    },
+    {
+      "suite": "migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 6.41,
+      "command": [
+        "tests/v0171_migration_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:34:38.780639+00:00"
+    },
+    {
+      "suite": "ui",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 49.82,
+      "command": [
+        "tests/v0171_ui_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:35:25.005980+00:00"
+    },
+    {
+      "suite": "touch",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 40.58,
+      "command": [
+        "tests/v0171_touch_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:35:19.359942+00:00"
+    },
+    {
+      "suite": "explorer-ui",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 33.98,
+      "command": [
+        "tests/v0171_explorer_ui_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:35:22.501193+00:00"
+    },
+    {
+      "suite": "release",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 1.12,
+      "command": [
+        "tests/v0171_release_test.py"
+      ],
+      "completed_utc": "2026-10-27T22:35:20.480930+00:00"
+    },
+    {
+      "suite": "sync",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.14,
+      "command": [
+        "tests/v0171_sync_test.mjs"
+      ],
+      "completed_utc": "2026-10-27T22:35:20.619133+00:00"
+    },
+    {
+      "suite": "worker",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.09,
+      "command": [
+        "tests/v0171_worker_test.mjs"
+      ],
+      "completed_utc": "2026-10-27T22:35:20.704828+00:00"
+    }
+  ],
+  "runtime_hashes": {
+    "campaign-slots.js": "016d131125289c69e0db6450756079464e78fee2ed804f8781354b7ef04b2088",
+    "index.html": "722df9991df6c8ca996a9813ef764e0da820a071499db91127483a3d28b68d38",
+    "styles.css": "ab2a3dcb02085f90df4ea63e25aa297cb7b04b02cfcb936d93c2b244a56f246c",
+    "audio.js": "5e5021fec4830c51e0339f128a790133401bf23774e00ab49136b2bc4881975a",
+    "game.js": "e44f02c864fb42f55a4857cf38dc626a337d46017d97f6bd6b786d9e84aa857e",
+    "version-sync.js": "2d0894e079a40d3894228ab9f6a86eec721b12bacfe233eee6105b73383f54e9",
+    "service-worker.js": "cecd1b9645b7b065befe130caa48f0d2da543037de8cc2304ce3abb98864b294",
+    "version.json": "37ea4782cb384d3cddf3e3c3867bbb429dc959cb3b2867532f98f5ffc0361eee"
+  }
+}
