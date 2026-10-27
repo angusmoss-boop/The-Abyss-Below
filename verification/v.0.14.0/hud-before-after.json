@@ -1,0 +1,16 @@
+[
+  {
+    "width": 390,
+    "height": 844,
+    "old_hud_height": 154.828125,
+    "new_hud_height": 105.75,
+    "reduction_percent": 31.7
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "old_hud_height": 97.28125,
+    "new_hud_height": 87.75,
+    "reduction_percent": 9.8
+  }
+]

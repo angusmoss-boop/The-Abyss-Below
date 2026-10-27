@@ -1,0 +1,118 @@
+{
+  "build": "0.14.0-living-depths-1",
+  "assembled_utc": "2026-10-27T18:51:50.041673+00:00",
+  "execution": "Successful individual and small-group reruns; not a claim that the interrupted large parallel run completed.",
+  "passed_suites": 14,
+  "results": [
+    {
+      "suite": "regression",
+      "status": "PASS",
+      "log": "verification/v0.14.0/regression.log",
+      "log_written_utc": "2026-10-27T18:43:26.570561+00:00",
+      "assertion_groups": 5
+    },
+    {
+      "suite": "systems",
+      "status": "PASS",
+      "log": "verification/v0.14.0/systems.log",
+      "log_written_utc": "2026-10-27T18:43:23.869757+00:00",
+      "assertion_groups": 3
+    },
+    {
+      "suite": "resume",
+      "status": "PASS",
+      "log": "verification/v0.14.0/resume.log",
+      "log_written_utc": "2026-10-27T18:43:24.738657+00:00",
+      "assertion_groups": 5
+    },
+    {
+      "suite": "survey",
+      "status": "PASS",
+      "log": "verification/v0.14.0/survey.log",
+      "log_written_utc": "2026-10-27T18:41:51.084934+00:00",
+      "assertion_groups": 4
+    },
+    {
+      "suite": "harbour",
+      "status": "PASS",
+      "log": "verification/v0.14.0/harbour.log",
+      "log_written_utc": "2026-10-27T18:42:34.772180+00:00",
+      "assertion_groups": 3
+    },
+    {
+      "suite": "geometry",
+      "status": "PASS",
+      "log": "verification/v0.14.0/geometry.log",
+      "log_written_utc": "2026-10-27T18:42:27.837000+00:00",
+      "assertion_groups": 2
+    },
+    {
+      "suite": "achievements",
+      "status": "PASS",
+      "log": "verification/v0.14.0/achievements.log",
+      "log_written_utc": "2026-10-27T18:42:42.445030+00:00",
+      "assertion_groups": 3
+    },
+    {
+      "suite": "migration",
+      "status": "PASS",
+      "log": "verification/v0.14.0/migration.log",
+      "log_written_utc": "2026-10-27T18:42:39.790931+00:00",
+      "assertion_groups": 1
+    },
+    {
+      "suite": "ui",
+      "status": "PASS",
+      "log": "verification/v0.14.0/ui.log",
+      "log_written_utc": "2026-10-27T18:44:52.668118+00:00",
+      "assertion_groups": 1
+    },
+    {
+      "suite": "touch",
+      "status": "PASS",
+      "log": "verification/v0.14.0/touch.log",
+      "log_written_utc": "2026-10-27T18:44:52.614366+00:00",
+      "assertion_groups": 6
+    },
+    {
+      "suite": "explorer-ui",
+      "status": "PASS",
+      "log": "verification/v0.14.0/explorer-ui.log",
+      "log_written_utc": "2026-10-27T18:45:41.528981+00:00",
+      "assertion_groups": 4
+    },
+    {
+      "suite": "release",
+      "status": "PASS",
+      "log": "verification/v0.14.0/release.log",
+      "log_written_utc": "2026-10-27T18:46:47.360260+00:00",
+      "assertion_groups": 1
+    },
+    {
+      "suite": "sync",
+      "status": "PASS",
+      "log": "verification/v0.14.0/sync.log",
+      "log_written_utc": "2026-10-27T18:46:47.567981+00:00",
+      "assertion_groups": 6
+    },
+    {
+      "suite": "worker",
+      "status": "PASS",
+      "log": "verification/v0.14.0/worker.log",
+      "log_written_utc": "2026-10-27T18:46:47.666320+00:00",
+      "assertion_groups": 3
+    }
+  ],
+  "runtime_hashes": {
+    "index.html": "cdae9ca4d9d41411a77446b34cf16746c88998fc58021d0f5c76991c83796bd9",
+    "styles.css": "62ba1ea8353ac98b42b1bf11255a9d677dde607ab36d9075d5cb199d60563ffa",
+    "audio.js": "10b9713d16a1f500fceb8a2ddf0cb0ec504c401f9fa5f2c560ae7ec5d8e58044",
+    "game.js": "fb81c144c6229cf3b8dc70fb6fd6dd7dad214216462c7f0b0e55a6710b2d990b",
+    "version-sync.js": "7f7a0781ddbd0f9885b3bde7134d9f6aacb5d54b93e0e18c3f58b12b6c4c1c15",
+    "service-worker.js": "85bb01dd4b37e756afcf24364f977ab0e096c2b9ea08b4f77134e1694359c304",
+    "version.json": "c07f649da29f1e34bb28c549c2e811ba40c9357a7c46bcd5cdb1499243f199be",
+    "manifest.webmanifest": "02ae4faeec5656f3d0067f32396e1fb87058c75ad7cfe4fc5982964d236083e4"
+  },
+  "live_pwa": "BLOCKED: ERR_BLOCKED_BY_ADMINISTRATOR; see live-pwa.json",
+  "physical_device_tested": false
+}

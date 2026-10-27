@@ -1,0 +1,56 @@
+{
+  "build": "0.14.0-living-depths-1",
+  "results": [
+    {
+      "suite": "harbour",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 21.58,
+      "command": [
+        "tests/v0140_harbour_test.py"
+      ],
+      "completed_utc": "2026-10-27T18:42:34.772452+00:00"
+    },
+    {
+      "suite": "geometry",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 14.64,
+      "command": [
+        "tests/v0140_world_achievements_test.py",
+        "--geometry-only"
+      ],
+      "completed_utc": "2026-10-27T18:42:27.837052+00:00"
+    },
+    {
+      "suite": "achievements",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 14.61,
+      "command": [
+        "tests/v0140_world_achievements_test.py",
+        "--achievements-only"
+      ],
+      "completed_utc": "2026-10-27T18:42:42.445120+00:00"
+    },
+    {
+      "suite": "migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 5.02,
+      "command": [
+        "tests/v0140_migration_test.py"
+      ],
+      "completed_utc": "2026-10-27T18:42:39.791037+00:00"
+    }
+  ],
+  "runtime_hashes": {
+    "index.html": "cdae9ca4d9d41411a77446b34cf16746c88998fc58021d0f5c76991c83796bd9",
+    "styles.css": "62ba1ea8353ac98b42b1bf11255a9d677dde607ab36d9075d5cb199d60563ffa",
+    "audio.js": "10b9713d16a1f500fceb8a2ddf0cb0ec504c401f9fa5f2c560ae7ec5d8e58044",
+    "game.js": "fb81c144c6229cf3b8dc70fb6fd6dd7dad214216462c7f0b0e55a6710b2d990b",
+    "version-sync.js": "7f7a0781ddbd0f9885b3bde7134d9f6aacb5d54b93e0e18c3f58b12b6c4c1c15",
+    "service-worker.js": "85bb01dd4b37e756afcf24364f977ab0e096c2b9ea08b4f77134e1694359c304",
+    "version.json": "c07f649da29f1e34bb28c549c2e811ba40c9357a7c46bcd5cdb1499243f199be"
+  }
+}

@@ -1,0 +1,4 @@
+PASS blackout conceals map objects; sonar logs contacts only on wave arrival; terrain remains charted but predator contacts expire
+PASS only surveyed open water accepts waypoints; HUD direction pin, zoom/overview/centre and clear; M/Escape modal preserves pause; chart survives actual reload
+PASS visual survey uses the actual forward lamp cone, not a full-radius reveal in dark water
+PASS five distinct seeded environments, three landmarks each, no changes to fixed resources/rocks; currents weaker than base quiet thrust; harbour and central route sheltered

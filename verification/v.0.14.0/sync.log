@@ -1,0 +1,6 @@
+PASS network-only manifest + 7 SHA-256 runtime files + loaded HTML/CSS/code build IDs + verified worker required for green sync status
+PASS offline invalidates green status, does not claim cached latest, and reconnection can verify
+PASS stale HTML/CSS, old worker, missing cache and no worker never report fully synced
+PASS numeric semver ordering (0.14 vs 0.9), update notification, no downgrade, and active-dive reload guard
+PASS partial upload, malformed/missing manifest and network failure never report synced
+PASS missing/older game entry point reports an incomplete build, not a verified version
