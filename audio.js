@@ -1,8 +1,8 @@
-/* Arsenal & Archives: original procedural audio, no downloads or permissions.
+/* Salvage & Supply: original procedural audio, no downloads or permissions.
    Start/resume only after user input. Settings persist independently of campaigns. */
 (() => {
   'use strict';
-  const KEY='abyss-audio-v1', BUILD='0.16.0-arsenal-archives-1';
+  const KEY='abyss-audio-v1', BUILD='0.17.0-salvage-supply-1';
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   let settings={effects:.5,ambience:.35,music:.3,muted:false};
   try { const v=JSON.parse(localStorage.getItem(KEY)||'null'); if(v){

@@ -1,4 +1,4 @@
-> Historical design notes. For current v0.15 behaviour, use README.md and WILD-WATERS-v0.15.0.md. Encounter persistence, wildlife, active-dive saving, charts and sound supersede earlier limitations here.
+> Historical design notes. The current specification is README.md and SALVAGE-SUPPLY-v0.17.0.md. These supersede old permanent-scrap, free-gun-reload, save-resume and pricing rules below.
 
 # The Abyss Below: current design
 

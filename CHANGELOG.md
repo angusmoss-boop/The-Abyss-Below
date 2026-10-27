@@ -1,3 +1,14 @@
+# v0.17.0 / Salvage & Supply
+
+- Original scrap sites recover after five active dive minutes, paced to one deposit every 45 seconds per visited level, never in view; queues persist independently in each campaign.
+- No wall-clock, offline, paused, inactive-slot or harbour recovery. Crystal placements, depletion and all crystal upgrade prices unchanged.
+- Automatic range-aware salvage and predator-drop collection; crystals/recorders stay manual. Power/visibility/collision gates and base free close collection preserved.
+- First-harvest ledgers preserve Clean Sweep / Full Survey progress despite replenishing scrap.
+- All upgrade credit prices increased 50%, rounded up: 22,765 CR + unchanged 464 crystals for the whole tree.
+- Paid dock rail/torpedo/mine ammunition: 6 / 24 / 18 CR per round. Three responsive supply cards, single and affordable bulk purchases.
+- No free ammo from docking, weapon installation, any upgrade, death, loading, relaunch or slot changes. Existing owned stock retained.
+- Physical dock repairs, air and power remain free. Existing combat, map, wildlife, music, 3 slots and active-dive resume preserved.
+
 # v0.16.0 / Arsenal & Archives
 
 - Three independent local campaign slots, one-time migration into Slot 1, explicit named creation and confirmed deletion; active expeditions resume paused.

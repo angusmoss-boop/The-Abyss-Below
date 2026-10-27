@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const BUILD = Object.freeze({version:'0.16.0',name:'Arsenal & Archives',id:'0.16.0-arsenal-archives-1'});
+  const BUILD = Object.freeze({version:'0.17.0',name:'Salvage & Supply',id:'0.17.0-salvage-supply-1'});
   window.AbyssBuild=BUILD;
   const $ = id => document.getElementById(id);
   const canvas = $('gameCanvas');
@@ -28,7 +28,20 @@
     armDelay:.65,deployCooldown:1.1,triggerRadius:52,blastRadius:108,radius:8});
   const roman = mark => ['0','I','II','III','IV','V','VI','VII'][mark]||String(mark);
   const BOOST = Object.freeze({capacities:[0,75,100,125,150],multipliers:[1,1.45,1.60,1.75,1.85],drain:25,recharge:12.5,rechargeDelay:1.5,powerPerSecond:7});
-  const AMMO_PRICE = 12;
+  const AMMO_PRICE = 18;
+  const WEAPON_AMMO_PRICES = Object.freeze({railgun:6,torpedo:24});
+  const CREDIT_PRICE_FACTOR = 1.5;
+  const SALVAGE_REGEN = Object.freeze({delay:300,interval:45,offscreenMargin:100,pickupInterval:.25});
+  const freshSalvage = () => ({version:1,elapsed:0,nextSpawnAt:0,harvested:[],due:{}});
+  function normaliseSalvage(value,loot,looted){
+    const scraps=new Set((loot||[]).filter(n=>n.type==='scrap').map(n=>n.id));
+    const spent=new Set(looted||[]),v=value?.version===1?value:{};
+    const elapsed=Number.isFinite(v.elapsed)?Math.max(0,Math.min(1e9,v.elapsed)):0;
+    const harvested=[...new Set([...(Array.isArray(v.harvested)?v.harvested:[]),...spent])].filter(id=>scraps.has(id));
+    const due={};
+    for(const id of spent)if(scraps.has(id))due[id]=Number.isFinite(v.due?.[id])?Math.max(0,Math.min(elapsed+SALVAGE_REGEN.delay,v.due[id])):elapsed+SALVAGE_REGEN.delay;
+    return {version:1,elapsed,nextSpawnAt:Number.isFinite(v.nextSpawnAt)?Math.max(0,Math.min(elapsed+SALVAGE_REGEN.interval,v.nextSpawnAt)):0,harvested,due};
+  }
   const WEAPONS=Object.freeze({
     railgun:{name:'PULSE RAILGUN',damage:[0,35,50,70,95],capacity:[0,12,18,24,32],speed:760,range:620,cooldown:.42,radius:4,blast:0,color:'#9beafa'},
     torpedo:{name:'SHOCK TORPEDOES',damage:[0,95,140,200,280],capacity:[0,3,4,6,8],speed:300,range:1000,cooldown:1.4,radius:7,blast:105,color:'#ffc48e'}
@@ -64,7 +77,7 @@
   const currentLevel=()=>LEVELS.find(l=>l.id===LEVEL_ID)||LEVELS[0];
   const cleanCount=v=>Number.isFinite(v)&&v>=0?Math.floor(v):0;
   const freshField = () => ({schema:3,seed:(Math.random()*0xffffffff)>>>0,cycle:0,
-    looted:[],health:{},loot:null,drops:[],secured:[],recoveries:[],recoverySerial:0,pendingCargo:null,floorReached:false,awaitingDock:false,survey:freshSurvey(),wild:null});
+    looted:[],health:{},loot:null,drops:[],secured:[],recoveries:[],recoverySerial:0,pendingCargo:null,floorReached:false,awaitingDock:false,survey:freshSurvey(),wild:null,salvage:freshSalvage()});
   let field=freshField(),campaignId='campaign-'+Date.now().toString(36)+'-'+field.seed.toString(36);
   let campaignLevels={},storageHealthy=true,storageRecovery=false,migratedLegacy=false;
   const readJSON=key=>{try{return JSON.parse(localStorage.getItem(key)||'null');}catch(_){return null;}};
@@ -76,8 +89,9 @@
     const cargo=n=>validPoint(n)?{x:n.x,y:n.y,scrap:cleanCount(n.scrap),crystal:cleanCount(n.crystal)}:null;
     const loot=Array.isArray(data.loot)&&data.loot.length>0&&data.loot.length<=3000&&data.loot.every(validNode)&&new Set(data.loot.map(n=>n.id)).size===data.loot.length?data.loot.map(normalise):null;
     const recoveries=Array.isArray(data.recoveries)?data.recoveries.filter(n=>cargo(n)&&typeof n.id==='string'&&/^recovery-/.test(n.id)).map(n=>({...cargo(n),id:n.id})).filter(n=>n.scrap||n.crystal):[];
-    return {schema:3,seed:data.seed,cycle:cleanCount(data.cycle),
-      looted:Array.isArray(data.looted)?[...new Set(data.looted.filter(x=>typeof x==='string'&&/^loot-\d+$/.test(x)))]:[],
+    const looted=Array.isArray(data.looted)?[...new Set(data.looted.filter(x=>typeof x==='string'&&/^loot-\d+$/.test(x)))]:[];
+    return {schema:3,seed:data.seed,cycle:cleanCount(data.cycle),looted,
+      salvage:normaliseSalvage(data.salvage,loot,looted),
       health:Object.fromEntries(Object.entries(data.health||{}).filter(([k,v])=>/^enemy-\d+$/.test(k)&&Number.isFinite(v)&&v>=0)),loot,
       drops:Array.isArray(data.drops)?data.drops.filter(n=>validNode(n)&&n.type==='scrap'&&/^drop-/.test(n.id)).map(normalise):[],
       secured:Array.isArray(data.secured)?[...new Set(data.secured.filter(n=>Number.isInteger(n)&&n>=0&&n<6))]:[],
@@ -121,10 +135,10 @@
     {id:'quiet', name:'SILENT DRIVE', desc:'Suppress engine noise and reduce predator detection.', base:95, limit:4},
     {id:'minePower', name:'SEA MINE WARHEADS', desc:'Buy Mk I to unlock mines. Four warhead tiers: 60 / 110 / 180 / 240 damage.', prices:[100,180,320,520], limit:4},
     {id:'mineCapacity', name:'MINE AMMO RACK', desc:'Separate capacity upgrade: 2 / 4 / 6 / 8 mines. Mk I rack is standard. Extra slots are empty; buy ammunition in the dock Ammunition tab.', prices:[0,90,160,280], limit:4},
-    {id:'magnet', name:'SALVAGE MAGNET', desc:'Use the existing USE action to recover visible scrap, crystals and predator salvage from farther away. Remote recovery costs a small burst of power; nearby collection stays free.', prices:[80,130,200,300], limit:4},
+    {id:'magnet', name:'SALVAGE MAGNET', desc:'Automatically collect visible scrap and predator salvage within magnet range. Crystals still require USE; recorders require a close approach. Remote pickups use power; close pickups stay free.', prices:[80,130,200,300], limit:4},
     {id:'shield', name:'KINETIC SHIELD', desc:'An automatic energy barrier absorbs predator bites and rock impacts before they reach the hull. It recharges from your battery after eight seconds without an impact, unless you are boosting.', prices:[100,180,280,420], limit:4},
-    {id:'railgun', name:'PULSE RAILGUN', desc:'A fast forward-firing bolt. Each mark increases damage and magazine capacity. Hold Z or RAIL to repeat. Free full reload only at the dock.', prices:[150,240,360,520], limit:4},
-    {id:'torpedo', name:'SHOCK TORPEDOES', desc:'A slower forward-firing explosive with an area blast. Each mark increases damage and carried rounds. Tap X or TORP to fire once. Reload free only at the dock.', prices:[200,320,480,680], limit:4},
+    {id:'railgun', name:'PULSE RAILGUN', desc:'A fast forward-firing bolt. Each mark increases damage and magazine capacity. Hold Z or RAIL to repeat. Buy rounds at the dock for 6 credits each. New capacity is empty.', prices:[150,240,360,520], limit:4},
+    {id:'torpedo', name:'SHOCK TORPEDOES', desc:'A slower forward-firing explosive with an area blast. Each mark increases damage and carried rounds. Tap X or TORP to fire once. Buy rounds at the dock for 24 credits each. New capacity is empty.', prices:[200,320,480,680], limit:4},
     {id:'disruptor', name:'SONIC DISRUPTOR', desc:'Your existing SONAR pulse also briefly stuns nearby predators as its wave reaches them. Stronger marks extend the stun and its effective radius. No additional action button needed.', prices:[90,160,250,380], limit:4}
   ];
   const defaults = () => ({credits:0,crystals:0,xp:0,bestDepth:0,mineAmmo:0,weaponAmmo:{railgun:0,torpedo:0},secured:[],achievements:{},stats:{},upgrades:{hull:0,oxygen:0,battery:0,engine:0,sonar:0,quiet:0,minePower:0,mineCapacity:1,flashlight:1,magnet:0,shield:0,disruptor:0,railgun:0,torpedo:0}});
@@ -263,7 +277,7 @@
   const scanPowerCost = () => sonarCost()+(disruptorReady()?DISRUPTOR.power[saved.upgrades.disruptor]:0);
   const mineCapacity = () => MINES.capacity[saved.upgrades.mineCapacity];
   const mineDamage = () => MINES.damage[saved.upgrades.minePower];
-  const upgradeCost = (upgrade,level) => upgrade.prices?.[level]??Math.floor(upgrade.base*Math.pow(1.55,level));
+  const upgradeCost = (upgrade,level) => Math.ceil((upgrade.prices?.[level]??Math.floor(upgrade.base*Math.pow(1.55,level)))*CREDIT_PRICE_FACTOR);
   const crystalCost = (upgrade,level) => CRYSTAL_PRICES[upgrade.id][level]||0;
   const predatorAlive = enemy => !enemy.dead && enemy.health>0;
   function createPredator(data){
@@ -410,6 +424,7 @@
       for(let i=0;i<count;i++)field.loot.push({id:'loot-'+nextId++,...populationPoint(r,700+(i+r())/count*(MAX_WORLD_Y-900)),type:'crystal',quantity:Math.min(2,amount-i*2)});
       field.crystalTopUp=true;
     }
+    field.salvage=normaliseSalvage(field.salvage,field.loot,field.looted);
     for(const node of field.loot)scene.items.push(makeItem(node.x,node.y,node.type,{...node,collected:looted.has(node.id)}));
     for(const node of field.drops)scene.items.push(makeItem(node.x,node.y,'scrap',{...node,predatorDrop:true}));
     for(const node of field.recoveries){
@@ -468,12 +483,54 @@
     const supplies=new Set(field.loot.filter(n=>n.type==='air').map(n=>n.id));
     field.looted=field.looted.filter(id=>!supplies.has(id));field.awaitingDock=false;
     populateWorld();persistField();
-    addEvent('Dock cycle complete · predators and supply caches refreshed; resource deposits unchanged');
+    addEvent('Dock cycle complete · predators and caches refreshed; salvage timers and crystals unchanged');
+  }
+  function updateSalvageRegeneration(dt){
+    // All visited levels in THIS slot age while this campaign is being dived.
+    // Pause, dock, harbour waiting, inactive slots and time offline grant no stock.
+    if(!running||paused||inHarbour(player)||!Number.isFinite(dt)||dt<=0)return;
+    let changed=false;
+    for(const [levelId,f] of Object.entries(campaignLevels)){
+      if(!f.loot?.length)continue;
+      const state=f.salvage||(f.salvage=normaliseSalvage(null,f.loot,f.looted));
+      state.elapsed+=dt;
+      if(state.elapsed<state.nextSpawnAt)continue;
+      const spent=new Set(f.looted);
+      const candidates=f.loot.filter(n=>n.type==='scrap'&&spent.has(n.id)&&Number.isFinite(state.due[n.id])&&state.due[n.id]<=state.elapsed)
+        .sort((a,b)=>state.due[a.id]-state.due[b.id]||a.id.localeCompare(b.id));
+      const node=candidates.find(n=>levelId!==LEVEL_ID||(!onscreen(n.x,n.y,SALVAGE_REGEN.offscreenMargin)&&distance(player,n)>magnetRange()+100));
+      if(!node)continue;
+      // Restore an existing deposit, never mint new crystals, nodes or kill drops.
+      f.looted=f.looted.filter(id=>id!==node.id);delete state.due[node.id];
+      state.nextSpawnAt=state.elapsed+SALVAGE_REGEN.interval;
+      if(levelId===LEVEL_ID){const item=scene.items.find(n=>n.id===node.id&&n.type==='scrap');if(item){item.collected=false;item.revealUntil=0;item.echoDuration=0;}}
+      // Survey contact remains a last-seen record until that site is revisited.
+      changed=true;
+    }
+    if(changed)persist();
+  }
+  function recordSalvageHarvest(item){
+    if(item.type!=='scrap'||item.predatorDrop||!field.loot?.some(n=>n.id===item.id&&n.type==='scrap'))return;
+    const state=field.salvage||(field.salvage=normaliseSalvage(null,field.loot,field.looted));
+    if(!state.harvested.includes(item.id))state.harvested.push(item.id);
+    state.due[item.id]=state.elapsed+SALVAGE_REGEN.delay;
+  }
+  function autoCollectSalvage(dt){
+    if(!running||paused||player.airborne||player.y<SURFACE.y)return;
+    player.autoSalvageCooldown=Math.max(0,(player.autoSalvageCooldown||0)-dt);
+    if(player.autoSalvageCooldown>0)return;
+    let closest=null,range=magnetRange();
+    for(const item of scene.items){
+      if(item.collected||item.type!=='scrap')continue;
+      const d=distance(player,item);
+      if(d<range&&((d<60&&clearSalvageLine(item))||remoteSalvageAvailable(item))){closest=item;range=d;}
+    }
+    if(closest&&collectItem(closest,true))player.autoSalvageCooldown=SALVAGE_REGEN.pickupInterval;
   }
   function newDive() {
     // A new launch is distinct from restoring the existing expedition.
     loadedActive=null;running=false;buildingWorld=true;createWorld();buildingWorld=false;dockVisitActive=!field.awaitingDock;
-    player={x:600,y:160,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing:-Math.PI/2,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,quiet:false,damageCooldown:0,scanCooldown:0,boost:boostCapacity(),boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,cargo:{scrap:0,crystal:0,recorders:[]},lastRepair:-100,mineAmmo:0,mineCooldown:0,weaponAmmo:{...saved.weaponAmmo},weaponCooldown:{railgun:0,torpedo:0},damageFlashUntil:0,nextDamageFlash:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,trip:{deepest:0,hullDamage:0}};
+    player={x:600,y:160,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing:-Math.PI/2,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,quiet:false,damageCooldown:0,scanCooldown:0,boost:boostCapacity(),boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,cargo:{scrap:0,crystal:0,recorders:[]},lastRepair:-100,mineAmmo:0,mineCooldown:0,weaponAmmo:{...saved.weaponAmmo},weaponCooldown:{railgun:0,torpedo:0},damageFlashUntil:0,nextDamageFlash:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,autoSalvageCooldown:0,trip:{deepest:0,hullDamage:0}};
     resupplyMines();
     sonarWaves=[];sonarTerrainEchoes=[];surfaceEffects=[];clock=0;for(const m of scene.derelictMines||[])Object.assign(m,mineLocation(m));lastZone='';eventLines=[];useHoldTimer=0;victoryShown=saved.secured.length===RECORDERS_TOTAL;pointerSilent=false;resetPilotInput();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
     addEvent('Dive systems initialised.');
@@ -506,9 +563,9 @@
     const station = HARBOUR;
     if(!player.airborne&&player.y>=SURFACE.y&&distance(player,station)<HARBOUR.dockRadius && depthOf(player.y)<30)return {type:'station',x:station.x,y:station.y};
     let candidate=null,range=magnetRange(); // Responsive salvage pick-up while gliding past an item.
-    for (const item of scene.items) if(!item.collected) {
+    for (const item of scene.items) if(!item.collected&&item.type!=='scrap') {
       const d=distance(player,item);
-      if(d<range&&(d<60||remoteSalvageAvailable(item))) {range=d;candidate=item;}
+      if(d<range&&((d<60&&clearSalvageLine(item))||remoteSalvageAvailable(item))) {range=d;candidate=item;}
     }
     return candidate;
   }
@@ -517,23 +574,29 @@
     const item=nearestInteractable();
     if(!item) {if(!silentMiss)announce('NOTHING IN SALVAGE RANGE',1.25);return;}
     if(item.type==='station') {depositAndDock();return;}
+    collectItem(item);
+  }
+  function collectItem(item,automatic=false){
+    if(!running||paused||item.collected||player.airborne)return false;
+    if(distance(player,item)>=magnetRange())return false;
+    if(distance(player,item)<60&&!clearSalvageLine(item))return false;
     if(distance(player,item)>=60){
       // Re-check on use so low power never collects a remote item for free.
-      if(!remoteSalvageAvailable(item))return;
+      if(!remoteSalvageAvailable(item))return false;
       player.battery=Math.max(0,player.battery-magnetPower());
       player.magnetFlash={x:item.x,y:item.y,until:clock+.35};
     }
-    item.collected=true;rememberSurveyObject('items',item);window.AbyssAudio?.event(item.type==='recorder'?'recorder':'pickup');
+    item.collected=true;recordSalvageHarvest(item);rememberSurveyObject('items',item);window.AbyssAudio?.event(item.type==='recorder'?'recorder':'pickup');
     const quantity=item.quantity||1;
     if(distance(player,item)>=60&&['scrap','crystal'].includes(item.type))addStat('magnetPickups',1);
     if(item.predatorDrop){field.drops=field.drops.filter(n=>n.id!==item.id);}
     else if(!['recorder','recovery'].includes(item.type)&&typeof item.id==='string'&&!field.looted.includes(item.id))field.looted.push(item.id);
     if(item.type==='recovery'){field.recoveries=field.recoveries.filter(n=>n.id!==item.id);player.cargo.scrap+=item.scrap||0;player.cargo.crystal+=item.crystal||0;announce('RECOVERY POD SECURED · RETURN TO HUB',3);addEvent('Recovered '+(item.scrap||0)+' scrap + '+(item.crystal||0)+' crystals');}
-    else if(item.type==='scrap') {player.cargo.scrap+=quantity;addEvent('Scrap recovered (+'+quantity+')');announce('SALVAGE +'+quantity+' SCRAP',1.8);}
+    else if(item.type==='scrap') {player.cargo.scrap+=quantity;if(!automatic){addEvent('Scrap recovered (+'+quantity+')');announce('SALVAGE +'+quantity+' SCRAP',1.8);}else{player.magnetFlash={x:item.x,y:item.y,until:clock+.35};}}
     else if(item.type==='crystal') {player.cargo.crystal+=quantity;addEvent('Abyss crystals recovered (+'+quantity+')');announce('RARE CRYSTALS +'+quantity,2);}
     else if(item.type==='air') {player.oxygen=Math.min(maxOxygen(),player.oxygen+35);player.battery=Math.min(maxBattery(),player.battery+12);addEvent('Emergency supply cache');announce('OXYGEN +35 · ENERGY +12',2);}
     else if(item.type==='recorder') {player.cargo.recorders.push(item.index);addEvent('ENCRYPTED RECORDER FOUND');announce('FLIGHT RECORDER RECOVERED · RETURN TO STATION',4);}
-    checkAchievements();persist();updateUI();
+    checkAchievements();persist();updateUI();return true;
   }
   function scan() {
     if(!running||paused)return;
@@ -712,8 +775,8 @@
     {id:'bottom',name:'Rock Bottom',description:'Visit the seabed in all five levels.',target:5,kind:'floors',icon:'08'},
     {id:'salvage',name:'Salvage Professional',description:'Deliver 200 scrap units to the hub across any number of dives.',target:200,kind:'stat',stat:'bankedScrap',icon:'09'},
     {id:'crystals',name:'Crystal Archivist',description:'Deliver 100 crystals to the hub across any number of dives.',target:100,kind:'stat',stat:'bankedCrystals',icon:'10'},
-    {id:'sweep',name:'Clean Sweep',description:'Collect every fixed scrap and crystal deposit in any one level.',target:1,kind:'sweeps',icon:'11'},
-    {id:'survey',name:'Full Survey',description:'Collect every fixed scrap and crystal deposit in all five levels.',target:5,kind:'sweeps',icon:'12'},
+    {id:'sweep',name:'Clean Sweep',description:'Collect each original scrap and crystal site at least once in any one level.',target:1,kind:'sweeps',icon:'11'},
+    {id:'survey',name:'Full Survey',description:'Collect each original scrap and crystal site at least once across all five levels.',target:5,kind:'sweeps',icon:'12'},
     {id:'first-blood',name:'First Blood',description:'Destroy your first predator.',target:1,kind:'stat',stat:'kills',icon:'13'},
     {id:'reapers',name:'Apex Eraser',description:'Destroy 10 Crimson Reapers across repeated dives.',target:10,kind:'stat',stat:'reaperKills',icon:'14'},
     {id:'demolition',name:'Demolition Crew',description:'Destroy 50 predators across the campaign.',target:50,kind:'stat',stat:'kills',icon:'15'},
@@ -728,9 +791,9 @@
   function resourceProgress(id){
     const l=LEVELS.find(x=>x.id===id),f=campaignLevels[id],nodes=f?.loot?.filter(n=>['scrap','crystal'].includes(n.type));
     if(!nodes)return {scrapTotal:l.scrap*2,scrapRemaining:l.scrap*2,crystalTotal:l.crystals,crystalRemaining:l.crystals,collected:0,total:l.scrap+l.crystals/2};
-    const looted=new Set(f.looted),sum=(type,remaining)=>nodes.filter(n=>n.type===type&&(!remaining||!looted.has(n.id))).reduce((v,n)=>v+n.quantity,0);
+    const looted=new Set(f.looted),harvested=new Set([...(f.salvage?.harvested||[]),...f.looted]),sum=(type,remaining)=>nodes.filter(n=>n.type===type&&(!remaining||!looted.has(n.id))).reduce((v,n)=>v+n.quantity,0);
     const extra=f.legacyLayout&&!f.crystalTopUp?Math.max(0,l.crystals-sum('crystal',false)):0;
-    return {scrapTotal:sum('scrap',false),scrapRemaining:sum('scrap',true),crystalTotal:sum('crystal',false)+extra,crystalRemaining:sum('crystal',true)+extra,collected:nodes.filter(n=>looted.has(n.id)).length,total:nodes.length+Math.ceil(extra/2)};
+    return {scrapTotal:sum('scrap',false),scrapRemaining:sum('scrap',true),crystalTotal:sum('crystal',false)+extra,crystalRemaining:sum('crystal',true)+extra,collected:nodes.filter(n=>n.type==='scrap'?harvested.has(n.id):looted.has(n.id)).length,total:nodes.length+Math.ceil(extra/2)};
   }
   function achievementProgress(a){
     if(a.kind==='recorders')return totalRecorders();
@@ -822,7 +885,7 @@
     saved.credits+=gained;saved.crystals+=bankedCrystals;saved.xp+=earnedXP;
     for(const i of player.cargo.recorders)if(!saved.secured.includes(i)&&i>=0&&i<RECORDERS_TOTAL)saved.secured.push(i);
     player.cargo={scrap:0,crystal:0,recorders:[]};field.pendingCargo=null;
-    player.hull=maxHull();player.oxygen=maxOxygen();player.battery=maxBattery();player.noise=0;resetBoost();resetShield();resupplyMines();reloadWeaponsAtDock();player.trip={deepest:0,hullDamage:0};
+    player.hull=maxHull();player.oxygen=maxOxygen();player.battery=maxBattery();player.noise=0;resetBoost();resetShield();resupplyMines();syncWeaponStock();player.trip={deepest:0,hullDamage:0};
     if(realReturn){refreshDockPopulation();dockVisitActive=true;}
     checkAchievements();persist();updateUI();
     addEvent('Docked · +'+gained+' CR · +'+bankedCrystals+' crystals · systems restored');
@@ -860,17 +923,17 @@
     sonar:['SENSORS','exploration','Scans cover the current screen. Very large screens can extend the cooldown until the wave finishes.'],
     quiet:['SIGNATURE CONTROL','support','Suppresses ordinary engine noise. Boost remains loud, and sonar can alert nearby predators.'],
     minePower:['ORDNANCE','defence','The launcher unlocks at Mk I. Warheads strengthen every mine; ammunition is bought separately.'],
-    mineCapacity:['ORDNANCE STORAGE','defence','A larger rack adds empty slots only. Buy rounds in the Ammunition tab for 12 credits each.'],
-    magnet:['RESOURCE RECOVERY','exploration','Hold USE or E to collect visible resources at range. Requires a clear path: no pulling through rock. Recorders and supply caches still need a close approach.'],
+    mineCapacity:['ORDNANCE STORAGE','defence','A larger rack adds empty slots only. Buy rounds in the Ammunition tab for 18 credits each.'],
+    magnet:['RESOURCE RECOVERY','exploration','Scrap collects automatically. Remote pickups require power, visibility and a clear path. Crystals still need USE or E, and recorders and supply caches need a close approach.'],
     shield:['ACTIVE DEFENCE','defence','Absorbs bites and rock impacts only, never pressure or oxygen loss. Recharge costs 0.35 power per shield point and pauses while boosting.'],
-    railgun:['DIRECT-FIRE WEAPON','tactical','Fast straight-line bolts follow the bow. Hold Z or RAIL for repeated fire. Rocks stop shots. Magazines refill free at a physical dock; menus, death and reloading never refill them.'],
-    torpedo:['EXPLOSIVE WEAPON','defence','Tap X or TORP for one forward torpedo. The blast can hit several predators; your own blast is ship-safe. Detonating abandoned mines can still hurt you. Free reloads only at the dock.'],
+    railgun:['DIRECT-FIRE WEAPON','tactical','Fast straight-line bolts follow the bow. Hold Z or RAIL for repeated fire. Rocks stop shots. Buy rail rounds for 6 credits each in Ammunition. Docking, upgrades, menus, death and loading never grant rounds.'],
+    torpedo:['EXPLOSIVE WEAPON','defence','Tap X or TORP for one forward torpedo. The blast can hit several predators; your own blast is ship-safe. Detonating abandoned mines can still hurt you. Buy torpedoes for 24 credits each at the dock. Upgrading adds empty capacity, not ammunition.'],
     disruptor:['ACOUSTIC COUNTERMEASURES','tactical','Stun begins on wave arrival, only inside the disruption radius. Stalkers receive 80% duration, Reapers 60%. Low battery falls back to an ordinary scan.']
   };
   function upgradeStats(id,mark){
     const n=v=>Number(v.toFixed(2)).toLocaleString('en-GB');
     switch(id){
-      case 'railgun':case 'torpedo':return [['Damage',WEAPONS[id].damage[mark]+' HP'],['Magazine capacity',WEAPONS[id].capacity[mark]+' rounds'],['Firing interval',WEAPONS[id].cooldown+' sec'],['Range',WEAPONS[id].range/10+' m'],['Dock reload','Free']];
+      case 'railgun':case 'torpedo':return [['Damage',WEAPONS[id].damage[mark]+' HP'],['Magazine capacity',WEAPONS[id].capacity[mark]+' rounds'],['Firing interval',WEAPONS[id].cooldown+' sec'],['Range',WEAPONS[id].range/10+' m'],['Price per round',WEAPON_AMMO_PRICES[id]+' CR']];
       case 'hull':return [['Safe depth',HULL_DEPTHS[mark].toLocaleString('en-GB')+' m'],['Hull integrity',(100+mark*28)+' HP']];
       case 'oxygen':return [['Oxygen capacity',(100+mark*30)+' units'],['Consumption',n(.22/(1+mark*.2)*60)+'/min']];
       case 'battery':return [['Battery capacity',(100+mark*30)+' power'],['Boost power use',n(BOOST.powerPerSecond/(1+mark*.12))+'/sec'],['Boost recharge',n(BOOST.recharge*(1+mark*.1))+'/sec']];
@@ -880,7 +943,7 @@
       case 'quiet':return [['Normal noise reduction',Math.round((1-1/(1+mark*.32))*100)+'%'],['Base idle noise','0%']];
       case 'minePower':return [['Mine damage',MINES.damage[mark]+' HP'],['Blast radius',MINES.blastRadius/10+' m'],['Launcher',mark?'Online':'Not fitted']];
       case 'mineCapacity':return [['Ammunition slots',MINES.capacity[mark]+' rounds'],['New rounds included','None']];
-      case 'magnet':return [['Resource reach',MAGNET.range[mark]/10+' m'],['Remote pickup cost',mark?MAGNET.power[mark]+' power':'Not fitted'],['Close pickup cost','Free']];
+      case 'magnet':return [['Resource reach',MAGNET.range[mark]/10+' m'],['Remote pickup cost',mark?MAGNET.power[mark]+' power':'Not fitted'],['Close pickup cost','Free'],['Scrap collection','Automatic'],['Crystals / recorders','USE required']];
       case 'shield':return [['Shield capacity',SHIELD.capacity[mark]+' HP'],['Recharge rate',SHIELD.recharge[mark]+' HP/sec'],['Recharge delay',mark?SHIELD.delay+' sec':'Not fitted']];
       case 'disruptor':return [['Disruption radius',DISRUPTOR.range[mark]/10+' m'],['Drifter stun',DISRUPTOR.seconds[mark]+' sec'],['Reaper stun',n(DISRUPTOR.seconds[mark]*.6)+' sec'],['Extra scan cost',DISRUPTOR.power[mark]+' power']];
       default:return [];
@@ -888,7 +951,7 @@
   }
   const DOCK_TABS=[['upgradesTab','upgrades'],['ammunitionTab','ammunition'],['expeditionsTab','expeditions']];
   function showDock(tab='upgrades') {
-    showingDock=true;dockTab=tab;reloadWeaponsAtDock();persist();
+    showingDock=true;dockTab=tab;syncWeaponStock();persist();
     openDialog('SURFACE OPERATIONS / CAMPAIGN HUB','NEREID EXPEDITION HUB',
       '<div class="dock-intro"><div><span class="dock-online"><i></i> VESSEL SECURED</span><p>Refit. Revisit. Go deeper.</p></div><div class="dock-wallet"><div class="dock-credit"><span>CREDITS</span><strong id="dockCredits">0</strong></div><div class="dock-credit crystal-wallet"><span>CRYSTALS</span><strong id="dockCrystals">0</strong></div></div></div><div id="dockBalance" class="dock-balance"></div><div class="dock-tabs" role="tablist" aria-label="Dock services"><button id="upgradesTab" role="tab" aria-controls="dockPanel">SHIP UPGRADES</button><button id="ammunitionTab" role="tab" aria-controls="dockPanel">AMMUNITION</button><button id="expeditionsTab" role="tab" aria-controls="dockPanel">EXPEDITIONS</button></div><div id="dockPanel" role="tabpanel"></div>',
       '<div class="dock-departure"><span id="departureLevel">'+currentLevel().name+'<br>Seabed '+currentLevel().depth.toLocaleString('en-GB')+' m · bank all recorders to unlock the next level.</span><button class="primary-btn" id="launchAgain">UNDOCK <span aria-hidden="true">↗</span></button></div>');
@@ -914,10 +977,10 @@
     else if(dockTab==='ammunition')drawAmmunition();else drawExpeditions();
   }
   function drawExpeditions(){
-    $('dockPanel').innerHTML='<div class="expedition-intro"><span>'+totalRecorders()+' / 20 RECORDERS BANKED</span><p>Switch levels here for free. Fixed resources never respawn. Remaining stocks are measured in units, not deposits.</p></div><div class="expedition-list">'+LEVELS.map((l,i)=>{
+    $('dockPanel').innerHTML='<div class="expedition-intro"><span>'+totalRecorders()+' / 20 RECORDERS BANKED</span><p>Crystals are finite. Scrap sites recover gradually during active diving. Stocks show units available now; survey completion counts each original site once.</p></div><div class="expedition-list">'+LEVELS.map((l,i)=>{
       const unlocked=levelUnlocked(i),active=l.id===LEVEL_ID,complete=levelComplete(l.id),r=resourceProgress(l.id),f=campaignLevels[l.id];
-      return '<article class="expedition-card '+(active?'selected ':'')+(!unlocked?'locked':'')+'" style="--level-accent:'+l.color+'"><div class="expedition-heading"><span>'+l.tag+'</span><b>'+(active?'CURRENT COURSE':complete?'CLEARED':unlocked?'UNLOCKED':'LOCKED')+'</b></div><h3>'+l.name+'</h3><p>'+l.description+'</p><div class="expedition-metrics"><span><strong>'+l.depth.toLocaleString('en-GB')+' m</strong> SEABED</span><span><strong>'+(f?.secured.length||0)+' / '+l.recorders.length+'</strong> RECORDERS</span><span><strong>'+r.scrapRemaining+' / '+r.scrapTotal+'</strong> SCRAP LEFT</span><span><strong>'+r.crystalRemaining+' / '+r.crystalTotal+'</strong> CRYSTALS LEFT</span></div>'+(f?.recoveries.length?'<div class="recovery-hint">'+f.recoveries.length+' RECOVERY POD'+(f.recoveries.length===1?'':'S')+' WAITING</div>':'')+'<button class="expedition-select" data-travel="'+l.id+'" '+(!unlocked||active?'disabled':'')+'>'+(active?'COURSE SELECTED':unlocked?'SET COURSE →':'BANK ALL RECORDERS IN LEVEL '+i)+'</button></article>';
-    }).join('')+'</div><p class="expedition-note">Predators and supply caches refresh after an actual return to the dock. Switching levels never replenishes ore, crystals, mines or uncollected salvage drops.</p>';
+      return '<article class="expedition-card '+(active?'selected ':'')+(!unlocked?'locked':'')+'" style="--level-accent:'+l.color+'"><div class="expedition-heading"><span>'+l.tag+'</span><b>'+(active?'CURRENT COURSE':complete?'CLEARED':unlocked?'UNLOCKED':'LOCKED')+'</b></div><h3>'+l.name+'</h3><p>'+l.description+'</p><div class="expedition-metrics"><span><strong>'+l.depth.toLocaleString('en-GB')+' m</strong> SEABED</span><span><strong>'+(f?.secured.length||0)+' / '+l.recorders.length+'</strong> RECORDERS</span><span><strong>'+r.scrapRemaining+' / '+r.scrapTotal+'</strong> SCRAP AVAILABLE</span><span><strong>'+r.crystalRemaining+' / '+r.crystalTotal+'</strong> CRYSTALS LEFT</span></div>'+(f?.recoveries.length?'<div class="recovery-hint">'+f.recoveries.length+' RECOVERY POD'+(f.recoveries.length===1?'':'S')+' WAITING</div>':'')+'<button class="expedition-select" data-travel="'+l.id+'" '+(!unlocked||active?'disabled':'')+'>'+(active?'COURSE SELECTED':unlocked?'SET COURSE →':'BANK ALL RECORDERS IN LEVEL '+i)+'</button></article>';
+    }).join('')+'</div><p class="expedition-note">Scrap recovers after 5 active dive minutes, at most one deposit per 45 seconds per visited level, out of view. Pauses, harbour waiting and offline time do not advance recovery. Crystals and ammo never refill automatically.</p>';
     document.querySelectorAll('[data-travel]').forEach(b=>b.addEventListener('click',()=>selectLevel(b.dataset.travel)));
   }
   function selectLevel(id){
@@ -925,19 +988,36 @@
     if(index<0||id===LEVEL_ID||!levelUnlocked(index)||!showingDock||!running||!paused||$('upgradeDialog').open||$('achievementsDialog').open||nearestInteractable()?.type!=='station'||player.cargo.scrap||player.cargo.crystal||player.cargo.recorders.length)return false;
     persist();LEVEL_ID=id;field=campaignLevels[id]||freshField();campaignLevels[id]=field;applyLevelGeometry();newDive();showDock('expeditions');persist();return true;
   }
-  function buyAmmunition(fill=false){
-    if(!showingDock||$('upgradeDialog').open||nearestInteractable()?.type!=='station'||saved.upgrades.minePower<1)return false;
-    const available=mineCapacity()-saved.mineAmmo;
-    const count=fill?Math.min(available,Math.floor(saved.credits/AMMO_PRICE)):1;
-    if(count<=0||count>available||saved.credits<count*AMMO_PRICE)return false;
-    saved.credits-=count*AMMO_PRICE;saved.mineAmmo+=count;player.mineAmmo=saved.mineAmmo;
-    persist();drawDockPanel();updateUI();addEvent(count+' mine'+(count===1?'':'s')+' purchased · '+(count*AMMO_PRICE)+' credits');return true;
+  const ammunitionCapacity=id=>id==='mine'?mineCapacity():WEAPONS[id].capacity[saved.upgrades[id]];
+  const ammunitionOwned=id=>id==='mine'?saved.mineAmmo:saved.weaponAmmo[id];
+  const ammunitionPrice=id=>id==='mine'?AMMO_PRICE:WEAPON_AMMO_PRICES[id];
+  const ammunitionFitted=id=>saved.upgrades[id==='mine'?'minePower':id]>0;
+  function buyAmmunition(fill=false){return buyOrdnance('mine',fill);}
+  function buyOrdnance(id,fill=false){
+    if(!['mine','railgun','torpedo'].includes(id)||slotTransition||!running||!paused||!showingDock||dockTab!=='ammunition'||$('upgradeDialog').open||nearestInteractable()?.type!=='station'||!ammunitionFitted(id))return false;
+    const available=ammunitionCapacity(id)-ammunitionOwned(id),price=ammunitionPrice(id);
+    const count=fill?Math.min(available,Math.floor(saved.credits/price)):1;
+    if(count<=0||count>available||saved.credits<count*price)return false;
+    saved.credits-=count*price;
+    if(id==='mine'){saved.mineAmmo+=count;player.mineAmmo=saved.mineAmmo;}
+    else{saved.weaponAmmo[id]+=count;player.weaponAmmo[id]=saved.weaponAmmo[id];}
+    const stored=persist();drawDockPanel();updateUI();
+    const message=count+' '+(id==='mine'?'mine round'+(count===1?'':'s'):id==='railgun'?'rail round'+(count===1?'':'s'):'torpedo'+(count===1?'':'es'))+' purchased · '+count*price+' CR';
+    addEvent(message);if($('ammoFeedback'))$('ammoFeedback').textContent=message+(stored?'':' · SAVE FAILED; keep this session open');
+    const stem=id==='railgun'?'Rail':id==='torpedo'?'Torpedo':'Mine';
+    const target=$(fill?(id==='mine'?'fillMinesBtn':'fill'+stem+'Btn'):'buy'+stem+'Btn');
+    if(target&&!target.disabled)target.focus({preventScroll:true});else $('ammoFeedback')?.focus({preventScroll:true});
+    return true;
   }
   function drawAmmunition(){
-    const fitted=saved.upgrades.minePower>0,missing=mineCapacity()-saved.mineAmmo;
-    const affordable=Math.min(missing,Math.floor(saved.credits/AMMO_PRICE));
-    $('dockPanel').innerHTML=`<section class="ammo-shop"><div class="recharge-readout">${["railgun","torpedo"].map(id=>`<span>${WEAPONS[id].name}<b>${saved.upgrades[id]?player.weaponAmmo[id]+" / "+WEAPONS[id].capacity[saved.upgrades[id]]:"NOT FITTED"}</b><small>FREE RELOAD ON DOCKING</small></span>`).join("")}</div><div class="ammo-symbol" aria-hidden="true">✧</div><div class="panel-label">PROXIMITY MINE AMMUNITION</div><h3>${saved.mineAmmo}<span> / ${mineCapacity()} LOADED</span></h3><div class="ammo-slots" aria-label="${saved.mineAmmo} loaded rounds">${Array.from({length:mineCapacity()},(_,i)=>'<span class="'+(i<saved.mineAmmo?'loaded':'')+'">◆</span>').join('')}</div><p>Each round costs <strong>${AMMO_PRICE} credits</strong>. Uses your fitted ${fitted?'Mk '+roman(saved.upgrades.minePower)+' warheads ('+mineDamage()+' damage)':'warhead upgrade'}. Loaded ammunition survives docking and reloads. Capacity upgrades only add empty slots.</p>${!fitted?'<p class="ammo-warning">Fit Mk I Sea Mine Warheads in Upgrades first.</p>':''}<div class="ammo-purchases"><button id="buyMineBtn" class="alt-btn" ${!fitted||!missing||saved.credits<AMMO_PRICE?'disabled':''}>BUY 1 · ${AMMO_PRICE} CR</button><button id="fillMinesBtn" class="primary-btn" ${!fitted||!affordable?'disabled':''}>${!missing?'RACK FULL':affordable===missing?'FILL RACK':'BUY '+affordable} ${missing&&affordable?'· '+affordable*AMMO_PRICE+' CR':''}</button></div><p class="ammo-footnote">No free rounds on docking, launch, death, reload or upgrade.</p></section>`;
-    $('buyMineBtn').addEventListener('click',()=>buyAmmunition(false));$('fillMinesBtn').addEventListener('click',()=>buyAmmunition(true));
+    const labels={railgun:'PULSE RAILGUN',torpedo:'SHOCK TORPEDOES',mine:'PROXIMITY MINES'};
+    $('dockPanel').innerHTML='<section class="ordnance-shop"><div class="ordnance-intro"><span class="panel-label">DOCK MUNITIONS</span><p>Spend credits, not crystals. Buy only what you need; owned rounds stay with this campaign.</p></div><div id="ammoFeedback" class="ammo-feedback" role="status" tabindex="-1">No automatic reloads. Upgrades add empty capacity.</div><div class="ordnance-grid">'+['railgun','torpedo','mine'].map(id=>{
+      const fitted=ammunitionFitted(id),capacity=ammunitionCapacity(id),owned=ammunitionOwned(id),missing=capacity-owned,price=ammunitionPrice(id);
+      const affordable=Math.min(missing,Math.floor(saved.credits/price)),stem=id==='railgun'?'Rail':id==='torpedo'?'Torpedo':'Mine';
+      const mark=saved.upgrades[id==='mine'?'minePower':id],damage=id==='mine'?mineDamage():WEAPONS[id].damage[mark];
+      return `<article class="ordnance-card ${id}" aria-label="${labels[id]} ammunition"><div class="ordnance-card-head"><h3>${labels[id]}</h3><span>${fitted?'MK '+roman(mark):'UNFITTED'}</span></div><div class="ordnance-stock"><strong>${owned}<small> / ${capacity}</small></strong><span><b>${price} CR</b> PER ROUND</span></div><div class="ordnance-track" role="progressbar" aria-label="${labels[id]} rounds" aria-valuenow="${owned}" aria-valuemin="0" aria-valuemax="${capacity||1}"><i style="width:${capacity?owned/capacity*100:0}%"></i></div><p>${fitted?damage+' HP damage · '+missing+' empty slot'+(missing===1?'':'s'):"Fit Mk I in Ship Upgrades to buy ammunition."}</p><div class="ammo-purchases"><button id="buy${stem}Btn" class="alt-btn" ${!fitted||!missing||saved.credits<price?'disabled':''}>BUY 1 · ${price} CR</button><button id="${id==='mine'?'fillMinesBtn':'fill'+stem+'Btn'}" class="primary-btn" ${!fitted||!affordable?'disabled':''}>${!fitted?'NOT FITTED':!missing?'FULL':!affordable?'NEED '+price+' CR':affordable===missing?'FILL '+missing:'BUY '+affordable}${missing&&affordable?' · '+affordable*price+' CR':''}</button></div></article>`;
+    }).join('')+'</div><p class="ammo-footnote">Dock repairs, air and power are still free. All three ammunition types must be purchased. No crystals charged.</p></section>';
+    for(const id of ['railgun','torpedo','mine']){const stem=id==='railgun'?'Rail':id==='torpedo'?'Torpedo':'Mine';$('buy'+stem+'Btn').addEventListener('click',()=>buyOrdnance(id,false));$(id==='mine'?'fillMinesBtn':'fill'+stem+'Btn').addEventListener('click',()=>buyOrdnance(id,true));}
   }
   function drawUpgrades(){
     const list=$('upgradeList');if(!list)return;
@@ -978,7 +1058,7 @@
     const problem=purchaseProblem(u),button=$('upgradePurchase');
     button.dataset.upgrade=u.id;button.disabled=maxed||Boolean(problem);
     button.textContent=maxed?'FULLY UPGRADED':(level?'UPGRADE TO MK ':'INSTALL MK ')+roman(next)+' · '+cost.toLocaleString('en-GB')+' CR + '+gems+' ◆';
-    $('upgradePriceNote').textContent=problem||'Price: '+cost.toLocaleString('en-GB')+' credits and '+gems+' crystals. '+(WEAPONS[u.id]?'Weapon reload included at dock. Mine ammunition remains separate.':'Permanent upgrade; no mine ammunition included.');
+    $('upgradePriceNote').textContent=problem||'Price: '+cost.toLocaleString('en-GB')+' credits and '+gems+' crystals. '+'Permanent upgrade; ammunition is purchased separately. No free rounds.';
     button.onclick=()=>purchaseUpgrade(u.id);
   }
   function purchaseUpgrade(id){
@@ -988,7 +1068,7 @@
     if(level>=u.limit||purchaseProblem(u))return false;
     saved.credits-=cost;saved.crystals-=gems;saved.upgrades[id]++;checkAchievements();
     if(id==='flashlight')beamTexture=buildBeamTexture();
-    player.hull=maxHull();player.oxygen=maxOxygen();player.battery=maxBattery();resetBoost();resetShield();resupplyMines();reloadWeaponsAtDock();
+    player.hull=maxHull();player.oxygen=maxOxygen();player.battery=maxBattery();resetBoost();resetShield();resupplyMines();syncWeaponStock();
     const stored=persist();drawDockPanel();renderUpgradeDetails();updateUI();addEvent(u.name+' upgraded');
     $('upgradeFeedback').textContent=stored?'MK '+roman(saved.upgrades[id])+' INSTALLED · '+cost.toLocaleString('en-GB')+' CR + '+gems+' CRYSTALS SPENT':'INSTALLED THIS SESSION · STORAGE UNAVAILABLE';
     if($('upgradePurchase').disabled)$('upgradeDetailClose').focus({preventScroll:true});
@@ -1187,6 +1267,7 @@
     // Hold USE with a second finger while steering: collect immediately on entering range.
     if(useHeld||keys.has('e')){useHoldTimer-=dt;if(useHoldTimer<=0){interact(true);useHoldTimer=.12;}}
     if(!running||paused)return;
+    updateSalvageRegeneration(dt);autoCollectSalvage(dt);
     if(distance(player,HARBOUR)>=145&&!field.awaitingDock){dockVisitActive=false;field.awaitingDock=true;persist();}
     const energyDrain=dt*((.018+(hasInput&&!player.airborne?(quiet?.028:.075):0))/(1+saved.upgrades.battery*.12)+(headlightsActive()?flashlightPowerRate():0));
     player.battery=clamp(player.battery-energyDrain,0,maxBattery());
@@ -1861,11 +1942,11 @@
     $('slotsDialog').addEventListener('cancel',e=>{e.preventDefault();closeSlots();});
   }
 
-  // === Rechargeable direct-fire magazines. No timers or menu actions grant rounds. ===
-  function reloadWeaponsAtDock(){
+  // === Owned ammunition. Only explicit paid dock transactions grant rounds. ===
+  function syncWeaponStock(){
     if(!player||player.airborne||distance(player,HARBOUR)>=HARBOUR.dockRadius)return false;
     for(const id of Object.keys(WEAPONS)){
-      saved.weaponAmmo[id]=WEAPONS[id].capacity[saved.upgrades[id]];
+      saved.weaponAmmo[id]=Math.min(cleanCount(saved.weaponAmmo[id]),WEAPONS[id].capacity[saved.upgrades[id]]);
       player.weaponAmmo[id]=saved.weaponAmmo[id];player.weaponCooldown[id]=0;
     }
     return true;
@@ -1879,7 +1960,7 @@
     const spec=WEAPONS[kind];if(!spec||!running||paused||slotTransition)return false;
     const say=text=>{if(!quiet)announce(text,1.5);return false;};
     if(!saved.upgrades[kind])return say('FIT '+spec.name+' MK I AT THE DOCK');
-    if(player.weaponAmmo[kind]<=0)return say('MAGAZINE EMPTY · FREE RELOAD AT DOCK');
+    if(player.weaponAmmo[kind]<=0)return say('MAGAZINE EMPTY · BUY ROUNDS AT DOCK');
     if(player.weaponCooldown[kind]>0)return false;
     if(inHarbour(player))return say('HARBOUR SAFETY · WEAPONS LOCKED');
     if(player.airborne||player.y<SURFACE.y+35)return say('SUBMERGE TO FIRE');
@@ -1962,7 +2043,7 @@
       const mark=saved.upgrades[id],cap=WEAPONS[id].capacity[mark],ammo=player.weaponAmmo?.[id]||0,cd=player.weaponCooldown?.[id]||0;
       const text=mark?ammo+'/'+cap:'LOCKED';$(label).textContent=text;$(pc).textContent=mark?text:'UNFITTED';
       $(button).setAttribute('aria-disabled',String(!mark||!ammo||!running||paused));
-      $(button).setAttribute('aria-label',WEAPONS[id].name+' · '+(mark?ammo+' of '+cap+' rounds. Free reload at dock.':'Not fitted. Buy at dock.'));
+      $(button).setAttribute('aria-label',WEAPONS[id].name+' · '+(mark?ammo+' of '+cap+' rounds. Buy ammunition at dock for '+WEAPON_AMMO_PRICES[id]+' credits per round.':'Not fitted. Buy at dock.'));
       $(button).classList.toggle('cooling',cd>0);$(button).style.setProperty('--ring',100*(1-cd/WEAPONS[id].cooldown));
     }
   }
@@ -2170,21 +2251,21 @@
       <li><strong>Mobile:</strong> touch and drag anywhere over the water that is not a button. A minimal transparent joystick appears only after dragging and disappears on release. The left-side CRUISE button retains your heading after release; the large left USE button salvages while you steer.</li>
       <li><kbd>Space</kbd> / hold <strong>BOOST</strong>: requires Mk I magnetic thrusters. Mk I / II / III / IV offer 3 / 4 / 5 / 6 seconds of boost and progressively faster boosted speeds. Costs battery and boost charge. Charge recovers after 1.5 seconds; a fully emptied meter locks until full. Release to rearm. Boost is loud and overrides quiet running. Battery upgrades reduce its power drain and speed up recharge.</li>
       <li><kbd>Q</kbd> / <strong>PING</strong>: a sonar wave sweeps the entire current screen. Salvage, recorders, caches, predators, rocks, wrecks, vents and walls appear as fading echoes <strong>when the wave reaches them</strong>, even with lights off. It uses power, alerts reached predators and has a visible cooldown. It does not light up the water permanently.</li>
-      <li><kbd>E</kbd> / <strong>USE</strong>: recover nearby objects or dock to bank cargo, refill systems and upgrade. <kbd>R</kbd> repairs 30 hull for 2 scrap. <kbd>L</kbd> toggles lights. <kbd>Shift</kbd> / <strong>SILENT</strong> reduces speed and noise.</li>
+      <li><kbd>E</kbd> / <strong>USE</strong>: recover crystals, recorders and caches, or dock to bank cargo, refill systems and upgrade. Scrap collects automatically within 6 m, extending to 10 / 14 / 18 / 22 m with the Salvage Magnet. Remote pickups require visibility, a clear path and power. <kbd>R</kbd> repairs 30 hull for 2 scrap. <kbd>L</kbd> toggles lights. <kbd>Shift</kbd> / <strong>SILENT</strong> reduces speed and noise.</li>
       <li>The water darkens gradually to total darkness at <strong>1,000 m</strong>. Only your forward lamp and temporary sonar echoes reveal the surroundings. Vessel name, class and pressure limit are pinned to the top of the screen, alongside depth and systems. The pressure tab turns red beyond your rating.</li>
       <li><kbd>F</kbd> / <strong>MINE</strong>: drop one proximity mine astern while steering or boosting. It arms after 0.65 seconds, then damages predators within its blast radius without harming your submarine. Mines remain until triggered, docking resets the field, or this expedition ends. The launcher cycles for 1.1 seconds; hold does not auto-fire. If the stern is obstructed, no ammo is spent.</li>
       <li><strong>Harbour and surface:</strong> the marked approach protects against predators, not low oxygen, power loss or rocks. USE / E secures the sub in its berth. Build upward speed to breach the surface; boost makes a higher leap. Momentum and gravity carry the arc, with no thrust in the air. Splashdowns do not damage the hull. Upgrade tiles show your fitted mark and turn gold at maximum tier.</li>
-      <li><strong>Dock ordnance:</strong> buy Mk I warheads to unlock mines, then upgrade damage separately from the ammo rack. Warheads deal 60 / 110 / 180 / 240 damage; racks hold <strong>2 / 4 / 6 / 8 mines</strong>. The two-slot Mk I rack comes fitted. Buy rounds for 12 credits each in the dock AMMUNITION tab. Docking, launch, upgrades, death and reload never refill ammunition for free.</li>
+      <li><strong>Dock ordnance:</strong> buy Mk I warheads to unlock mines, then upgrade damage separately from the ammo rack. Warheads deal 60 / 110 / 180 / 240 damage; racks hold <strong>2 / 4 / 6 / 8 mines</strong>. The two-slot Mk I rack comes fitted. Buy mine rounds for 18 credits each in the dock AMMUNITION tab. Docking, launch, upgrades, death and reload never refill ammunition for free.</li>
       <li><strong>Three threat tiers:</strong> common blue drifters; rarer purple stalkers below 400 m; rare crimson reapers below 800 m. Base health is 100 / 200 / 400 HP; later campaign levels scale health and damage upward. Reaper chase speed matches Mk IV magnetic thrusters exactly: normal thrust cannot pull away in open water. Boost to create distance, or leave mines in its path. All tiers retain finite pursuit ranges. Health bars respect darkness and sonar visibility.</li>
       <li><strong>Exploration:</strong> mobile sees 43% farther in each direction; PC zoom is unchanged. The trench is three times wider, with more obstacles and hunters but fewer salvage pieces and much rarer crystals. The three clear navigation lanes keep descent routes open.</li>
       <li><strong>Flashlight Mk I–IV:</strong> the standard Mk I lamp reaches 26 m. Dock upgrades extend this to 36 / 48 / 62 m and widen the beam. The lamp draws power slowly only while on; battery upgrades improve efficiency. Switch it off with <kbd>L</kbd> / LIGHTS to conserve energy.</li>
-      <li><strong>Adaptive ship systems:</strong> the Salvage Magnet extends USE / hold E for visible scrap and crystals, including predator drops, at a small power cost. It cannot recover through rocks or fetch distant recorders/caches. The Kinetic Shield absorbs bites, rock impacts, contact-mine blasts and hot vent damage, but not pressure or oxygen loss; recharge starts after 8 seconds without impacts, uses battery power and pauses during boost. The Sonic Disruptor adds a short stun to nearby predators on sonar-wave arrival, with shorter stuns for stronger tiers. Low battery falls back to a normal scan.</li>
-      <li><strong>Persistent campaign resources:</strong> salvage and crystals are placed once for this campaign level. Collected deposits never return, even after docking or reloading. Scrap and crystal deposits each yield 2 units. Across five fresh levels, fixed resources provide 15,192 credits worth of scrap and 496 crystals. Scrap banks at 18 credits per unit; crystals stay a separate currency. All paid ship upgrades cost both. If an optional purchase would consume the last crystals needed for the current recorder gate, the shop reserves them for the hull instead. Predators drop 2 / 4 / 8 scrap when destroyed; collect and dock to bank it. Predators and supply caches refresh on a genuine return to dock after departure. Drops persist until collected. Secured recorders never respawn. Lost or deliberately quit dives leave recoverable scrap and crystal pods; undelivered recorders return to their wrecks. Active dives now autosave every five simulation seconds and after important actions. Continue restores the ship, cargo, enemies, mines and timers paused. Explicit QUIT or defeat still creates a recovery pod. Twenty achievements are available from the main and pause menus. Each of the three campaign slots has independent levels, achievements and progress.</li>
+      <li><strong>Adaptive ship systems:</strong> the Salvage Magnet automatically collects visible scrap and predator drops at range, at a small power cost. Crystals still require USE / hold E. It cannot recover through rocks or fetch distant recorders/caches. The Kinetic Shield absorbs bites, rock impacts, contact-mine blasts and hot vent damage, but not pressure or oxygen loss; recharge starts after 8 seconds without impacts, uses battery power and pauses during boost. The Sonic Disruptor adds a short stun to nearby predators on sonar-wave arrival, with shorter stuns for stronger tiers. Low battery falls back to a normal scan.</li>
+      <li><strong>Persistent campaign resources:</strong> crystals are placed once and never respawn. Scrap regenerates at its original sites: after a five-minute recovery, at most one deposit per 45 active dive seconds per visited level. Recovery pauses in menus, at the harbour and offline, and never creates a deposit in the current view. Each campaign slot has independent timers. Scrap and crystal deposits each yield 2 units. Across five fresh levels, the initial stock provides 15,192 credits worth of scrap and 496 finite crystals. Renewable scrap supports future purchases. Upgrade credit prices are 50% higher; crystal prices are unchanged. Scrap banks at 18 credits per unit; crystals stay a separate currency. All paid ship upgrades cost both. If an optional purchase would consume the last crystals needed for the current recorder gate, the shop reserves them for the hull instead. Predators drop 2 / 4 / 8 scrap when destroyed; collect and dock to bank it. Predators and supply caches refresh on a genuine return to dock after departure. Drops persist until collected. Secured recorders never respawn. Lost or deliberately quit dives leave recoverable scrap and crystal pods; undelivered recorders return to their wrecks. Active dives now autosave every five simulation seconds and after important actions. Continue restores the ship, cargo, enemies, mines and timers paused. Explicit QUIT or defeat still creates a recovery pod. Twenty achievements are available from the main and pause menus. Each of the three campaign slots has independent levels, achievements and progress.</li>
       <li><strong>Exploration systems:</strong> each level has its own seeded scenery, landmark silhouettes and visible current bands. The harbour and central route are sheltered. All scenery respects total darkness. Press <kbd>M</kbd> or the map icon for a paused, permanent survey chart; drag to pan, pinch or use +/− to zoom, and tap surveyed water to set a waypoint. Resources are charted only after discovery and predator contacts expire. The sliders icon opens detailed vessel telemetry. Sound settings are in the main and pause menus.</li>
       <li><strong>Abandoned contact mines:</strong> rusty horned spheres sway on chains. Touching one detonates it, harming nearby predators and the submarine. Your own deployed mines remain safe to the ship. Sonar reveals the tether and the chart remembers the hazard. Cleared contact mines never return, even after docking. The harbour, central route, fixed deposits, recorder approaches and recovery pods are kept clear.</li>
       <li><strong>Wildlife:</strong> Silver Darts, Sunstripe Reeflets, Ribbonfins and Violet Glassfish form harmless schools. Gentle piloting parts the school; boost, nearby predators and passing sonar scatter it before it regroups. Fish cannot be collected and do not clutter the chart. Anemones, fan corals, crabs and tube colonies react to lights, movement and currents.</li>
       <li><strong>Vent fields:</strong> rising bubbles and a rumble warn for three seconds before a three-second plume. Active vents push the ship and predators upward. Sunbreak Shelf bubble seeps are harmless; hotter vents in later levels damage the ship while inside. Wait for a quiet phase or take a different route. The chart records discovered vents, not their live phase. New scenery never defeats darkness.</li>
-      <li><strong>Direct-fire weapons:</strong> hold <kbd>Z</kbd> / RAIL for railgun bolts; tap <kbd>X</kbd> / TORP for one explosive torpedo. Both fire along the bow, stop at rock and need Mk I fitted at the dock. Each upgrade increases damage and magazine capacity. All rounds reload free only on physically docking. Neither waiting, reloading nor respawning grants ammunition. Mines still cost credits.</li>
+      <li><strong>Direct-fire weapons:</strong> hold <kbd>Z</kbd> / RAIL for railgun bolts; tap <kbd>X</kbd> / TORP for one explosive torpedo. Both fire along the bow, stop at rock and need Mk I fitted at the dock. Each upgrade increases damage and magazine capacity. All rounds are bought in the dock Ammunition tab: rail 6 CR, torpedo 24 CR, mine 18 CR each. Docking, upgrades, waiting, loading and respawning never grant ammunition.</li>
       <li><strong>Environmental sound:</strong> nearby chains, vents, kelp, school movement, wreck groans and harbour machinery use the ambience slider. Explosions, docking clamps and interaction sounds use effects. Mute and both volume controls remain in SOUND SETTINGS; visible hazard warnings work without audio.</li>
       <li><kbd>Esc</kbd> / <strong>PAUSE</strong> freezes the dive. MENU saves it across sessions; QUIT abandons the dive and leaves a recovery pod. CAMPAIGN SLOTS keeps up to three independent games. New Game selects an empty slot; only confirmed deletion removes an occupied slot. Reloading preserves the last successful active-dive snapshot. Continue restores paused; the ocean does not advance while you are away. Clearing browser data still removes local saves.</li>
     </ul></div>`;
@@ -2380,7 +2461,7 @@
     });
     window.addEventListener('appinstalled',()=>{installPrompt=null;installButton.classList.add('hidden');});
   }
-  // === Arsenal & Archives / atomic active-expedition snapshots ===
+  // === Salvage & Supply / atomic active-expedition snapshots ===
   function validateActiveDive(value){
     if(!value||value.schema!==1||!LEVELS.some(l=>l.id===value.levelId)||!Number.isInteger(value.seed)||!Number.isInteger(value.cycle)||!Number.isFinite(value.clock)||value.clock<0)return null;
     const p=value.player,l=LEVELS.find(l=>l.id===value.levelId),bottom=120+l.depth*10;
@@ -2557,7 +2638,7 @@
     ctx.restore();
   }
 
-  // === Arsenal & Archives: independent seeded encounters, never resource rerolls ===
+  // === Salvage & Supply: independent seeded encounters, never resource rerolls ===
   const WILD = Object.freeze({mineCounts:[8,16,28,42,58],ventCounts:[5,9,15,21,28],schoolCounts:[12,22,36,48,62],
     mineRadius:16,blastRadius:118,mineHullDamage:[24,32,40,48,56],mineEnemyDamage:[110,140,180,230,280],
     maxActiveSchools:12,maxFishPerSchool:14});
@@ -3172,7 +3253,7 @@
   }
   beamTexture=buildBeamTexture();
   bind();resize();createWorld();
-  player={x:600,y:160,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing:0,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),lights:true,noise:0,cargo:{scrap:0,crystal:0,recorders:[]},scanCooldown:0,damageCooldown:0,boost:boostCapacity(),boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,mineAmmo:0,mineCooldown:0,weaponAmmo:{...saved.weaponAmmo},weaponCooldown:{railgun:0,torpedo:0},damageFlashUntil:0,nextDamageFlash:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null};
+  player={x:600,y:160,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing:0,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),lights:true,noise:0,cargo:{scrap:0,crystal:0,recorders:[]},scanCooldown:0,damageCooldown:0,boost:boostCapacity(),boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,mineAmmo:0,mineCooldown:0,weaponAmmo:{...saved.weaponAmmo},weaponCooldown:{railgun:0,torpedo:0},damageFlashUntil:0,nextDamageFlash:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,autoSalvageCooldown:0};
   resupplyMines();
   camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
   checkAchievements(true);persist();updateMainMenu();updateUI();requestAnimationFrame(frame);
@@ -3222,7 +3303,7 @@
     window.AbyssDiagnostics.simulationFixture=({depth=500,facing=Math.PI/2,lights=false,battery=maxBattery(),boost=null,upgrades={},items=[],predators=[],rocks=[],wrecks=[],vents=[],mines=[],mineAmmo=null}={})=>{
       environmentEnabled=false;wildEnabled=false;resetPilotInput();Object.assign(saved.upgrades,upgrades);beamTexture=buildBeamTexture();
       const y=120+depth*10,x=centerAt(y);
-      player={...player,x,y,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing,lights,battery,boost:boost??boostCapacity(),hull:maxHull(),oxygen:maxOxygen(),noise:0,quiet:false,boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,damageCooldown:0,scanCooldown:0,mineAmmo:mineAmmo??(saved.upgrades.minePower?mineCapacity():0),mineCooldown:0,weaponAmmo:{...saved.weaponAmmo},weaponCooldown:{railgun:0,torpedo:0},damageFlashUntil:0,nextDamageFlash:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,trip:{deepest:0,hullDamage:0},cargo:{scrap:0,crystal:0,recorders:[]}};
+      player={...player,x,y,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing,lights,battery,boost:boost??boostCapacity(),hull:maxHull(),oxygen:maxOxygen(),noise:0,quiet:false,boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,damageCooldown:0,scanCooldown:0,mineAmmo:mineAmmo??(saved.upgrades.minePower?mineCapacity():0),mineCooldown:0,weaponAmmo:{...saved.weaponAmmo},weaponCooldown:{railgun:0,torpedo:0},damageFlashUntil:0,nextDamageFlash:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,autoSalvageCooldown:0,trip:{deepest:0,hullDamage:0},cargo:{scrap:0,crystal:0,recorders:[]}};
       saved.mineAmmo=player.mineAmmo;
       scene={items:items.map((i,n)=>makeItem(x+i.dx,y+i.dy,i.type||'scrap',{id:n,index:i.index??0,...i})),
         rocks:rocks.map(r=>{const k={x:x+r.dx,y:y+r.dy,radius:30,rot:0,seed:.4,spikes:8,...r};return {...k,vertices:rockPolygon(k)};}),
@@ -3287,6 +3368,10 @@
     window.AbyssDiagnostics.setFear=value=>{for(const s of scene.schools||[])s.fear=value;render();};
     window.AbyssDiagnostics.pulseWild=dt=>{clock+=dt;updateWildWaters(dt);updateUI();render();};
 
+    window.AbyssDiagnostics.economy=()=>({regen:{...SALVAGE_REGEN},creditFactor:CREDIT_PRICE_FACTOR,prices:{mine:AMMO_PRICE,...WEAPON_AMMO_PRICES},salvage:JSON.parse(JSON.stringify(field.salvage))});
+    window.AbyssDiagnostics.buyOrdnance=buyOrdnance;
+    window.AbyssDiagnostics.autoPickup=()=>{const before=paused;paused=false;autoCollectSalvage(.25);paused=before;updateUI();return player.cargo.scrap;};
+    window.AbyssDiagnostics.economyPulse=(seconds,allowPaused=false)=>{const before=paused;if(allowPaused)paused=false;updateSalvageRegeneration(seconds);paused=before;persist();return window.AbyssDiagnostics.economy();};
     window.AbyssDiagnostics.grantCredits=(value)=>{saved.credits=Math.max(0,Math.floor(value));persist();updateUI();};
   }
 })();

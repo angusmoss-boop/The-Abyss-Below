@@ -1,0 +1,73 @@
+{
+  "version": "0.17.0",
+  "name": "Salvage & Supply",
+  "build_id": "0.17.0-salvage-supply-1",
+  "base_version": "0.16.0",
+  "date": "2026-10-27",
+  "runtime_manifest": "version.json",
+  "campaign_schema": 3,
+  "economy": {
+    "upgrade_credit_factor": 1.5,
+    "credit_rounding": "ceil",
+    "upgrade_credit_total": 22765,
+    "upgrade_crystal_total": 464,
+    "initial_crystals": 496,
+    "initial_scrap_credit_value": 15192,
+    "ammo_credit_prices": {
+      "railgun": 6,
+      "torpedo": 24,
+      "mine": 18
+    },
+    "salvage_delay_seconds": 300,
+    "salvage_pacing_seconds": 45,
+    "clock": "active dive outside harbour; each visited level of active campaign",
+    "automatic_scrap_ranges_m": [
+      6,
+      10,
+      14,
+      18,
+      22
+    ]
+  },
+  "guide": "SALVAGE-SUPPLY-v0.17.0.md",
+  "verification": "VERIFICATION-v0.17.0.md",
+  "verification_summary": {
+    "suites_passed": 23,
+    "runtime_hashes": {
+      "campaign-slots.js": "702f762b1d6e901f4be9b2518299808e05fb3bc3d7bf7c1022068c7653c2316a",
+      "index.html": "b56bbc73761afc7c691b68086ade31becfa0ed0bcbb15e42a678e7318ba41c9e",
+      "styles.css": "15fe53aa71d8c4fcc4bff2d74cc363027856009a0f6346966a02db067c8f4887",
+      "audio.js": "da78d9da49ba821660e5c17df6d4882d21aa99f7754d9ede105d0870f9c4a3b7",
+      "game.js": "2bfbc710435b16038b4fa9fccefdd8c1107dc2b38372ab7a42f3824edb143031",
+      "version-sync.js": "2d0894e079a40d3894228ab9f6a86eec721b12bacfe233eee6105b73383f54e9",
+      "service-worker.js": "7a5ca54733b3eb6ad84942dc43946e7f19984b764246620d1a20d8339a1448eb",
+      "version.json": "4a06d9b26346bad6a264c07610848308cd1fb5552e6a125e7d5040b92cafda66"
+    },
+    "finalised_utc": "2026-10-27T22:04:33.464195+00:00",
+    "live_offline": "BLOCKED",
+    "physical_devices": "UNTESTED",
+    "human_campaign_balance": "UNTESTED"
+  },
+  "package_checks": {
+    "build_id": "0.17.0-salvage-supply-1",
+    "timestamp_utc": "2026-10-27T22:05:58.217676+00:00",
+    "runtime_assets": [
+      "index.html",
+      "styles.css",
+      "campaign-slots.js",
+      "audio.js",
+      "game.js",
+      "version-sync.js",
+      "service-worker.js",
+      "manifest.webmanifest",
+      "icon-192.png",
+      "icon-512.png",
+      "icon-maskable-512.png"
+    ],
+    "complete": "PASS",
+    "overlay": "PASS",
+    "base_archive": "the-abyss-below-v0.16.0-complete.zip",
+    "suites_passed": 23,
+    "live_offline": "BLOCKED"
+  }
+}
