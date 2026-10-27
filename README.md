@@ -1,47 +1,74 @@
 # THE ABYSS BELOW
-### Deepwater Expedition · v0.1.0
+### Deepwater Expedition · v0.2.1
 
-A single-player, browser-based submarine survival/exploration game. Built with plain HTML, CSS and JavaScript. No build tools, accounts, payments or servers required.
+A single-player submarine survival game built with vanilla HTML, CSS and JavaScript. The v0.2 update adds analogue touchscreen steering and installable fullscreen/offline Progressive Web App (PWA) support.
 
-## Play
+## Play and controls
 
-Open `index.html` locally in a modern browser, or publish the three game files on **GitHub Pages** (see below). Progress is saved on the current browser/device using localStorage.
+After publishing to HTTPS GitHub Pages, open the site in your mobile browser.
 
-### Controls
-
-| Action | Keyboard | Phone/tablet |
+| Action | PC | Phone |
 |---|---|---|
-| Pilot | WASD or arrow keys | Direction pad |
-| Sonar pulse | Q | SONAR |
-| Pick up item / dock | E | USE |
+| Pilot | WASD / arrow keys | Drag the circular **joystick**; slight tilt = slow, edge = fast |
+| Hands-free travel | n/a | Enable **CRUISE**, drag the stick to set a course, release it; adjust by dragging again; tap CRUISE to stop |
+| Sonar | Q | SONAR |
+| Salvage / dock | E | USE |
 | Quiet propulsion | Hold Shift | SILENT toggle |
-| Field repair (cost: 2 scrap) | R | REPAIR |
-| External lights | L | Keyboard only (lights stay on by default on touch) |
-| Pause | Esc | Pause button at top |
+| Repair (2 scrap) | R | REPAIR |
+| Lamps | L | LIGHTS ON/OFF |
+| Pause | Esc | PAUSE |
 
-## Your mission
+Joystick releases to neutral. Your submarine slows rather than snapping to a stop because it has momentum. Cruise mode holds your **last steering vector**, not collision avoidance. It turns off automatically if you pause, switch apps, open a dialog or start a new dive. Watch your oxygen, battery and rocks!
 
-Locate 3 orange/gold flight recorders at increasing depths and **return to the surface station to deliver them**. Pick up scrap and crystals to earn credits. Upgrade the hull, air recycler, battery, thrusters, sonar and silent drive. Sonar consumes power and attracts predators; noisy propulsion gives away your location. Exceeding your depth rating damages the hull. Oxygen caches replenish air, while a dock visit restores all systems.
+## Install on Android (fullscreen, no address bar)
 
-**Progress rule:** Credits, XP, upgrades, best dive depth and **delivered** recorders are saved. Cargo and any unbanked recorders are lost if your vessel is destroyed or the page is refreshed. Each fresh dive generates a new rock and salvage layout; the three mission wrecks stay at consistent depth milestones.
+1. Upload the game's root files to your **existing** GitHub repository. Keep `index.html`, `game.js`, `styles.css`, `manifest.webmanifest`, `service-worker.js`, and the three `.png` icon files at the repository root. Upload other docs/tests if wanted. **Don't upload the ZIP itself.**
+2. Wait for GitHub Pages to redeploy, then open the **same Pages URL** in **Chrome** (HTTPS). If the old layout remains, refresh or close/reopen the page.
+3. Chrome's **⋮ menu** should offer **Install app** or **Add to Home screen**. Use **Install app** when offered. Alternatively, use the game's *INSTALL ON PHONE* button if Chrome displays it.
+4. Launch **The Abyss Below** from its new home-screen icon, rather than reopening the GitHub Pages tab. The app requests **fullscreen** display to hide browser toolbars. Android may retain system navigation gestures or override fullscreen settings.
 
-## Publish to GitHub Pages
+The new service worker caches core files for offline play after installation and the initial online load. The game uses the same browser storage key as v0.1, so credits/upgrades already saved on the same device and GitHub Pages origin should remain available. **Saves are local to that browser/origin; there is no cloud sync or transfer between devices.** Unbanked cargo and an in-progress dive are not saved. Avoid clearing site data/uninstalling before securing anything important.
 
-1. Create a new public GitHub repository named `the-abyss-below` (or another name).
-2. Upload the contents of this folder to the **root** of the repository: `index.html`, `styles.css`, `game.js`, `README.md`, `GAME_DESIGN.md`, `CHANGELOG.md` (the `tests/` folder is optional).
-3. On GitHub, open **Settings → Pages**. Choose **Deploy from a branch**; choose `main` and `/ (root)`; save.
-4. Your game will be available at `https://YOUR-USERNAME.github.io/the-abyss-below/` after GitHub publishes it.
-5. To update the game, replace the files on the same branch and commit the changes. Existing save progress stays on the same GitHub Pages URL and device.
+## Publish or update on GitHub Pages
 
-## Roadmap
+**First publish:** create a public repo, upload root files, go to **Settings → Pages**, choose **Deploy from a branch**, `main`, `/ (root)` and Save.
 
-- **v0.1.0 (current)**: playable trench exploration, physical movement/collisions, procedural rock fields, sonar reveal, collectable resources, three recorder mission, predator patrol/chase behaviour, hull/oxygen/energy/noise systems, depth pressure, repairs, dock upgrades, XP ranks, mobile controls and persistent banked progress.
-- **v0.2 idea**: captain's log, world map, additional wreck encounters, biomes and sonar signal triangulation, improved accessibility and touch controls.
-- **v0.3 idea**: modular damage, repair tasks, underwater currents, active stealth tactics, predator variety and deeper ship upgrade decisions.
-- **v0.4 idea**: branching story missions, unlockable submarines, rival expedition traces, environmental storytelling and a proper ending.
+**Updating v0.1:** replace the three existing root game files, add `manifest.webmanifest`, `service-worker.js`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` to the same root, and commit. If using Android's GitHub web interface, enable Desktop site when GitHub hides the upload controls. You do not need to create another repository. GitHub may take a short while to refresh the site after committing. Open your published site and check the footer says **v0.2.1**.
+
+## Mission and gameplay
+
+Locate three gold/orange flight recorders at increasing depths and **return to the surface station to deliver them**. Salvage scrap/crystals for credits, then upgrade hull, oxygen, battery, engine, sonar and stealth. Noise and sonar attract predators. Depth pressure can damage the hull. Dock to bank progress and restore your systems.
+
+**Permanent progress:** saved credits, upgrades, XP, best depth and delivered recorders. The original localStorage key `the-abyss-below-v01` is deliberately retained to protect v0.1 saves.
 
 ## Developer notes
 
-No runtime dependencies. Gameplay logic lives in `game.js`, UI layout in `index.html`, styling in `styles.css`. To run the optional automated desktop/mobile smoke tests: `pip install playwright`, `python -m playwright install chromium`, then `python tests/smoke_test.py`. A read-only `window.AbyssDiagnostics.state()` is available from the browser console to inspect basic live state during testing. GitHub Pages is static hosting, so saves are per-browser and do not sync across devices. No backend/cloud save yet.
+No runtime libraries or external assets required. The entire app is static, compatible with GitHub Pages subdirectories because PWA paths are relative. Game code is `game.js`, mobile controls in `index.html`/`styles.css`, install config in `manifest.webmanifest`, and offline caching in `service-worker.js`.
 
-For iteration, report the build number, browser/device, the steps to reproduce any issue, and what you expected vs what happened. We'll add versioned updates without silently breaking saves.
+Optional tests: `pip install playwright pillow`, `python -m playwright install chromium`, `python tests/smoke_test.py` and `python tests/joystick_pwa_test.py`. The second checks movement and manifest icons in an in-memory browser. It does not prove installed Android fullscreen or actual offline behaviour; test that on Chrome after deployment. A read-only `window.AbyssDiagnostics.state()` hook is available for inspecting game state.
+
+## What comes next
+
+More creatures, salvage variety, navigation tools, and distinct depth biomes. No updates to the mission/progression rules were made in this release.
+
+
+## Mobile v0.2.1: fullscreen cockpit
+
+On a phone, **BEGIN EXPEDITION** enters the expanded play view automatically. Use the
+**EXIT** button at the top right to return to the complete mission/radar/upgrade
+console. **FULLSCREEN** inside the canvas lets you switch back. The browser will
+also attempt its native Fullscreen API when you press this button; in browsers
+that disallow it, immersive view still fills the available webpage area. Install
+via Chrome's **Install app** for a display without the usual address bar.
+
+A high-contrast joystick is at the bottom left, and compact sonar/use/silent/
+repair/lights controls are at the bottom right. Toggle **CRUISE** for hands-free
+thrust after steering. CSS and JS carry versioned URLs so new uploads do not
+accidentally reuse old files from browser caches; offline app caching also uses
+a new release key.
+
+When updating GitHub Pages from a phone, upload the files **inside** the update
+ZIP to the repository root, replacing the old versions; do not upload the ZIP
+itself. Confirm the version in the regular console footer is v0.2.1. If your
+installed home-screen app is showing an old layout, close/reopen it after the
+Pages deployment completes and clear the site's cache if necessary.

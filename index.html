@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#06121d" />
   <meta name="description" content="The Abyss Below: a submarine exploration and survival game." />
   <title>The Abyss Below | Deepwater Expedition</title>
-  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="manifest" href="manifest.webmanifest?v=0.2.1" />
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=0.2.1" />
 </head>
 <body>
   <div class="app">
@@ -30,6 +30,18 @@
         <section class="viewport" aria-label="Submarine expedition game">
           <canvas id="gameCanvas"></canvas>
           <div class="viewport-topline"><span id="coordsText">SECTOR 01 · SURFACE APPROACH</span><span id="sonarText">SONAR READY</span></div>
+          <div class="focus-hud" aria-label="Live submarine systems">
+            <div class="hud-stat"><span>DEPTH</span><strong id="focusDepth">0m</strong></div>
+            <div class="hud-stat"><span>HULL</span><strong id="focusHull">100%</strong></div>
+            <div class="hud-stat"><span>O₂</span><strong id="focusOxygen">100%</strong></div>
+            <div class="hud-stat"><span>POWER</span><strong id="focusBattery">100%</strong></div>
+            <div class="hud-stat hud-noise"><span>NOISE</span><strong id="focusNoise">0%</strong></div>
+          </div>
+          <div class="game-view-tools">
+            <button id="focusToggleBtn" class="view-tool" aria-label="Expand play view" title="Expand play view">⛶ <span>FULLSCREEN</span></button>
+            <button id="focusHelpBtn" class="view-tool focus-only" aria-label="Pilot instructions" title="Pilot instructions">?</button>
+            <button id="focusPauseBtn" class="view-tool focus-only" aria-label="Pause game" title="Pause game">Ⅱ</button>
+          </div>
           <div id="interactionPrompt" class="interaction-prompt hidden"></div>
           <div id="notification" class="notification hidden"></div>
           <div class="vignette-label left">NEREID // MK-I</div><div class="vignette-label right">LIVE DEPTH FEED</div>
@@ -41,7 +53,13 @@
               </div>
               <button id="mobileCruise" class="cruise-toggle" aria-pressed="false" title="Keep moving after releasing the joystick">CRUISE OFF</button>
             </div>
-            <div class="mobile-actions"><button id="mobileSonar">SONAR</button><button id="mobileInteract">USE</button><button id="mobileSilent">SILENT</button><button id="mobileRepair">REPAIR</button><button id="mobileLights" class="wide">LIGHTS ON</button></div>
+            <div class="mobile-actions" aria-label="Submarine actions">
+              <button id="mobileSonar" aria-label="Ping sonar" title="Ping sonar"><span class="action-glyph">◎</span><span>PING</span></button>
+              <button id="mobileInteract" aria-label="Interact or dock" title="Interact or dock"><span class="action-glyph">✦</span><span>USE</span></button>
+              <button id="mobileSilent" aria-label="Toggle quiet running" title="Toggle quiet running"><span class="action-glyph">◌</span><span>SILENT</span></button>
+              <button id="mobileRepair" aria-label="Repair hull" title="Repair hull"><span class="action-glyph">✚</span><span>REPAIR</span></button>
+              <button id="mobileLights" class="wide" aria-label="Toggle lights" title="Toggle lights"><span class="action-glyph">☀</span><span id="lightsLabel">LIGHTS ON</span></button>
+            </div>
           </div>
         </section>
         <div class="systems-bar">
@@ -61,10 +79,10 @@
         <button id="dockBtn" class="dock-btn" disabled>◈ RETURN TO STATION TO UPGRADE</button>
       </aside>
     </main>
-    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.2.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
+    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.2.1</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
   </div>
   <div class="overlay" id="menuOverlay"><div class="menu-card"><div class="menu-kicker">TRANSMISSION // 0001</div><div class="menu-icon">⌁</div><h1>THE ABYSS<br><span>BELOW</span></h1><p>Something went silent beneath the continental shelf. Three recorders remain. Your oxygen is finite. Your vessel is not invincible. The deeper you go, the more the darkness notices you.</p><div class="menu-feature-list"><span>◈ PROCEDURAL TRENCH</span><span>◈ SURVIVAL SYSTEMS</span><span>◈ PREDATOR AI</span><span>◈ UPGRADABLE SUB</span></div><button id="startBtn" class="primary-btn">BEGIN EXPEDITION <span>→</span></button><button id="instructionsBtn" class="text-btn">VIEW PILOT BRIEFING</button><button id="installBtn" class="install-btn hidden">⬇ INSTALL ON PHONE</button><div class="menu-bottom">NEREID EXPLORATION PROGRAM · CLASSIFIED</div></div></div>
   <div class="overlay hidden" id="modalOverlay"><div class="dialog-card"><div class="dialog-top"><div id="modalKicker" class="menu-kicker">FIELD BRIEFING</div><button id="modalClose" class="close-btn">✕</button></div><h2 id="modalTitle">PILOT BRIEFING</h2><div id="modalBody"></div><div id="modalFooter"></div></div></div>
-  <script src="game.js" defer></script>
+  <script src="game.js?v=0.2.1" defer></script>
 </body>
 </html>

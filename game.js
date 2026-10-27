@@ -512,9 +512,31 @@
     if(running&&!paused&&close){
       prompt.textContent=close.type==='station'?'[ E / USE ] DOCK & UPGRADE':close.type==='recorder'?'[ E / USE ] RECOVER BLACK BOX':close.type==='air'?'[ E / USE ] CLAIM SUPPLY CACHE':'[ E / USE ] SALVAGE '+close.type.toUpperCase();prompt.classList.remove('hidden');
     } else prompt.classList.add('hidden');
-    $('mobileSilent').classList.toggle('active',pointerSilent);$('mobileLights').textContent=player.lights?'LIGHTS ON':'LIGHTS OFF';
+    $('mobileSilent').classList.toggle('active',pointerSilent);$('lightsLabel').textContent=player.lights?'LIGHTS ON':'LIGHTS OFF';
+    $('focusDepth').textContent=depth+'m';$('focusHull').textContent=Math.round(player.hull/maxHull()*100)+'%';$('focusOxygen').textContent=Math.round(player.oxygen/maxOxygen()*100)+'%';$('focusBattery').textContent=Math.round(player.battery/maxBattery()*100)+'%';$('focusNoise').textContent=Math.round(player.noise)+'%';
+    $('focusHull').classList.toggle('alert',player.hull/maxHull()<.35);$('focusOxygen').classList.toggle('alert',player.oxygen/maxOxygen()<.25);$('focusBattery').classList.toggle('alert',player.battery/maxBattery()<.2);
     const cruiseButton=$('mobileCruise');cruiseButton.classList.toggle('active',cruiseEnabled);cruiseButton.setAttribute('aria-pressed',String(cruiseEnabled));cruiseButton.textContent=cruiseEnabled?'CRUISE ON':'CRUISE OFF';
     drawRadar();
+  }
+  let focusMode=false;
+  function setFocusMode(on){
+    focusMode=Boolean(on);
+    document.body.classList.toggle('game-focus',focusMode);
+    const toggle=$('focusToggleBtn');
+    toggle.innerHTML=focusMode?'↙ <span>EXIT</span>':'⛶ <span>FULLSCREEN</span>';
+    toggle.setAttribute('aria-label',focusMode?'Exit expanded play view':'Expand play view');
+    toggle.setAttribute('aria-pressed',String(focusMode));
+    // Let mobile layout finish, then update both canvas backing dimensions and camera.
+    requestAnimationFrame(()=>resize());
+  }
+  function toggleFocusMode(){
+    const willFocus=!focusMode;
+    setFocusMode(willFocus);
+    if(willFocus && document.fullscreenEnabled && !document.fullscreenElement && document.documentElement.requestFullscreen){
+      document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{});
+    } else if(!willFocus && document.fullscreenElement && document.exitFullscreen){
+      document.exitFullscreen().catch(()=>{});
+    }
   }
   function togglePause(){if(!running)return;if(!$('modalOverlay').classList.contains('hidden')){closeDialog();return;}paused=!paused;if(paused)resetJoystick(true);$('pauseBtn').textContent=paused?'▶ RESUME':'Ⅱ PAUSE';if(paused)announce('GAME PAUSED',3600);else $('notification').classList.add('hidden');}
   function briefing(){
@@ -523,7 +545,21 @@
     $('briefDone').addEventListener('click',closeDialog);
   }
   function bind() {
-    $('startBtn').addEventListener('click',newDive);
+    $('startBtn').addEventListener('click',()=>{
+      newDive();
+      // Phones start in the uncluttered cockpit by default; the EXIT button restores the console.
+      if(window.matchMedia('(max-width: 850px)').matches){
+        setFocusMode(true);
+        // A direct tap can grant native fullscreen on Android Chrome; CSS fullscreen is fallback.
+        if(document.fullscreenEnabled && !document.fullscreenElement && document.documentElement.requestFullscreen){
+          document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{});
+        }
+      }
+    });
+    $('focusToggleBtn').addEventListener('click',toggleFocusMode);
+    $('focusHelpBtn').addEventListener('click',briefing);
+    $('focusPauseBtn').addEventListener('click',togglePause);
+    document.addEventListener('fullscreenchange',()=>{resize();});
     $('helpBtn').addEventListener('click',briefing);$('instructionsBtn').addEventListener('click',briefing);
     $('modalClose').addEventListener('click',closeDialog);
     $('pauseBtn').addEventListener('click',togglePause);
@@ -566,6 +602,7 @@
     $('mobileSonar').addEventListener('click',scan);$('mobileInteract').addEventListener('click',interact);$('mobileRepair').addEventListener('click',repair);$('mobileLights').addEventListener('click',toggleLights);
     $('mobileSilent').addEventListener('click',()=>{pointerSilent=!pointerSilent;updateUI();});
     window.addEventListener('resize',()=>{resize();updateUI();});
+    if(window.visualViewport)window.visualViewport.addEventListener('resize',resize);
     setupInstall();
   }
   function steerJoystick(e){
@@ -625,5 +662,5 @@
   camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
   updateUI();requestAnimationFrame(frame);
   // Tiny inspection hook for automated smoke tests. Does not mutate gameplay.
-  window.AbyssDiagnostics={state:()=>({running,paused,depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
+  window.AbyssDiagnostics={state:()=>({focusMode,running,paused,depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
 })();
