@@ -1,28 +1,27 @@
 # The Abyss Below
 
-## v0.13.0: Harbour Rising
+## v0.14.0: Living Depths
 
-A dependency-free browser/PWA submarine expedition game. This release remodels the surface station, adds a predator-free approach and momentum-driven surface breaches, and puts fitted-tier badges and gold maximum outlines on the dock upgrade tiles. The five-level campaign, 20 achievements and separate credit/crystal economy remain intact.
+A dependency-free Canvas/JavaScript submarine expedition game for desktop and mobile browsers/PWAs. This release adds active-dive save/resume, a persistent exploration chart, five visual environments with currents and landmarks, procedural sound, and a compact instrument HUD. The five-level campaign, twelve upgrade systems, twenty achievements, finite resources and paid ammunition remain intact.
 
 ## Install the update
 
-1. **On the old build, dock and bank your cargo before updating.** Then quit the active dive. The active vessel is not resumed after a reload; bank safely rather than relying on recovery pods during an update.
-2. Extract the update ZIP. Copy its contents into the existing repository root, replacing matching files. Do not upload the ZIP itself or add an extra enclosing directory.
-3. Publish the runtime files together, including `game.js`, `index.html`, `styles.css`, `service-worker.js`, `version-sync.js` and `version.json`. Keep the manifest and icons in place. The version checker rejects partial or mismatched deployments.
-4. After your normal hosting deployment completes, reopen online at the same site and browser profile. The menu should show **v0.13.0 / Harbour Rising**. Use CHECK AGAIN to check the published files.
-5. **UP TO DATE · SYNC VERIFIED** requires matching loaded build markers, published asset hashes and the controlling worker. It checks your deployed website, not unpublished repository changes or cloud saves. A local preview correctly remains unverified.
+1. On v0.13 or an older build, **dock and bank cargo, then quit the active dive before updating**. That build cannot supply the new full expedition snapshot.
+2. Extract the update ZIP and copy its contents into the existing repository root, replacing matching files. Do not upload the ZIP itself or introduce an extra parent directory.
+3. Publish `index.html`, `styles.css`, **`audio.js`**, `game.js`, `version-sync.js`, `service-worker.js`, `manifest.webmanifest` and `version.json` together. Keep the existing icons. Partial deployments are rejected by the version checker.
+4. Reopen online after the hosting deployment completes. Look for **v0.14.0 / Living Depths** and use CHECK AGAIN. SYNC VERIFIED requires published hashes, loaded code/style/audio markers and the controlling offline worker to match.
+5. Keep the same host path and browser profile. Do not clear site data or select New Game to update. This package does not automatically push or deploy a repository.
 
-This package does not push a repository or deploy a website. No reinstallation is required by the update process. Do not clear site data or choose New Game to update. Saves remain local to this site and browser profile.
+## Living Depths features
 
-## New in Harbour Rising
+- **Compact HUD:** a thin identity rail, live numeric gauges, system readiness and contextual warnings. The map and telemetry controls sit beside pause. The detail panel has twelve exact readings, fullscreen/help controls and sound settings. The measured 390 x 844 portrait HUD is 31.7% shorter than v0.13.
+- **Five environments:** coral/seagrass, pale mineral formations, kelp/overgrowth, cathedral-like columns and basalt/fissures. Each level has three chartable landmarks. Scenery uses an independent seed and does not move existing deposits or rocks. Deep darkness and sonar rules remain intact.
+- **Currents:** visible, bounded horizontal flows that affect the submarine and predators, with a sheltered harbour/central route. Currents are weaker than standard quiet-running thrust.
+- **Survey map:** M or the top map icon opens a paused side-view chart. Explore or scan to reveal terrain; discovered contacts persist, predator dots expire, and surveyed water can receive a waypoint. Pan, pinch/wheel zoom, centre and overview controls are provided.
+- **Sound:** original procedural engine/water/boost layers and event cues, with separate effects/ambience sliders, mute and sonar preview. Pause/backgrounding suspends audio. No downloaded sound assets or microphone permissions are needed.
+- **Save/resume:** Continue restores the actual expedition paused, including position, cargo, mines, enemies, timers and ammunition. Automatic checkpoints occur around every five simulation seconds and after important actions. Intentional Quit/defeat still use recovery pods.
 
-The station now has twin pontoons, an illuminated operations cabin, communications equipment, crane, underwater pylons, service lights and a central docking berth. A dotted safe-zone perimeter shows where predators break pursuit. The HUD confirms **DOCK SAFE ZONE**. Use E / USE while submerged to bank and refit; docking now stops residual ship motion. This is predator protection, not immunity to low oxygen or rocks.
-
-Ascend at speed to breach the surface. Normal thrust can launch a short leap; upgraded thrusters and boost carry you higher. Above water, momentum and gravity take over. No airborne boost or flight controls are added. Spray and ripples mark launch/entry, and splashdown itself causes no hull damage. The camera, pause flow and zero-depth instruments continue to work. A midair reload or quit places recoverable cargo underwater rather than losing finite crystals.
-
-Upgrade tiles keep three columns and now show **name + fitted mark + current/maximum tier**. Fully upgraded tiles have a gold border and **MAX** label. Detailed stats and purchases still open in the pop-up.
-
-Read **HARBOUR-v0.13.0.md** for current surface physics, safety limits and persistence rules. No upgrade price, map resource stock, recorder gate or ammunition rule changed in this release.
+Read **LIVING-DEPTHS-v0.14.0.md** for detailed mechanics, storage behaviour and caveats. Previous release guides are historical; their old reload-loss instructions no longer describe v0.14.
 
 ## Five-level campaign
 
@@ -50,9 +49,9 @@ Fixed scrap/crystal deposits never regenerate on docking, level switching, quitt
 
 ## Recovery pods and crystal safeguards
 
-Collected resources are journaled together with deposit depletion. Defeat, quitting a dive or reloading leaves unbanked scrap/crystals in a persistent recovery pod instead of deleting finite resources. Recover the pod and dock to bank it. Pods are placed no deeper than the current safe hull range and are visible to sonar and the objective indicator. Undelivered recorders return to their wrecks. Spent ammunition and repair scrap are not refunded.
+Collected resources are journaled together with deposit depletion. Defeat or intentionally quitting a dive leaves unbanked scrap/crystals in a persistent recovery pod instead of deleting finite resources. Recover the pod and dock to bank it. Pods are placed no deeper than the current safe hull range and are visible to sonar and the objective indicator. Undelivered recorders return to their wrecks. Spent ammunition and repair scrap are not refunded.
 
-The ship's active position, oxygen, combat simulation and planted mines are **not** resumed after a reload. A recovery pod is not an active-dive save. Browser storage failure or clearing site data can still lose progress; the game displays a warning if saving fails.
+Ordinary reloads now restore a valid active-dive snapshot, paused. Ship position, resources, cargo, ammunition, mines and enemies are resumed without advancing time while closed. A recovery pod is still used for intentional abandonment/defeat or a recoverable invalid snapshot. Sudden termination can lose time since the last checkpoint, and browser storage failure or clearing site data can still lose progress. A visible warning reports failed writes.
 
 The shop checks the crystal budget at every remaining hull pressure gate. Optional purchases are refused only when they would leave too few crystals obtainable before a required hull step. Crystals below that pressure limit do not count as available funds. Fit the indicated hull upgrade first.
 
@@ -64,7 +63,7 @@ See **CAMPAIGN-v0.12.0.md** for the full achievement list, level stocks, all upg
 
 ## Existing campaigns
 
-**Updating from v0.12:** all campaign progress, unlocked levels, selected destination, layouts/depletion, banked currencies/recorders, stats/achievements, upgrades, ammo and stored predator health carry over. No New Game is required. The schema and save key remain version 3.
+**Updating from v0.13 or v0.12:** all campaign progress, unlocked levels, selected destination, layouts/depletion, banked currencies/recorders, stats/achievements, upgrades, ammo and stored predator health carry over. No New Game is required. The campaign schema and key remain version 3, with an optional versioned active-dive snapshot and per-level charts. Existing maps start partially unsurveyed; their resources are not regenerated.
 
 **Updating from v0.11 or earlier:** Existing credits, XP, best depth, fitted upgrades and purchased ammunition are retained. The old trench is preserved as **Level 5, Calypso Abyss**, including its original resource locations/depletion and secured recorders. You start the expanded campaign at Level 1 and must clear the four new levels to revisit that old trench. Old secured recorders remain stored while access is locked.
 
@@ -83,6 +82,9 @@ Imported Level 5 receives a one-time addition of missing crystal deposits to rea
 | Flashlight | L | LIGHTS |
 | Quiet running | Hold Shift | SILENT toggle |
 | Pause | Esc | Top pause control |
+| Survey map | M; Esc to close | Top map icon / pause menu |
+| Detailed telemetry | Top sliders icon | Top sliders icon |
+| Sound | Main/pause menu or telemetry | Main/pause menu or telemetry |
 
 All existing flashlight, boost, shield, magnet, disruption and paid ammunition systems remain. Eight circular mobile actions stay bottom left; the floating steering pad appears where you touch open water. PC retains its keybind reference strip.
 
@@ -90,6 +92,6 @@ All existing flashlight, boost, shield, magnet, disruption and paid ammunition s
 
 Serve the folder over HTTP for local development, for example `python -m http.server 8000`. Normal local-preview version status is not a verified hosted release.
 
-After editing any runtime asset, run `python tests/build_release.py` before publishing. Run the current suite with `python tests/run_v0130.py`; see **tests/README-v0.13.0.md** for dependencies and limitations. Historical tests/reports describe earlier rules and are not current acceptance evidence.
+After editing any runtime asset, run `python tests/build_release.py` before publishing. Run the current suite with `python tests/run_v0140.py --jobs 1`; see **tests/README-v0.14.0.md** for dependencies and limitations. Historical tests/reports describe earlier rules and are not current acceptance evidence.
 
-**VERIFICATION-v0.13.0.md** records the actual test outcomes. Physical Android hardware, real hosted/offline updating and a full human campaign playthrough are not verified. This remains a browser/PWA source release, not a signed Android app bundle.
+**VERIFICATION-v0.14.0.md** records the actual test outcomes. Physical Android hardware, real hosted/offline updating and a full human campaign playthrough are not verified. This remains a browser/PWA source release, not a signed Android app bundle.

@@ -1,0 +1,139 @@
+{
+  "version": "0.14.0",
+  "name": "Living Depths",
+  "build_id": "0.14.0-living-depths-1",
+  "base_version": "0.13.0",
+  "date": "2026-10-27",
+  "runtime_manifest": "version.json",
+  "campaign_schema": 3,
+  "canonical_save_key": "the-abyss-below-campaign-v3",
+  "levels": [
+    {
+      "id": "sunbreak-shelf",
+      "floor_m": 300,
+      "recorders": 2,
+      "scrap_units": 84,
+      "crystal_units": 36
+    },
+    {
+      "id": "glassbone-rift",
+      "floor_m": 600,
+      "recorders": 3,
+      "scrap_units": 130,
+      "crystal_units": 70
+    },
+    {
+      "id": "drowned-gardens",
+      "floor_m": 1000,
+      "recorders": 4,
+      "scrap_units": 170,
+      "crystal_units": 100
+    },
+    {
+      "id": "midnight-cathedral",
+      "floor_m": 1400,
+      "recorders": 5,
+      "scrap_units": 210,
+      "crystal_units": 130
+    },
+    {
+      "id": "calypso-abyss",
+      "floor_m": 1800,
+      "recorders": 6,
+      "scrap_units": 250,
+      "crystal_units": 160
+    }
+  ],
+  "economy": {
+    "fixed_scrap_credit_value": 15192,
+    "fixed_crystals": 496,
+    "upgrade_tree_credits": 12223,
+    "upgrade_tree_crystals": 432,
+    "paid_steps": 51,
+    "ammo_round_credits": 12,
+    "hull_iii": {
+      "credits": 297,
+      "crystals": 10
+    },
+    "crystal_guard": "Every required hull gate counts only stocks reachable before that pressure upgrade"
+  },
+  "achievements": {
+    "count": 20,
+    "entry_points": [
+      "main menu",
+      "pause menu"
+    ],
+    "scope": "campaign",
+    "currency_rewards": false
+  },
+  "migration": {
+    "v013": "Retains profile, resources, depletion, upgrades, purchased ammunition, recorders, achievements and seeds; adds per-level charts and optional schema-1 active-dive snapshots. Older pending cargo still recovers once.",
+    "legacy": "Earlier campaign migration paths retained",
+    "active_dive": "New snapshots restore actual expedition paused; intentional quit and defeat still create recovery pods."
+  },
+  "verification": {
+    "suites": 14,
+    "status": "PASS",
+    "completed_at": "2026-10-27T18:51:50.041673+00:00",
+    "execution": "Successful individual/grouped runs, not the interrupted large parallel orchestration",
+    "report": "VERIFICATION-v0.14.0.md",
+    "physical_phone": "NOT_TESTED",
+    "live_pwa": "BLOCKED_BY_ADMINISTRATOR",
+    "full_playthrough": "NOT_TESTED",
+    "audio_listening": "NOT_TESTED"
+  },
+  "live_pwa": {
+    "status": "BLOCKED_OR_FAILED",
+    "error": "Page.goto: net::ERR_BLOCKED_BY_ADMINISTRATOR at http://127.0.0.1:36753/\nCall log:\n  - navigating to \"http://127.0.0.1:36753/\", waiting until \"load\"\n",
+    "limitations": [
+      "No successful live offline integration claim"
+    ]
+  },
+  "harbour": {
+    "x": 600,
+    "y": 160,
+    "safe_radius": 260,
+    "predator_exclusion_radius": 330,
+    "station_collision": "Background landmark, central berth open"
+  },
+  "surface": {
+    "water_y": 70,
+    "breach_speed": 100,
+    "gravity": 260,
+    "air_drag": 0.18,
+    "air_thrust": false,
+    "splash_damage": false
+  },
+  "upgrade_tiles": {
+    "columns": 3,
+    "labels": "name, fitted mark, current/maximum",
+    "maxed": "gold outline and MAX text",
+    "purchase_flow": "existing details modal"
+  },
+  "living_depths": {
+    "landmarks": 15,
+    "biomes": 5,
+    "current_bands": [
+      3,
+      5,
+      8,
+      11,
+      14
+    ],
+    "max_current_metres_per_second": [
+      1.2,
+      2,
+      2.8,
+      3.6,
+      4.4
+    ],
+    "sheltered_harbour_and_central_route": true,
+    "survey_grid_metres": 9,
+    "temporary_contact_simulation_seconds": 8,
+    "waypoints_per_level": 1,
+    "save_interval_simulation_seconds": 5,
+    "new_sound_file": "audio.js",
+    "audio": "Original procedural Web Audio; separate effects/ambience/mute",
+    "hud_measurements": "verification/v0.14.0/hud-before-after.json"
+  }
+}

@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const BUILD = Object.freeze({version:'0.13.0',name:'Harbour Rising',id:'0.13.0-harbour-rising-1'});
+  const BUILD = Object.freeze({version:'0.14.0',name:'Living Depths',id:'0.14.0-living-depths-1'});
   window.AbyssBuild=BUILD;
   const $ = id => document.getElementById(id);
   const canvas = $('gameCanvas');
@@ -8,6 +8,15 @@
   const radar = $('radarCanvas');
   const rctx = radar.getContext('2d');
   const TAU = Math.PI * 2;
+  const SURVEY = Object.freeze({cell:90,left:-1000,right:2200,contactLife:8});
+  const freshSurvey=()=>({version:1,cells:[],contacts:{},waypoint:null});
+  function normaliseSurvey(value){
+    if(!value||value.version!==1)return freshSurvey();
+    const point=p=>p&&Number.isFinite(p.x)&&p.x>=SURVEY.left&&p.x<=SURVEY.right&&Number.isFinite(p.y)&&p.y>=70&&p.y<=18120;
+    return {version:1,cells:Array.isArray(value.cells)?[...new Set(value.cells.filter(x=>typeof x==='string'&&/^\d{1,2}:\d{1,3}$/.test(x)).slice(0,12000))]:[],
+      contacts:Object.fromEntries(Object.entries(value.contacts||{}).filter(([k,c])=>k.length<100&&point(c)&&['scrap','crystal','air','recorder','recovery','wreck','landmark','station'].includes(c.type)).slice(0,4000).map(([k,c])=>[k,{x:c.x,y:c.y,type:c.type,label:String(c.label||'').slice(0,80),collected:c.collected===true}])),
+      waypoint:point(value.waypoint)?{x:value.waypoint.x,y:value.waypoint.y}:null};
+  }
   // Surface and harbour rules are shared by rendering, physics and AI.
   const SURFACE = Object.freeze({y:70,breachSpeed:100,gravity:260,airDrag:.18,reentryDrag:.62});
   const HARBOUR = Object.freeze({x:600,y:160,safeRadius:260,exclusionRadius:330,dockRadius:128});
@@ -50,7 +59,7 @@
   const currentLevel=()=>LEVELS.find(l=>l.id===LEVEL_ID)||LEVELS[0];
   const cleanCount=v=>Number.isFinite(v)&&v>=0?Math.floor(v):0;
   const freshField = () => ({schema:3,seed:(Math.random()*0xffffffff)>>>0,cycle:0,
-    looted:[],health:{},loot:null,drops:[],secured:[],recoveries:[],recoverySerial:0,pendingCargo:null,floorReached:false,awaitingDock:false});
+    looted:[],health:{},loot:null,drops:[],secured:[],recoveries:[],recoverySerial:0,pendingCargo:null,floorReached:false,awaitingDock:false,survey:freshSurvey()});
   let field=freshField(),campaignId='campaign-'+Date.now().toString(36)+'-'+field.seed.toString(36);
   let campaignLevels={},storageHealthy=true,storageRecovery=false,migratedLegacy=false;
   const readJSON=key=>{try{return JSON.parse(localStorage.getItem(key)||'null');}catch(_){return null;}};
@@ -68,7 +77,7 @@
       drops:Array.isArray(data.drops)?data.drops.filter(n=>validNode(n)&&n.type==='scrap'&&/^drop-/.test(n.id)).map(normalise):[],
       secured:Array.isArray(data.secured)?[...new Set(data.secured.filter(n=>Number.isInteger(n)&&n>=0&&n<6))]:[],
       recorderDepths:Array.isArray(data.recorderDepths)&&data.recorderDepths.length===6&&data.recorderDepths.every(n=>Number.isFinite(n)&&n>0&&n<1800)?[...data.recorderDepths]:null,
-      legacyLayout:data.legacyLayout===true,crystalTopUp:data.crystalTopUp===true,recoveries,recoverySerial:cleanCount(data.recoverySerial),pendingCargo:cargo(data.pendingCargo),floorReached:data.floorReached===true,awaitingDock:data.awaitingDock===true};
+      survey:normaliseSurvey(data.survey),legacyLayout:data.legacyLayout===true,crystalTopUp:data.crystalTopUp===true,recoveries,recoverySerial:cleanCount(data.recoverySerial),pendingCargo:cargo(data.pendingCargo),floorReached:data.floorReached===true,awaitingDock:data.awaitingDock===true};
   }
   function addRecovery(f,cargo){
     if(!cargo||!(cargo.scrap||cargo.crystal))return;
@@ -150,9 +159,11 @@
   function levelComplete(id){const l=LEVELS.find(x=>x.id===id);return Boolean(l&&campaignLevels[id]?.secured.length===l.recorders.length);}
   function levelUnlocked(index){return index===0||LEVELS.slice(0,index).every(l=>levelComplete(l.id));}
   if(!levelUnlocked(LEVELS.findIndex(l=>l.id===LEVEL_ID)))LEVEL_ID=LEVELS[0].id;
-  for(const f of Object.values(campaignLevels)){
+  let loadedActive=validateActiveDive(campaign?.activeDive),buildingWorld=false,lastSaveWall=0;
+  if(loadedActive&&(loadedActive.levelId!==LEVEL_ID||loadedActive.seed!==campaignLevels[LEVEL_ID]?.seed||loadedActive.cycle!==campaignLevels[LEVEL_ID]?.cycle||loadedActive.player.mineAmmo!==saved.mineAmmo))loadedActive=null;
+  for(const [id,f] of Object.entries(campaignLevels)){
     // Crash/reload cargo is converted once, atomically, into a persistent recovery pod.
-    if(f.pendingCargo){addRecovery(f,f.pendingCargo);f.pendingCargo=null;}
+    if(f.pendingCargo&&(!loadedActive||loadedActive.levelId!==id)){addRecovery(f,f.pendingCargo);f.pendingCargo=null;}
   }
   field=campaignLevels[LEVEL_ID]||freshField();campaignLevels[LEVEL_ID]=field;
   function applyLevelGeometry(){
@@ -165,15 +176,18 @@
   }
   applyLevelGeometry();
   function persist(){
+    if(simulationStepping){saveRequested=true;return storageHealthy;}
     field.secured=saved.secured;
     if(player&&running){field.pendingCargo=player.cargo.scrap||player.cargo.crystal?{x:player.x,y:Math.max(300,player.y),scrap:player.cargo.scrap,crystal:player.cargo.crystal}:null;}
     campaignLevels[LEVEL_ID]=field;
-    const snapshot=JSON.stringify({schema:3,id:campaignId,selectedLevel:LEVEL_ID,profile:saved,levels:campaignLevels});
+    if(buildingWorld)return true;
+    const activeDive=running&&player&&player.hull>0?captureActiveDive():loadedActive;
+    const snapshot=JSON.stringify({schema:3,id:campaignId,selectedLevel:LEVEL_ID,profile:saved,levels:campaignLevels,activeDive});
     try{
       const previous=localStorage.getItem(CAMPAIGN_KEY);
       if(previous&&validCampaign(readJSON(CAMPAIGN_KEY)))localStorage.setItem(CAMPAIGN_KEY+'.backup',previous);
       localStorage.setItem(CAMPAIGN_KEY,snapshot);
-      storageHealthy=true;return true;
+      storageHealthy=true;lastSaveWall=Date.now();return true;
     }catch(_){storageHealthy=false;return false;}
   }
   const persistField=()=>persist();
@@ -276,7 +290,7 @@
   let toastUntil=0, eventLines=[], sonarWaves=[], sonarTerrainEchoes=[];
   let pointerSilent = false, victoryShown = false;
   let useHeld = false, useHoldTimer = 0, usePointerId = null;
-  let idCounter = 0,journalTimer=0;
+  let idCounter = 0,journalTimer=0,simulationStepping=false,saveRequested=false;
   function makeItem(x,y,type,extra={}) {const id=idCounter++;return {id,animationSeed:id,x,y,type,collected:false,revealUntil:0,...extra};}
   function rockPolygon(rock) {
     const verts=[],cos=Math.cos(rock.rot),sin=Math.sin(rock.rot);
@@ -443,7 +457,7 @@
       const y=r()*MAX_WORLD_Y;
       scene.dust.push({x:lerp(leftAt(y)-120,rightAt(y)+120,r()),y,phase:r()*TAU,size:.5+r()*1.7});
     }
-    populateWorld();persistField();
+    populateWorld();buildEnvironment();hydrateSurvey();persistField();
   }
   function refreshDockPopulation(){
     field.cycle++;field.health={};
@@ -453,8 +467,8 @@
     addEvent('Dock cycle complete · predators and supply caches refreshed; resource deposits unchanged');
   }
   function newDive() {
-    // Relaunches restore the depleted population. Only physical docking resets it.
-    createWorld();dockVisitActive=!field.awaitingDock;
+    // A new launch is distinct from restoring the existing expedition.
+    loadedActive=null;running=false;buildingWorld=true;createWorld();buildingWorld=false;dockVisitActive=!field.awaitingDock;
     player={x:600,y:160,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing:-Math.PI/2,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,quiet:false,damageCooldown:0,scanCooldown:0,boost:boostCapacity(),boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,cargo:{scrap:0,crystal:0,recorders:[]},lastRepair:-100,mineAmmo:0,mineCooldown:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,trip:{deepest:0,hullDamage:0}};
     resupplyMines();
     sonarWaves=[];sonarTerrainEchoes=[];surfaceEffects=[];clock=0;lastZone='';eventLines=[];useHoldTimer=0;victoryShown=saved.secured.length===RECORDERS_TOTAL;pointerSilent=false;resetPilotInput();camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;
@@ -464,7 +478,7 @@
     $('menuOverlay').classList.add('hidden');$('modalOverlay').classList.add('hidden');$('pauseOverlay').classList.add('hidden');
     canvas.focus({preventScroll:true});syncPauseButtons();
     announce('EXPEDITION ACTIVE · LOCATE THE RECORDERS');
-    updateUI();
+    surveyVisibleWater();persist();updateUI();
   }
   function addEvent(msg) {eventLines.unshift(msg);eventLines=eventLines.slice(0,3);$('eventLog').innerHTML=eventLines.map(x=>'<div>◈ '+x+'</div>').join('');}
   function announce(message,duration=2.8) { $('notification').textContent=message;$('notification').classList.remove('hidden');toastUntil=clock+duration; }
@@ -505,7 +519,7 @@
       player.battery=Math.max(0,player.battery-magnetPower());
       player.magnetFlash={x:item.x,y:item.y,until:clock+.35};
     }
-    item.collected=true;
+    item.collected=true;rememberSurveyObject('items',item);window.AbyssAudio?.event(item.type==='recorder'?'recorder':'pickup');
     const quantity=item.quantity||1;
     if(distance(player,item)>=60&&['scrap','crystal'].includes(item.type))addStat('magnetPickups',1);
     if(item.predatorDrop){field.drops=field.drops.filter(n=>n.id!==item.id);}
@@ -533,7 +547,7 @@
       const d=distance(origin,object);
       if(d<=range+100)contacts.push({kind,object,previousDistance:d,hit:false});
     };
-    for(const kind of ['items','predators','rocks','wrecks','vents','mines'])for(const object of scene[kind])add(kind,object);
+    for(const kind of ['items','predators','rocks','wrecks','vents','mines','landmarks'])for(const object of (scene[kind]||[]))add(kind,object);
     for(let y=Math.floor((camera.y-30)/24)*24;y<=camera.y+viewport.h+30;y+=24){
       if(y<120)continue;
       for(const side of [-1,1])add('wall',{x:side<0?leftAt(y):rightAt(y),y,side});
@@ -545,8 +559,9 @@
     const disruption=disruptorReady()?saved.upgrades.disruptor:0;
     player.battery-=sonarCost()+(disruption?DISRUPTOR.power[disruption]:0);player.scanCooldown=Math.max(sonarCooldown(),duration+.4);
     player.scanDuration=player.scanCooldown; // UI ring uses the actual screen-sized scan duration.
-    player.noise=Math.min(100,player.noise+27);addStat('sonarPings',1);checkAchievements();persist();
+    player.noise=Math.min(100,player.noise+27);addStat('sonarPings',1);checkAchievements();window.AbyssAudio?.event('sonar');
     sonarWaves.push({...origin,disruption,birth:clock,radius:range,front:0,duration,echoSeconds:sonarEchoSeconds(),contacts});
+    persist();
     addEvent(disruption?'Disruptor pulse · nearby contacts stunned on arrival':saved.upgrades.disruptor?'Standard scan · insufficient power for disruption':'Sonar sweeping · contacts appear on wave arrival');
     updateUI();
   }
@@ -554,12 +569,14 @@
     for(const wave of sonarWaves){
       const previous=wave.front;
       wave.front=Math.min(wave.radius,Math.max(0,clock-wave.birth)*SONAR.waveSpeed);
+      if(wave.front-previous>0)surveySonarWave(wave,previous);
       for(const contact of wave.contacts){
         if(contact.hit||contact.object.collected||contact.object.dead||contact.object.detonated)continue;
         const object=contact.object,d=distance(wave,object);
         // Crossing test handles moving predators and large simulation steps.
         if(d<=wave.front&&(contact.previousDistance>=previous||previous===0)){
-          contact.hit=true;
+          contact.hit=true;rememberSurveyObject(contact.kind,object);
+          if(['items','predators'].includes(contact.kind))window.AbyssAudio?.event('echo',clamp((object.x-player.x)/300,-1,1));
           object.revealUntil=Math.max(object.revealUntil||0,clock+wave.echoSeconds);
           object.echoDuration=wave.echoSeconds;
           if(contact.kind==='predators'){
@@ -607,6 +624,7 @@
     if(!drop){announce('STERN OBSTRUCTED · MOVE TO CLEAR WATER',1.5);return false;}
     scene.mines.push({...drop,id:idCounter++,mark:saved.upgrades.minePower,damage:mineDamage(),
       birth:clock,armedAt:clock+MINES.armDelay,detonated:false,revealUntil:0});
+    window.AbyssAudio?.event('mine');
     player.mineAmmo--;saved.mineAmmo=player.mineAmmo;player.mineCooldown=MINES.deployCooldown;persist();
     addEvent('Mk '+roman(saved.upgrades.minePower)+' mine deployed · '+player.mineAmmo+' remaining');
     updateUI();return true;
@@ -655,7 +673,7 @@
         if(t!==null&&(contact===null||t<contact))contact=t;
       }
       if(contact===null)continue;
-      mine.detonated=true;
+      mine.detonated=true;window.AbyssAudio?.event('explosion',clamp((mine.x-player.x)/300,-1,1));
       scene.blasts.push({x:mine.x,y:mine.y,birth:clock,radius:MINES.blastRadius});
       let hits=0;
       for(const enemy of scene.predators)if(predatorAlive(enemy)){
@@ -677,7 +695,7 @@
     player.cargo.scrap-=2;player.lastRepair=clock;player.hull=Math.min(maxHull(),player.hull+30);player.noise=Math.min(100,player.noise+10);
     announce('FIELD REPAIR COMPLETE · HULL +30',2);addEvent('Used 2 scrap for repairs');persist();updateUI();
   }
-  function toggleLights(){if(!running||paused)return;player.lights=!player.lights;addEvent('External lamps '+(player.lights?'activated':'disabled'));updateUI();}
+  function toggleLights(){if(!running||paused)return;player.lights=!player.lights;window.AbyssAudio?.event('lights');persist();addEvent('External lamps '+(player.lights?'activated':'disabled'));updateUI();}
   const ACHIEVEMENTS = Object.freeze([
     {id:'first-signal',name:'First Transmission',description:'Bank your first flight recorder.',target:1,kind:'recorders',icon:'01'},
     {id:'shelf',name:'Shelf Graduate',description:'Secure both Sunbreak Shelf recorders.',target:1,kind:'level',level:0,icon:'02'},
@@ -790,6 +808,7 @@
   function depositAndDock() {
     if(!running||paused||nearestInteractable()?.type!=='station')return;
     player.x=HARBOUR.x;player.y=HARBOUR.y;player.vx=0;player.vy=0;player.airborne=false;player.surfaceCooldownUntil=0;player.facing=Math.PI/2;
+    window.AbyssAudio?.event('dock');
     const wasComplete=levelComplete(LEVEL_ID),gained=player.cargo.scrap*18,bankedCrystals=player.cargo.crystal;
     const earnedXP=player.cargo.scrap*9+bankedCrystals*23+player.cargo.recorders.length*90;
     const delivered=player.cargo.recorders.length,realReturn=!dockVisitActive;
@@ -975,7 +994,7 @@
     dialogReturnPause=false;$('victoryClose').addEventListener('click',()=>{paused=false;showDock('expeditions');});
   }
   function defeat(reason) {
-    stashCargo();running=false;paused=true;player.hull=Math.max(0,player.hull);checkAchievements();persist();
+    loadedActive=null;stashCargo();running=false;paused=true;player.hull=Math.max(0,player.hull);checkAchievements();persist();
     openDialog('SIGNAL LOST // RECOVERY AVAILABLE','VESSEL LOST',`<div class="briefing"><p>${reason}</p><p>Your unbanked scrap and crystals are in a persistent recovery pod near the loss position. Undelivered recorders return to their wrecks. Banked currencies, upgrades and achievements remain saved.</p><p><strong>Selected level:</strong> ${currentLevel().name}<br><strong>Best depth:</strong> ${saved.bestDepth} m · <strong>Secured recorders:</strong> ${saved.secured.length}/${RECORDERS_TOTAL}</p></div>`, '<div class="dialog-actions"><button class="primary-btn" id="retryBtn">LAUNCH RESCUE VESSEL <span>→</span></button><button class="alt-btn" id="defeatMenuBtn">MAIN MENU</button></div>');
     $('retryBtn').addEventListener('click',newDive);$('defeatMenuBtn').addEventListener('click',()=>returnToMenu(false));
   }
@@ -984,9 +1003,10 @@
     const absorbed=Math.min(player.shield||0,amount);
     player.shield=Math.max(0,(player.shield||0)-absorbed);
     if(shieldCapacity()>0){player.shieldDelay=SHIELD.delay;player.shieldFlashUntil=clock+.45;}
+    window.AbyssAudio?.event(absorbed>=amount?'shield':'damage');
     player.hull-=Math.max(0,amount-absorbed);if(player.trip)player.trip.hullDamage+=Math.max(0,amount-absorbed);addStat('shieldAbsorbed',absorbed);checkAchievements();player.damageCooldown=.7;
     if(amount>=8) {addEvent(reason);announce(reason.toUpperCase(),2);}
-    if(player.hull<=0)defeat(reason+' destroyed the NEREID.');
+    if(player.hull<=0)defeat(reason+' destroyed the NEREID.');else persist();
   }
   function resetShield(){
     player.shield=shieldCapacity();player.shieldDelay=0;player.shieldFlashUntil=0;
@@ -1081,6 +1101,7 @@
     }
   }
   function emitSurfaceSplash(x,speed,entry){
+    window.AbyssAudio?.event(entry?'splash':'breach');
     const strength=clamp(Math.abs(speed)/450,.2,1),count=Math.round(10+strength*16);
     surfaceEffects.push({x,birth:clock,entry,strength,particles:Array.from({length:count},(_,i)=>{
       const phase=Math.sin(i*127.1+x*.01+clock*17)*.5+.5;
@@ -1102,6 +1123,7 @@
     }
   }
   function update(dt) {
+    simulationStepping=true;
     clock+=dt;
     if(!player)return;
     player.scanCooldown=Math.max(0,player.scanCooldown-dt);
@@ -1121,7 +1143,8 @@
     const maxSpeed=(quiet?THRUST.quiet*(1+saved.upgrades.engine*THRUST.perMark):normalSpeedAt(saved.upgrades.engine))*lerp(1,boostMultiplier(),boostFraction);
     const thrustPower=hasInput&&player.battery>.5?1:0;
     const divisor=Math.max(1,magnitude);
-    const desiredX=x/divisor*maxSpeed*thrustPower,desiredY=y/divisor*maxSpeed*thrustPower;
+    const water=currentAt(player.x,player.y);
+    const desiredX=x/divisor*maxSpeed*thrustPower+water.x,desiredY=y/divisor*maxSpeed*thrustPower;
     const factor=1-Math.exp(-(3.5+saved.upgrades.engine*.2)*dt);
     if(player.airborne){
       // Momentum carries the leap. Neither held steering nor boost can make the sub fly.
@@ -1199,7 +1222,8 @@
       const ty=chase?player.y:enemy.homeY+Math.cos(clock*.27+enemy.phase)*65;
       const ed=Math.hypot(tx-enemy.x,ty-enemy.y)||1;
       const es=chase?tier.speed:tier.patrolSpeed;
-      enemy.vx=lerp(enemy.vx,(tx-enemy.x)/ed*es,1-Math.exp(-dt*2));
+      const waterAtEnemy=currentAt(enemy.x,enemy.y);
+      enemy.vx=lerp(enemy.vx,(tx-enemy.x)/ed*es+waterAtEnemy.x,1-Math.exp(-dt*2));
       enemy.vy=lerp(enemy.vy,(ty-enemy.y)/ed*es,1-Math.exp(-dt*2));
       enemy.x=clamp(enemy.x+enemy.vx*dt,leftAt(enemy.y)+34,rightAt(enemy.y)-34);
       enemy.y=clamp(enemy.y+enemy.vy*dt,SURFACE.y+34,MAX_WORLD_Y-30);
@@ -1223,6 +1247,7 @@
     camera.y=lerp(camera.y,player.y-viewport.h*.52,Math.min(1,dt*3.4));
     if(clock>toastUntil)$('notification').classList.add('hidden');
     surfaceEffects=surfaceEffects.filter(effect=>clock-effect.birth<2.4);
+    surveyTimer+=dt;if(surveyTimer>=.25){surveyTimer=0;surveyVisibleWater();}
     journalTimer+=dt;if(journalTimer>=5){journalTimer=0;checkAchievements();persist();}
     uiTimer+=dt;if(uiTimer>.13){uiTimer=0;updateUI();}
   }
@@ -1247,7 +1272,7 @@
     if(ambient!==lastAmbient){canvas.parentElement.style.setProperty('--ambient-light',String(ambient));lastAmbient=ambient;}
     // Water colour also blends continuously; no sudden colour jumps between zones.
     const tint=1-ambient;
-    ctx.fillStyle=`rgb(${Math.round(lerp(9,3,tint))},${Math.round(lerp(42,17,tint))},${Math.round(lerp(57,26,tint))})`;
+    ctx.fillStyle=`rgb(${Math.round(lerp(biome().water[0],3,tint))},${Math.round(lerp(biome().water[1],17,tint))},${Math.round(lerp(biome().water[2],26,tint))})`;
     ctx.fillRect(0,0,W,H);
     const bg=ctx.createRadialGradient(W*.52,H*.38,10,W*.52,H*.55,Math.max(W,H)*.75);
     bg.addColorStop(0,'#10405766');bg.addColorStop(1,'#00101b00');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
@@ -1268,7 +1293,7 @@
       }
     }
     if(onscreen(HARBOUR.x,HARBOUR.y,410))drawStation();
-    drawTrench();drawSeabed();
+    drawTrench();drawSeabed();drawEnvironment();
     for(const particle of scene.dust)if(onscreen(particle.x,particle.y)){
       const x=particle.x+Math.sin(clock*.28+particle.phase)*17,y=particle.y+Math.cos(clock*.37+particle.phase)*7;
       ctx.beginPath();ctx.arc(x,y,particle.size,0,TAU);ctx.fillStyle='#83dfe12a';ctx.fill();
@@ -1312,6 +1337,7 @@
     // instrument echo layer: silhouettes only, never an ambient-light reset.
     applyDepthDarkness(ambient);
     drawSonarEchoes();
+    if(environmentEnabled){ctx.save();ctx.translate(-camera.x,-camera.y);for(const l of environment.landmarks)if(l.revealUntil>clock&&onscreen(l.x,l.y,200)){ctx.globalAlpha=clamp((l.revealUntil-clock)/sonarEchoSeconds(),0,.9);drawLandmark(l,true);}ctx.restore();}
     drawMouseTarget();
     drawEdgeArrows();
   }
@@ -1468,8 +1494,8 @@
   function drawRock(rock){
     ctx.save();ctx.translate(rock.x,rock.y);ctx.rotate(rock.rot);
     ctx.beginPath();for(let i=0;i<rock.spikes;i++){const a=i/rock.spikes*TAU;const radius=rock.radius*(.78+Math.sin(i*10+rock.seed*99)*.19);const x=Math.cos(a)*radius,y=Math.sin(a)*radius;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.closePath();
-    ctx.fillStyle='#102938';ctx.fill();ctx.strokeStyle='#2c576b';ctx.lineWidth=2;ctx.stroke();
-    ctx.beginPath();ctx.moveTo(-rock.radius*.55,-rock.radius*.14);ctx.lineTo(-rock.radius*.14,-rock.radius*.52);ctx.lineTo(rock.radius*.5,-rock.radius*.31);ctx.strokeStyle='#4170834a';ctx.stroke();
+    ctx.fillStyle=biome().rock;ctx.fill();ctx.strokeStyle=biome().edge;ctx.lineWidth=2;ctx.stroke();
+    ctx.beginPath();ctx.moveTo(-rock.radius*.55,-rock.radius*.14);ctx.lineTo(-rock.radius*.14,-rock.radius*.52);ctx.lineTo(rock.radius*.5,-rock.radius*.31);ctx.strokeStyle=biome().detail+'60';ctx.stroke();
     ctx.restore();
   }
   function drawWreck(w){
@@ -1723,7 +1749,7 @@
   }
   function drawEdgeArrows(){
     if(!player||!running)return;
-    const missing=scene.items.filter(i=>['recorder','recovery'].includes(i.type)&&!i.collected);
+    const missing=field.survey.waypoint?[field.survey.waypoint]:scene.items.filter(i=>['recorder','recovery'].includes(i.type)&&!i.collected);
     if(!missing.length)return;
     let target=missing[0],best=Infinity;
     for(const item of missing){const d=distance(player,item);if(d<best){target=item;best=d;}}
@@ -1767,13 +1793,13 @@
     const enemyClose=scene.predators.some(e=>e.aggression>.15&&distance(player,e)<240);
     const apexClose=scene.predators.some(e=>e.tier==='apex'&&e.aggression>.15&&distance(player,e)<300);
     const reaperClose=scene.predators.some(e=>e.tier==='reaper'&&e.aggression>.15&&distance(player,e)<360);
-    const st=depth>rating?'PRESSURE ALERT':player.oxygen<20?'LOW OXYGEN':player.battery<15?'LOW POWER':player.airborne?'SURFACE BREACH':inHarbour(player)?'DOCK SAFE ZONE':reaperClose?'REAPER CONTACT':apexClose?'APEX CONTACT':enemyClose?'PREDATOR ALERT':'NOMINAL';
-    $('statusStat').textContent=st;$('statusStat').className=(['NOMINAL','DOCK SAFE ZONE','SURFACE BREACH'].includes(st)?'status-safe':st==='PREDATOR ALERT'||st==='APEX CONTACT'||st==='REAPER CONTACT'||st==='PRESSURE ALERT'?'status-danger':'status-warning');
+    const st=depth>rating?'PRESSURE ALERT':player.hull/maxHull()<.35?'LOW HULL':player.oxygen<20?'LOW OXYGEN':player.battery<15?'LOW POWER':player.airborne?'SURFACE BREACH':inHarbour(player)?'DOCK SAFE ZONE':reaperClose?'REAPER CONTACT':apexClose?'APEX CONTACT':enemyClose?'PREDATOR ALERT':'NOMINAL';
+    $('statusStat').textContent=st;$('statusStat').className=(['NOMINAL','DOCK SAFE ZONE','SURFACE BREACH'].includes(st)?'status-safe':st==='PREDATOR ALERT'||st==='APEX CONTACT'||st==='REAPER CONTACT'||st==='PRESSURE ALERT'||st==='LOW HULL'?'status-danger':'status-warning');
     $('signalText').textContent=st==='NOMINAL'?'VESSEL ONLINE':'VESSEL WARNING';
     const setGauge=(kind,value,max)=>{const pct=clamp(value/max*100,0,100);$(kind+'Value').textContent=Math.round(pct)+'%';$(kind+'Bar').style.width=pct+'%';
       $(kind+'Tab').classList.toggle('alert',kind==='noise'?pct>75:pct<(kind==='hull'?35:kind==='oxygen'?25:20));};
     setGauge('hull',player.hull,maxHull());setGauge('oxygen',player.oxygen,maxOxygen());setGauge('battery',player.battery,maxBattery());setGauge('noise',player.noise,100);
-    $('coordsText').textContent=(LEVELS.findIndex(l=>l.id===LEVEL_ID)+1)+' / 5 · '+currentLevel().name+' · FLOOR '+currentLevel().depth+' m';
+    $('coordsText').textContent='0'+(LEVELS.findIndex(l=>l.id===LEVEL_ID)+1)+' · '+currentLevel().name;
     const sonarCooling=player.scanCooldown>0;
     $('sonarText').textContent=sonarCooling?Math.ceil(player.scanCooldown)+'s':player.battery<sonarCost()?'LOW':'READY';
     const sonarPct=sonarCooling?clamp(1-player.scanCooldown/(player.scanDuration||sonarCooldown()),0,1)*100:100;
@@ -1847,7 +1873,7 @@
     $('mobileLights').title='Flashlight Mk '+roman(saved.upgrades.flashlight)+' · '+(flashlightSpec().length/10)+' m reach';
     $('mobileLights').setAttribute('aria-label',!player.lights?'Turn flashlight on':headlightsActive()?'Turn flashlight off':'Flashlight has no battery power');
     const cruiseButton=$('mobileCruise');cruiseButton.classList.toggle('active',cruiseEnabled);cruiseButton.setAttribute('aria-pressed',String(cruiseEnabled));$('cruiseLabel').textContent=cruiseEnabled?'ON':'OFF';
-    drawRadar();
+    updateLivingHUD();drawRadar();
   }
   let focusMode=false;
   function setFocusMode(on){
@@ -1872,6 +1898,7 @@
   }
   function resumeDive(){
     if(!running)return;
+    $('pauseTitle').textContent='EXPEDITION PAUSED';window.AbyssAudio?.unlock();
     paused=false;resetPilotInput();canvas.focus({preventScroll:true});
     $('pauseOverlay').classList.add('hidden');$('menuOverlay').classList.add('hidden');
     $('notification').classList.add('hidden');syncPauseButtons();updateUI();
@@ -1880,30 +1907,32 @@
     $('saveStatus').textContent=storageHealthy?(storageRecovery?'RECOVERED CAMPAIGN BACKUP':'CAMPAIGN SAVED ON THIS DEVICE'):'STORAGE UNAVAILABLE · PROGRESS WILL NOT BE SAVED';
     $('saveStatus').classList.toggle('save-warning',!storageHealthy||storageRecovery);
     window.dispatchEvent(new Event('abyss-menu'));
-    checkAchievements(true);$('menuHubBtn').disabled=running;
-    $('startBtn').innerHTML=running?'CONTINUE EXPEDITION <span>→</span>':'BEGIN EXPEDITION <span>→</span>';
-    $('menuHubBtn').title=running?'Bank or quit the active dive before opening the hub.':'Choose a level and refit at the hub.';
+    checkAchievements(true);$('menuHubBtn').disabled=running||Boolean(loadedActive);
+    $('startBtn').innerHTML=running||loadedActive?'CONTINUE EXPEDITION <span>→</span>':'BEGIN EXPEDITION <span>→</span>';
+    $('menuHubBtn').title=running||loadedActive?'Bank or quit the active dive before opening the hub.':'Choose a level and refit at the hub.';
     const existing=saved.bestDepth>0||saved.credits>0||saved.xp>0||saved.secured.length>0||Object.entries(saved.upgrades).some(([id,v])=>v>(defaults().upgrades[id]??0));
-    $('menuProgress').textContent=running?'DIVE SUSPENDED · '+depthOf(player.y)+'m · '+player.cargo.recorders.length+' RECORDER(S) ABOARD':
+    $('menuProgress').textContent=loadedActive?'SAVED DIVE · '+depthOf(loadedActive.player.y)+'m · CONTINUE TO RESTORE PAUSED':running?'DIVE SUSPENDED · '+depthOf(player.y)+'m · '+player.cargo.recorders.length+' RECORDER(S) ABOARD':
       existing?'CAMPAIGN · '+totalRecorders()+'/20 RECORDERS · '+saved.crystals+' CRYSTALS · '+currentLevel().name:'NEW CAPTAIN · LEVEL 1 / SUNBREAK SHELF';
   }
   function returnToMenu(preserveDive){
     closeUpgradeDetails(false);
     resetPilotInput();
     $('modalOverlay').classList.add('hidden');$('pauseOverlay').classList.add('hidden');
-    if(!preserveDive) {stashCargo();running=false;paused=false;checkAchievements();persist();}
-    else paused=true;
+    if(!preserveDive) {loadedActive=null;stashCargo();running=false;paused=false;checkAchievements();persist();}
+    else {paused=true;persist();}
     syncPauseButtons();updateMainMenu();
     $('menuOverlay').classList.remove('hidden');updateUI();
   }
   function showPause(){
     if(!running||!$('menuOverlay').classList.contains('hidden'))return;
-    paused=true;resetPilotInput();
+    $('pauseTitle').textContent='EXPEDITION PAUSED';
+    paused=true;resetPilotInput();persist();window.AbyssAudio?.suspend();
     $('pauseStats').textContent='DEPTH '+depthOf(player.y)+'m  ·  HULL '+Math.round(player.hull/maxHull()*100)+'%  ·  RECORDERS '+player.cargo.recorders.length+' ABOARD';
     $('pauseOverlay').classList.remove('hidden');
     $('notification').classList.add('hidden');syncPauseButtons();updateUI();
   }
   function togglePause(){
+    if(document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open]'))return;
     if(!$('modalOverlay').classList.contains('hidden')){closeDialog();return;}
     if(!running||!$('menuOverlay').classList.contains('hidden'))return;
     if(paused)resumeDive();else showPause();
@@ -1921,7 +1950,7 @@
       '<div class="dialog-actions"><button id="cancelNewGameBtn" class="alt-btn">KEEP PROGRESS</button><button id="confirmNewGameBtn" class="danger-btn">START FRESH</button></div>');
     $('cancelNewGameBtn').addEventListener('click',closeDialog);
     $('confirmNewGameBtn').addEventListener('click',()=>{
-      closeAchievements();running=false;saved=defaults();field=freshField();campaignLevels={};LEVEL_ID=LEVELS[0].id;campaignLevels[LEVEL_ID]=field;applyLevelGeometry();
+      closeExplorationDialogs();closeAchievements();loadedActive=null;running=false;saved=defaults();field=freshField();campaignLevels={};LEVEL_ID=LEVELS[0].id;campaignLevels[LEVEL_ID]=field;applyLevelGeometry();
       campaignId='campaign-'+Date.now().toString(36)+'-'+field.seed.toString(36);storageRecovery=false;migratedLegacy=false;
       try{for(const key of [CAMPAIGN_KEY,CAMPAIGN_KEY+'.backup',LEGACY_CAMPAIGN_KEY,LEGACY_CAMPAIGN_KEY+'.backup',SAVE_KEY,FIELD_KEY])localStorage.removeItem(key);}catch(_){}
       $('achievementToast').classList.add('hidden');beamTexture=buildBeamTexture();launchDive();
@@ -1951,8 +1980,9 @@
       <li><strong>Exploration:</strong> mobile sees 43% farther in each direction; PC zoom is unchanged. The trench is three times wider, with more obstacles and hunters but fewer salvage pieces and much rarer crystals. The three clear navigation lanes keep descent routes open.</li>
       <li><strong>Flashlight Mk I–IV:</strong> the standard Mk I lamp reaches 26 m. Dock upgrades extend this to 36 / 48 / 62 m and widen the beam. The lamp draws power slowly only while on; battery upgrades improve efficiency. Switch it off with <kbd>L</kbd> / LIGHTS to conserve energy.</li>
       <li><strong>Adaptive ship systems:</strong> the Salvage Magnet extends USE / hold E for visible scrap and crystals, including predator drops, at a small power cost. It cannot recover through rocks or fetch distant recorders/caches. The Kinetic Shield absorbs bites and rock impacts, but not pressure or oxygen loss; recharge starts after 8 seconds without impacts, uses battery power and pauses during boost. The Sonic Disruptor adds a short stun to nearby predators on sonar-wave arrival, with shorter stuns for stronger tiers. Low battery falls back to a normal scan.</li>
-      <li><strong>Persistent campaign resources:</strong> salvage and crystals are placed once for this campaign level. Collected deposits never return, even after docking or reloading. Scrap and crystal deposits each yield 2 units. Across five fresh levels, fixed resources provide 15,192 credits worth of scrap and 496 crystals. Scrap banks at 18 credits per unit; crystals stay a separate currency. All paid ship upgrades cost both. If an optional purchase would consume the last crystals needed for the current recorder gate, the shop reserves them for the hull instead. Predators drop 2 / 4 / 8 scrap when destroyed; collect and dock to bank it. Predators and supply caches refresh on a genuine return to dock after departure. Drops persist until collected. Secured recorders never respawn. Lost, quit or interrupted dives leave recoverable scrap and crystal pods; undelivered recorders return to their wrecks. Active ship position is not reload-persistent. Twenty achievements are available from the main and pause menus. New Game resets all five levels and achievements.</li>
-      <li><kbd>Esc</kbd> / <strong>PAUSE</strong> freezes the dive. MENU suspends it for this session; QUIT loses unbanked cargo. NEW GAME asks before erasing saved progress. Refreshing the page does not preserve an active dive.</li>
+      <li><strong>Persistent campaign resources:</strong> salvage and crystals are placed once for this campaign level. Collected deposits never return, even after docking or reloading. Scrap and crystal deposits each yield 2 units. Across five fresh levels, fixed resources provide 15,192 credits worth of scrap and 496 crystals. Scrap banks at 18 credits per unit; crystals stay a separate currency. All paid ship upgrades cost both. If an optional purchase would consume the last crystals needed for the current recorder gate, the shop reserves them for the hull instead. Predators drop 2 / 4 / 8 scrap when destroyed; collect and dock to bank it. Predators and supply caches refresh on a genuine return to dock after departure. Drops persist until collected. Secured recorders never respawn. Lost, quit or interrupted dives leave recoverable scrap and crystal pods; undelivered recorders return to their wrecks. Active dives now autosave every five simulation seconds and after important actions. Continue restores the ship, cargo, enemies, mines and timers paused. Explicit QUIT or defeat still creates a recovery pod. Twenty achievements are available from the main and pause menus. New Game resets all five levels and achievements.</li>
+      <li><strong>Living Depths:</strong> each level has its own seeded scenery, landmark silhouettes and visible current bands. The harbour and central route are sheltered. All scenery respects total darkness. Press <kbd>M</kbd> or the map icon for a paused, permanent survey chart; drag to pan, pinch or use +/− to zoom, and tap surveyed water to set a waypoint. Resources are charted only after discovery and predator contacts expire. The sliders icon opens detailed vessel telemetry. Sound settings are in the main and pause menus.</li>
+      <li><kbd>Esc</kbd> / <strong>PAUSE</strong> freezes the dive. MENU saves it across sessions; QUIT abandons the dive and leaves a recovery pod. NEW GAME asks before erasing saved progress. Reloading preserves the last successful active-dive snapshot. Continue restores paused; the ocean does not advance while you are away. Clearing browser data still removes local saves.</li>
     </ul></div>`;
     openDialog('OPERATIONS MANUAL // NEREID','PILOT BRIEFING',body,'<div class="dialog-actions"><button id="briefDone" class="alt-btn">UNDERSTOOD</button></div>');
     $('briefDone').addEventListener('click',closeDialog);
@@ -1972,22 +2002,22 @@
     document.body.classList.toggle('desktop-ui',!touchControls);
   }
   function bind() {
-    syncInputMode();
+    syncInputMode();bindLivingUI();
     const cockpitObserver=new ResizeObserver(syncCockpitLayout);
     for(const node of [canvas.parentElement,...document.querySelectorAll('.cockpit-hud,.mobile-controls,.desktop-keybinds')])cockpitObserver.observe(node);
     primaryPointer.addEventListener('change',()=>{resetPilotInput();syncInputMode();resize();syncCockpitLayout();updateUI();});
     $('menuAchievementsBtn').addEventListener('click',showAchievements);$('pauseAchievementsBtn').addEventListener('click',showAchievements);
     $('achievementClose').addEventListener('click',closeAchievements);$('achievementsDialog').addEventListener('cancel',e=>{e.preventDefault();closeAchievements();});
-    $('menuHubBtn').addEventListener('click',()=>{if(running)return;launchDive();showDock('expeditions');});
+    $('menuHubBtn').addEventListener('click',()=>{if(running||loadedActive)return;launchDive();showDock('expeditions');});
     $('startBtn').addEventListener('click',()=>{
-      if(running)resumeDive();else launchDive();
+      if(running)resumeDive();else if(loadedActive)restoreActiveDive();else launchDive();
     });
     $('newGameBtn').addEventListener('click',newGameConfirmation);
     $('resumeBtn').addEventListener('click',resumeDive);
     $('pauseMenuBtn').addEventListener('click',()=>returnToMenu(true));
     $('quitBtn').addEventListener('click',quitDiveConfirmation);
-    $('focusToggleBtn').addEventListener('click',toggleFocusMode);
-    $('focusHelpBtn').addEventListener('click',briefing);
+    $('focusToggleBtn').addEventListener('click',()=>{closeExplorerDialog('telemetryDialog');toggleFocusMode();});
+    $('focusHelpBtn').addEventListener('click',()=>{closeExplorerDialog('telemetryDialog');briefing();});
     $('focusPauseBtn').addEventListener('click',togglePause);
     document.addEventListener('fullscreenchange',()=>{resize();});
     $('helpBtn').addEventListener('click',briefing);$('instructionsBtn').addEventListener('click',briefing);
@@ -2001,6 +2031,7 @@
     $('pauseBtn').addEventListener('click',togglePause);
     $('dockBtn').addEventListener('click',()=>{if(running&&!paused&&nearestInteractable()?.type==='station')depositAndDock();});
     window.addEventListener('keydown',e=>{
+      if($('surveyDialog').open||$('audioDialog').open||$('telemetryDialog').open)return;
       if($('achievementsDialog').open)return;
       const k=e.key.toLowerCase();
       if($('upgradeDialog').open){if(k==='escape'){e.preventDefault();closeUpgradeDetails();}return;}
@@ -2010,6 +2041,7 @@
         return;
       }
       if(e.target instanceof Element&&e.target.closest('input,textarea,select,[contenteditable="true"]'))return;
+      if(k==='m'&&running&&!e.repeat){e.preventDefault();openSurvey();return;}
       if(k==='escape'){if(!e.repeat)togglePause();return;}
       if(!running||paused)return;
       if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();
@@ -2018,9 +2050,9 @@
       if(k==='q')scan();else if(k==='e')interact();else if(k==='r')repair();else if(k==='l')toggleLights();else if(k==='f')deployMine();
     });
     window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-    window.addEventListener('blur',resetPilotInput);
-    document.addEventListener('visibilitychange',()=>{if(document.hidden){resetPilotInput();checkAchievements();persist();}});
-    window.addEventListener('pagehide',()=>{checkAchievements();persist();});
+    window.addEventListener('blur',backgroundPause);
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)backgroundPause();});
+    window.addEventListener('pagehide',backgroundPause);
     canvas.addEventListener('pointerdown',e=>{
       if(e.pointerType==='touch'||e.button!==0||mouseHelm.pointerId!==null||!running||paused)return;
       e.preventDefault();resetJoystick(true);canvas.focus({preventScroll:true});
@@ -2143,12 +2175,423 @@
     });
     window.addEventListener('appinstalled',()=>{installPrompt=null;installButton.classList.add('hidden');});
   }
+  // === Living Depths / atomic active-expedition snapshots ===
+  function validateActiveDive(value){
+    if(!value||value.schema!==1||!LEVELS.some(l=>l.id===value.levelId)||!Number.isInteger(value.seed)||!Number.isInteger(value.cycle)||!Number.isFinite(value.clock)||value.clock<0)return null;
+    const p=value.player,l=LEVELS.find(l=>l.id===value.levelId),bottom=120+l.depth*10;
+    const finite=keys=>keys.every(k=>Number.isFinite(p?.[k]));
+    if(!finite(['x','y','vx','vy','facing','hull','oxygen','battery','boost','mineAmmo'])||p.hull<=0||p.x<-1400||p.x>2600||p.y<-2000||p.y>bottom+10)return null;
+    if(!p.cargo||!['scrap','crystal'].every(k=>Number.isInteger(p.cargo[k])&&p.cargo[k]>=0)||!Array.isArray(p.cargo.recorders)||!p.cargo.recorders.every(i=>Number.isInteger(i)&&i>=0&&i<l.recorders.length))return null;
+    for(const key of ['items','predators','mines','blasts','waves','echoes','terrain'])if(!Array.isArray(value[key])||value[key].length>6000)return null;
+    const point=o=>o&&Number.isFinite(o.x)&&Number.isFinite(o.y)&&Math.abs(o.x)<5000&&Math.abs(o.y)<20000;
+    if(!value.items.every(o=>point(o)&&['scrap','crystal','recorder','recovery','air'].includes(o.type)))return null;
+    if(!value.predators.every(o=>point(o)&&Number.isFinite(o.health)&&PREDATOR_TIERS[o.tier]))return null;
+    if(!value.mines.every(o=>point(o)&&Number.isFinite(o.armedAt)&&Number.isFinite(o.damage)&&o.damage>=0))return null;
+    if(!value.waves.every(o=>point(o)&&Number.isFinite(o.birth)&&Number.isFinite(o.radius)&&Array.isArray(o.contacts)))return null;
+    return value;
+  }
+  function captureActiveDive(){
+    // Only JSON-safe scalar state crosses the storage boundary. Sonar references
+    // become stable collection indices, then are rebound after world generation.
+    const waves=sonarWaves.map(({contacts,...wave})=>({...wave,contacts:contacts.map(c=>({kind:c.kind,hit:c.hit,previousDistance:c.previousDistance,
+      index:scene[c.kind]?.indexOf(c.object)??-1,object:['wall','floor'].includes(c.kind)?c.object:null}))}));
+    const terrain=[];for(const kind of ['rocks','wrecks','vents','landmarks'])(scene[kind]||[]).forEach((o,i)=>{if(o.revealUntil>clock)terrain.push({kind,i,revealUntil:o.revealUntil,echoDuration:o.echoDuration});});
+    return {schema:1,build:BUILD.version,levelId:LEVEL_ID,seed:field.seed,cycle:field.cycle,clock,idCounter,dockVisitActive,
+      player:{...player},items:scene.items,predators:scene.predators,mines:scene.mines,blasts:scene.blasts,waves,echoes:sonarTerrainEchoes,terrain,
+      events:eventLines.slice(0,3),threatContacts:surveyThreats,surfaceEffects};
+  }
+  function restoreActiveDive(){
+    const snapshot=loadedActive;if(!snapshot)return false;
+    buildingWorld=true;running=false;
+    LEVEL_ID=snapshot.levelId;field=campaignLevels[LEVEL_ID];applyLevelGeometry();createWorld();
+    clock=snapshot.clock;idCounter=Math.max(cleanCount(snapshot.idCounter),scene.items.length+1);
+    player=JSON.parse(JSON.stringify(snapshot.player));player.trip=player.trip||{deepest:depthOf(player.y),hullDamage:0};
+    scene.items=JSON.parse(JSON.stringify(snapshot.items));scene.predators=JSON.parse(JSON.stringify(snapshot.predators));
+    scene.mines=JSON.parse(JSON.stringify(snapshot.mines)).filter(m=>!m.detonated);scene.blasts=JSON.parse(JSON.stringify(snapshot.blasts));
+    for(const t of snapshot.terrain){const o=scene[t.kind]?.[t.i];if(o){o.revealUntil=t.revealUntil;o.echoDuration=t.echoDuration;}}
+    sonarTerrainEchoes=JSON.parse(JSON.stringify(snapshot.echoes));
+    sonarWaves=snapshot.waves.map(w=>({...w,contacts:w.contacts.map(c=>({...c,object:['wall','floor'].includes(c.kind)?c.object:scene[c.kind]?.[c.index]})).filter(c=>c.object)}));
+    surfaceEffects=Array.isArray(snapshot.surfaceEffects)?snapshot.surfaceEffects:[];
+    surveyThreats=Array.isArray(snapshot.threatContacts)?snapshot.threatContacts.filter(c=>Number.isFinite(c.until)&&c.until>clock):[];
+    dockVisitActive=snapshot.dockVisitActive===true;eventLines=Array.isArray(snapshot.events)?snapshot.events.slice(0,3):[];
+    loadedActive=null;buildingWorld=false;running=true;paused=true;showingDock=false;
+    resetPilotInput();pointerSilent=Boolean(player.quiet);player.boosting=false;
+    camera={x:player.x-viewport.w/2,y:player.y-viewport.h*.52};
+    ['menuOverlay','modalOverlay'].forEach(id=>$(id).classList.add('hidden'));
+    enterMobileCockpit();showPause();$('pauseTitle').textContent='EXPEDITION RESTORED';
+    addEvent('Dive restored safely paused · no elapsed-time simulation');persist();updateUI();render();return true;
+  }
+  function advanceSimulation(dt){
+    try{update(dt);}finally{
+      simulationStepping=false;
+      if(saveRequested){saveRequested=false;persist();}
+    }
+  }
+  function backgroundPause(){
+    resetPilotInput();
+    const explorerOpen=document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open]');
+    if(explorerOpen){explorerReturnPause=true;if(running&&$('menuOverlay').classList.contains('hidden'))showPause();}
+    if(running&&!paused&&$('menuOverlay').classList.contains('hidden'))showPause();
+    else if(running)paused=true;
+    checkAchievements();persist();window.AbyssAudio?.suspend();
+  }
+
+  // === Seeded environments, independent of resource / collision generation ===
+  const BIOMES=[
+    {water:[12,58,64],rock:'#193f43',edge:'#56847b',detail:'#84bb9a',accent:'#97e4ba',name:'SUNBREAK SHELF',current:12,landmarks:['CORAL CROWN','THE OLD ANCHOR','SHELF OBSERVATORY']},
+    {water:[14,39,55],rock:'#223747',edge:'#7392a8',detail:'#c4d8e5',accent:'#b8d6ef',name:'GLASSBONE RIFT',current:20,landmarks:['GLASS GATE','FRACTURE SPIRE','WHITE SKELETON']},
+    {water:[10,42,39],rock:'#173b36',edge:'#42695a',detail:'#7dba7c',accent:'#92c1a1',name:'DROWNED GARDENS',current:28,landmarks:['ROOT CATHEDRAL','LOST CONSERVATORY','GARDEN SENTINEL']},
+    {water:[23,28,45],rock:'#2a2c40',edge:'#65637f',detail:'#a5a4ba',accent:'#c1b3df',name:'MIDNIGHT CATHEDRAL',current:36,landmarks:['THE NAVE','SILENT BELFRY','SUBMERGED ARCHIVE']},
+    {water:[29,26,32],rock:'#302b32',edge:'#6c555b',detail:'#a57364',accent:'#d59a7e',name:'CALYPSO ABYSS',current:44,landmarks:['OBSIDIAN GATE','THE FAULT LINE','CALYPSO ARRAY']}
+  ];
+  let environment={decor:[],landmarks:[],currents:[]},environmentEnabled=true;
+  const biome=()=>BIOMES[Math.max(0,LEVELS.findIndex(l=>l.id===LEVEL_ID))];
+  function buildEnvironment(){
+    environmentEnabled=true;
+    const index=LEVELS.findIndex(l=>l.id===LEVEL_ID),r=randGen((field.seed^0x4ad81407)>>>0);
+    environment={decor:[],landmarks:[],currents:[]};
+    for(const [i,rock] of scene.rocks.entries()){
+      if(r()>.68)continue;
+      environment.decor.push({x:rock.x,y:rock.y-rock.radius*.25,size:rock.radius*(.55+r()*.9),phase:r()*TAU,variant:i%4,index});
+    }
+    for(let n=0;n<3;n++){
+      const y=520+(MAX_WORLD_Y-900)*(.2+n*.3),x=laneAt(y,n%2?2:0);
+      environment.landmarks.push({id:'landmark-'+n,x,y,size:95+n*16,name:biome().landmarks[n],index,variant:n,revealUntil:0});
+    }
+    scene.landmarks=environment.landmarks;
+    const count=[3,5,8,11,14][index];
+    for(let i=0;i<count;i++){
+      const y=850+(i+.5)/count*(MAX_WORLD_Y-1250),lane=i%2?0:2;
+      environment.currents.push({x:laneAt(y,lane),y,rx:190+r()*65,ry:170+r()*95,dir:i%2?-1:1,phase:r()*TAU,strength:biome().current});
+    }
+  }
+  function currentAt(x,y,time=clock){
+    if(!environmentEnabled||y<SURFACE.y+400||y>MAX_WORLD_Y-140||Math.hypot(x-HARBOUR.x,y-HARBOUR.y)<HARBOUR.exclusionRadius+90)return {x:0,y:0,strength:0};
+    // A quiet central route and the harbour remain sheltered. Even the strongest
+    // current is weaker than an unmodified quiet-running engine (68 units/s).
+    if(Math.abs(x-laneAt(y,1))<100||x<leftAt(y)+100||x>rightAt(y)-100)return {x:0,y:0,strength:0};
+    let force=0;
+    for(const c of environment.currents){const d=((x-c.x)/c.rx)**2+((y-c.y)/c.ry)**2;if(d<1)force+=c.dir*c.strength*(1-d)*(.74+.26*Math.sin(time*.6+c.phase));}
+    force=clamp(force,-biome().current,biome().current);
+    if(Math.abs(force)>1&&scene.rocks.some(r=>Math.abs(r.x-x)<r.radius+58&&Math.abs(r.y-y)<r.radius+58))force*=.2;
+    return {x:force,y:0,strength:Math.abs(force)};
+  }
+  function drawEnvironment(){
+    if(!environmentEnabled)return;
+    const b=biome(),index=LEVELS.findIndex(l=>l.id===LEVEL_ID);
+    ctx.save();
+    for(const c of environment.currents)if(onscreen(c.x,c.y,c.ry+30)){
+      for(let k=0;k<15;k++){
+        const phase=(clock*(.22+c.strength*.007)+k*.73+c.phase)%1;
+        const x=c.x-c.dir*c.rx+c.dir*phase*c.rx*2,y=c.y+Math.sin(k*2.4+c.phase)*c.ry*.78;
+        ctx.strokeStyle=b.accent+'42';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-c.dir*(6+c.strength*.18),y+1);ctx.stroke();
+      }
+    }
+    for(const d of environment.decor){
+      if(!onscreen(d.x,d.y,d.size*2))continue;
+      ctx.save();ctx.translate(d.x,d.y);const size=d.size,sway=Math.sin(clock*.65+d.phase)*size*.1;
+      if(index===0){
+        // Seagrass and branching coral, rooted in existing rock rather than new colliders.
+        ctx.strokeStyle=d.variant%2?'#659d83':'#b38476';ctx.lineWidth=2;ctx.globalAlpha=.75;
+        for(let k=-2;k<=2;k++){
+          ctx.beginPath();ctx.moveTo(k*4,8);ctx.quadraticCurveTo(k*6+sway,-size*.45,k*12+sway,-size*(.5+(k+2)*.08));ctx.stroke();
+          if(d.variant%2===0){ctx.beginPath();ctx.moveTo(k*6+sway*.6,-size*.3);ctx.lineTo(k*10+10,-size*.52);ctx.stroke();}
+        }
+        if(d.variant===1){for(let k=0;k<4;k++){const x=Math.sin(clock*.23+d.phase)*size+k*14,y=-size*.7+Math.sin(clock+k)*4;ctx.fillStyle='#8dcbbe8a';ctx.beginPath();ctx.ellipse(x,y,5,2,0,0,TAU);ctx.fill();ctx.beginPath();ctx.moveTo(x-4,y);ctx.lineTo(x-8,y-3);ctx.lineTo(x-8,y+3);ctx.fill();}}
+      }else if(index===1){
+        for(let k=-1;k<=1;k++){const h=size*(.8+Math.abs(Math.sin(d.phase+k))*.8),x=k*size*.23;
+          ctx.fillStyle='#9eb9cc22';ctx.strokeStyle='#b4cbdc8a';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x-9,9);ctx.lineTo(x-6,-h*.7);ctx.lineTo(x+2,-h);ctx.lineTo(x+10,-h*.55);ctx.lineTo(x+9,9);ctx.closePath();ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(x+2,-h);ctx.lineTo(x+1,8);ctx.stroke();}
+      }else if(index===2){
+        for(let k=-1;k<=1;k++){
+          const h=size*(1.5+Math.abs(Math.sin(d.phase+k))),x=k*13;
+          ctx.strokeStyle='#4b836d99';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,12);ctx.bezierCurveTo(x+sway,-h*.3,x-sway,-h*.7,x+sway,-h);ctx.stroke();
+          for(let j=1;j<6;j++){const y=-h*j/6,lean=Math.sin(clock*.5+j+d.phase)*8;ctx.fillStyle=j%2?'#64935b77':'#336b5966';ctx.beginPath();ctx.ellipse(x+lean+(j%2?8:-8),y,14,4,j%2?-.5:.5,0,TAU);ctx.fill();}
+        }
+      }else if(index===3){
+        const h=size*(1+d.variant*.2);ctx.fillStyle='#53546633';ctx.strokeStyle='#77768b77';ctx.lineWidth=1.2;
+        ctx.beginPath();ctx.moveTo(-12,12);ctx.lineTo(-9,-h);ctx.lineTo(7,-h-8);ctx.lineTo(12,12);ctx.closePath();ctx.fill();ctx.stroke();
+        ctx.beginPath();ctx.moveTo(-4,9);ctx.lineTo(-4,-h+12);ctx.moveTo(4,7);ctx.lineTo(4,-h+8);ctx.stroke();
+        ctx.fillStyle='#89829355';ctx.fillRect(-14,-h-4,29,7);
+      }else{
+        for(let k=-1;k<=1;k++){
+          const h=size*(.7+Math.abs(Math.sin(d.phase+k))*.6),x=k*size*.22;ctx.fillStyle='#343039';ctx.strokeStyle='#735852';ctx.lineWidth=1;
+          ctx.beginPath();ctx.moveTo(x-12,12);ctx.lineTo(x-9,-h);ctx.lineTo(x+7,-h-6);ctx.lineTo(x+12,12);ctx.closePath();ctx.fill();ctx.stroke();
+          ctx.strokeStyle='#ad75505a';ctx.beginPath();ctx.moveTo(x,-h*.7);ctx.lineTo(x+4,-h*.4);ctx.lineTo(x-3,0);ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+    for(const landmark of environment.landmarks)if(onscreen(landmark.x,landmark.y,220))drawLandmark(landmark);
+    ctx.restore();
+  }
+  function drawLandmark(l,echo=false){
+    const b=biome(),s=l.size;
+    ctx.save();ctx.translate(l.x,l.y);ctx.lineWidth=echo?1.7:3;
+    ctx.strokeStyle=echo?'#91e6cf':b.edge;ctx.fillStyle=b.rock;ctx.globalAlpha*=echo?1:.75;
+    if(l.index===0){
+      ctx.beginPath();ctx.moveTo(-s,-20);ctx.quadraticCurveTo(0,-s*.7,s,-20);ctx.lineTo(s*.8,0);ctx.quadraticCurveTo(0,-s*.45,-s*.8,0);ctx.closePath();if(!echo)ctx.fill();ctx.stroke();
+      for(let j=-2;j<=2;j++){ctx.beginPath();ctx.moveTo(j*s*.3,-20);ctx.lineTo(j*s*.38,-s*.65);ctx.stroke();}
+    }else if(l.index===1||l.index===3){
+      for(const k of [-1,1]){ctx.beginPath();ctx.rect(k*s*.7-14,-s*.4,28,s*.9);if(!echo)ctx.fill();ctx.stroke();}
+      ctx.beginPath();ctx.moveTo(-s*.7,-s*.4);ctx.quadraticCurveTo(0,-s*1.5,s*.7,-s*.4);ctx.moveTo(-s*.52,-s*.4);ctx.quadraticCurveTo(0,-s*1.14,s*.52,-s*.4);ctx.stroke();
+      if(l.index===1){ctx.beginPath();ctx.moveTo(-s*.35,-s*.8);ctx.lineTo(-s*.1,-s*.53);ctx.lineTo(s*.18,-s*.9);ctx.stroke();}
+    }else if(l.index===2){
+      ctx.beginPath();ctx.ellipse(0,0,s*.8,s*.35,0,0,TAU);if(!echo)ctx.fill();ctx.stroke();
+      for(let k=-2;k<=2;k++){ctx.beginPath();ctx.moveTo(k*s*.28,s*.1);ctx.bezierCurveTo(k*s*.2,-s*.4,k*s*.7,-s*.7,k*s*.32,-s*1.2);ctx.stroke();}
+    }else{
+      for(let k=-2;k<=2;k++){const h=s*(.5+Math.abs(Math.sin(k+field.seed))*.7),x=k*s*.31;ctx.beginPath();ctx.moveTo(x-16,s*.4);ctx.lineTo(x-13,-h);ctx.lineTo(x+13,-h-10);ctx.lineTo(x+17,s*.4);ctx.closePath();if(!echo)ctx.fill();ctx.stroke();}
+    }
+    ctx.restore();
+  }
+
+  // === Persistent, partial survey chart; no remote omniscient loot or enemies ===
+  let surveyCells=new Set(),surveyThreats=[],surveyTimer=0,sonarSurveyTimer=0;
+  let explorerReturnPause=false,explorerReturnFocus=null;
+  const mapView={x:600,y:700,scale:.18,w:600,h:480,drag:null,pointers:new Map(),pinch:null};
+  const surveyKey=(x,y)=>Math.floor((x-SURVEY.left)/SURVEY.cell)+':'+Math.floor((y-SURFACE.y)/SURVEY.cell);
+  function hydrateSurvey(){
+    field.survey=normaliseSurvey(field.survey);surveyCells=new Set(field.survey.cells);surveyThreats=[];surveyTimer=0;
+    field.survey.contacts.station={x:HARBOUR.x,y:HARBOUR.y,type:'station',label:'NEREID HARBOUR',collected:false};
+  }
+  function markSurveyCell(x,y){
+    if(y<SURFACE.y||y>MAX_WORLD_Y||x<leftAt(y)-50||x>rightAt(y)+50)return;
+    const key=surveyKey(x,y);if(!surveyCells.has(key)){surveyCells.add(key);field.survey.cells.push(key);}
+  }
+  function chartArea(x,y,radius,predicate=null){
+    const size=SURVEY.cell;
+    for(let cy=Math.max(0,Math.floor((y-radius-SURFACE.y)/size));cy<=Math.floor((Math.min(MAX_WORLD_Y,y+radius)-SURFACE.y)/size);cy++){
+      for(let cx=Math.max(0,Math.floor((x-radius-SURVEY.left)/size));cx<=Math.floor((x+radius-SURVEY.left)/size);cx++){
+        const px=SURVEY.left+(cx+.5)*size,py=SURFACE.y+(cy+.5)*size;
+        if(Math.hypot(px-x,py-y)<=radius&&(!predicate||predicate(px,py)))markSurveyCell(px,py);
+      }
+    }
+  }
+  function rememberSurveyObject(kind,object){
+    if(kind==='predators'){
+      if(!predatorAlive(object))return;
+      const id=object.id??('contact-'+Math.round(object.homeX)+'-'+Math.round(object.homeY));
+      surveyThreats=surveyThreats.filter(c=>c.id!==id&&c.until>clock);
+      surveyThreats.push({id,x:object.x,y:object.y,tier:object.tier,until:clock+SURVEY.contactLife});return;
+    }
+    if(!['items','wrecks','landmarks'].includes(kind))return;
+    const type=kind==='items'?object.type:kind==='wrecks'?'wreck':'landmark';
+    const id=kind+':'+(object.id??object.index);
+    field.survey.contacts[id]={x:object.x,y:object.y,type,label:kind==='landmarks'?object.name:type==='recorder'?'RECORDER '+(object.index+1):type==='recovery'?'RECOVERY POD':type.toUpperCase(),collected:Boolean(object.collected)};
+  }
+  function surveyVisibleWater(){
+    if(!player||!field.survey)return;
+    const ambient=ambientLightAt(player.y),radius=ambient>.08?100+ambient*95:0;
+    // The vessel always knows its own approximate grid square. Scenery beyond it
+    // is charted only by actual local visibility or a passing sonar wave.
+    markSurveyCell(player.x,Math.max(SURFACE.y,player.y));
+    if(radius)chartArea(player.x,player.y,radius);
+    if(headlightsActive())chartArea(player.x,player.y,flashlightSpec().length,(x,y)=>beamIntersects(x,y,0));
+    for(const kind of ['items','predators','wrecks','landmarks'])for(const object of (scene[kind]||[])){
+      if(object.collected||object.dead)continue;
+      const d=distance(player,object);
+      const inBeam=headlightsActive()&&beamIntersects(object.x,object.y,0);
+      if(d<radius||inBeam||object.revealUntil>clock)rememberSurveyObject(kind,object);
+    }
+    surveyThreats=surveyThreats.filter(c=>c.until>clock);
+  }
+  function surveySonarWave(wave,previous){
+    const front=wave.front;
+    // Terrain is logged on arrival, not when the scan button is pressed.
+    chartArea(wave.x,wave.y,front,(x,y)=>Math.hypot(x-wave.x,y-wave.y)>=Math.max(0,previous-SURVEY.cell));
+  }
+  function openExplorerDialog(id){
+    if(document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open]'))return false;
+    explorerReturnPause=paused;explorerReturnFocus=document.activeElement;
+    paused=true;resetPilotInput();persist();window.AbyssAudio?.suspend();
+    $(id).showModal();syncPauseButtons();return true;
+  }
+  function closeExplorerDialog(id){
+    if(!$(id).open)return;
+    $(id).close();mapView.drag=null;mapView.pointers.clear();mapView.pinch=null;
+    paused=explorerReturnPause;syncPauseButtons();
+    if(explorerReturnFocus?.isConnected)explorerReturnFocus.focus({preventScroll:true});
+    if(running&&!paused)window.AbyssAudio?.unlock();
+    updateUI();persist();
+  }
+  function closeExplorationDialogs(){
+    for(const id of ['surveyDialog','audioDialog','telemetryDialog'])if($(id)?.open)$(id).close();
+    mapView.pointers.clear();mapView.drag=null;mapView.pinch=null;
+  }
+  function openSurvey(){
+    if(!running||$('upgradeDialog').open||$('achievementsDialog').open)return;
+    if(!openExplorerDialog('surveyDialog'))return;
+    mapView.x=player.x;mapView.y=Math.max(100,player.y);mapView.scale=Math.min(.45,Math.max(.12,window.innerWidth/2100));
+    $('surveyTitle').textContent=currentLevel().name;
+    $('surveySummary').textContent='LEVEL '+(LEVELS.findIndex(l=>l.id===LEVEL_ID)+1)+' / 5 · '+currentLevel().depth.toLocaleString('en-GB')+' m SEABED · '+saved.secured.length+'/'+RECORDERS_TOTAL+' RECORDERS BANKED';
+    $('mapMessage').textContent='Drag to pan. Tap surveyed water to pin a waypoint. Unknown regions stay hidden.';
+    sizeSurvey();$('surveyClose').focus({preventScroll:true});
+  }
+  function sizeSurvey(){
+    if(!$('surveyDialog').open)return;
+    const c=$('surveyCanvas'),rect=c.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);
+    mapView.w=Math.max(1,rect.width);mapView.h=Math.max(1,rect.height);c.width=Math.round(mapView.w*dpr);c.height=Math.round(mapView.h*dpr);
+    clampMap();drawSurvey();
+  }
+  const chartPoint=(x,y)=>({x:(x-mapView.x)*mapView.scale+mapView.w/2,y:(y-mapView.y)*mapView.scale+mapView.h/2});
+  const chartWorld=(x,y)=>({x:(x-mapView.w/2)/mapView.scale+mapView.x,y:(y-mapView.h/2)/mapView.scale+mapView.y});
+  function clampMap(){
+    mapView.scale=clamp(mapView.scale,.018,1.2);
+    mapView.x=clamp(mapView.x,SURVEY.left,SURVEY.right);
+    const half=mapView.h/(2*mapView.scale),margin=30/mapView.scale;
+    mapView.y=MAX_WORLD_Y-SURFACE.y<2*half?(SURFACE.y+MAX_WORLD_Y)/2:clamp(mapView.y,SURFACE.y+half-margin,MAX_WORLD_Y-half+margin);
+  }
+  function mapZoom(factor,anchor=null){
+    const p=anchor||{x:mapView.w/2,y:mapView.h/2},before=chartWorld(p.x,p.y);
+    mapView.scale=clamp(mapView.scale*factor,.018,1.2);
+    const after=chartWorld(p.x,p.y);mapView.x+=before.x-after.x;mapView.y+=before.y-after.y;clampMap();drawSurvey();
+  }
+  function setWaypoint(x,y){
+    if(y<SURFACE.y||y>MAX_WORLD_Y||!surveyCells.has(surveyKey(x,y))||x<leftAt(y)+14||x>rightAt(y)-14||scene.rocks.some(r=>Math.hypot(r.x-x,r.y-y)<r.radius+12&&insidePolygon(x,y,r.vertices))){
+      $('mapMessage').textContent='Choose surveyed open water. Explore or scan first to chart an unknown route.';return false;
+    }
+    field.survey.waypoint={x,y};persist();$('mapMessage').textContent='WAYPOINT SET · '+depthOf(y)+' m DEPTH · '+Math.round(distance(player,{x,y})/10)+' m FROM SUB';drawSurvey();updateUI();return true;
+  }
+  function drawSurvey(){
+    if(!$('surveyDialog').open)return;
+    const c=$('surveyCanvas'),g=c.getContext('2d'),W=mapView.w,H=mapView.h,scale=mapView.scale,dpr=c.width/W;
+    g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);g.fillStyle='#030c14';g.fillRect(0,0,W,H);
+    const step=scale>.25?500:scale>.07?1000:2500;
+    g.font='10px ui-monospace,monospace';g.textAlign='left';
+    for(let y=Math.max(120,Math.floor((mapView.y-H/(2*scale))/step)*step+120);y<=mapView.y+H/(2*scale)&&y<=MAX_WORLD_Y;y+=step){
+      const p=chartPoint(0,y);g.strokeStyle='#28445550';g.lineWidth=.7;g.beginPath();g.moveTo(0,p.y);g.lineTo(W,p.y);g.stroke();g.fillStyle='#668b9c';g.fillText(depthOf(y)+' m',9,p.y-5);
+    }
+    // Clip the terrain to surveyed grid squares. Unvisited boundaries and rocks
+    // never leak through the fog, even in overview mode.
+    g.save();g.beginPath();
+    for(const key of surveyCells){const [cx,cy]=key.split(':').map(Number),p=chartPoint(SURVEY.left+cx*SURVEY.cell,SURFACE.y+cy*SURVEY.cell),size=SURVEY.cell*scale;
+      if(p.x>W||p.y>H||p.x+size<0||p.y+size<0)continue;g.rect(p.x,p.y,size+.5,size+.5);}
+    g.clip();g.fillStyle='#12303d';g.fillRect(0,0,W,H);
+    g.strokeStyle='#356674';g.lineWidth=1;
+    for(const side of [-1,1]){g.beginPath();for(let y=Math.max(SURFACE.y,mapView.y-H/(2*scale)-60);y<=Math.min(MAX_WORLD_Y,mapView.y+H/(2*scale)+60);y+=45){const p=chartPoint(side<0?leftAt(y):rightAt(y),y);if(y===Math.max(SURFACE.y,mapView.y-H/(2*scale)-60))g.moveTo(p.x,p.y);else g.lineTo(p.x,p.y);}g.stroke();}
+    g.fillStyle='#355361';g.strokeStyle='#68919b88';
+    for(const r of scene.rocks){const p=chartPoint(r.x,r.y),radius=r.radius*scale;if(p.x<-radius||p.x>W+radius||p.y<-radius||p.y>H+radius)continue;
+      g.beginPath();r.vertices.forEach((v,i)=>{const a=chartPoint(v.x,v.y);i?g.lineTo(a.x,a.y):g.moveTo(a.x,a.y);});g.closePath();g.fill();if(scale>.1)g.stroke();}
+    const floor=chartPoint(0,MAX_WORLD_Y);g.fillStyle='#52616c';g.fillRect(0,floor.y,W,H-floor.y);g.strokeStyle='#a4b5bc';g.beginPath();g.moveTo(0,floor.y);g.lineTo(W,floor.y);g.stroke();
+    g.restore();
+    for(const [id,contact] of Object.entries(field.survey.contacts)){
+      const p=chartPoint(contact.x,contact.y);if(p.x<-20||p.x>W+20||p.y<-20||p.y>H+20)continue;
+      let collected=contact.collected;
+      if(id.startsWith('items:')){const object=scene.items.find(o=>'items:'+o.id===id);if(object)collected=object.collected;else if(contact.type==='recorder')collected=saved.secured.includes(Number(id.split('-').at(-1)));}
+      g.save();g.translate(p.x,p.y);g.lineWidth=1.4;
+      if(collected){g.strokeStyle='#6f9b9477';g.beginPath();g.moveTo(-3,0);g.lineTo(0,3);g.lineTo(5,-4);g.stroke();}
+      else if(contact.type==='recorder'||contact.type==='recovery'){g.strokeStyle=contact.type==='recorder'?'#f2cb87':'#f39476';g.beginPath();g.moveTo(0,-6);g.lineTo(5,0);g.lineTo(0,6);g.lineTo(-5,0);g.closePath();g.stroke();}
+      else if(contact.type==='landmark'||contact.type==='station'||contact.type==='wreck'){
+        g.strokeStyle=contact.type==='station'?'#92e4d4':'#afa6ce';g.strokeRect(-5,-5,10,10);
+        if(scale>.08&&contact.type!=='wreck'){g.font='9px ui-monospace,monospace';g.fillStyle=g.strokeStyle;g.fillText(contact.label,9,-7);}
+      }else{g.fillStyle=contact.type==='crystal'?'#c1a4ef':contact.type==='air'?'#8fbedd':'#8ac4b5';g.beginPath();g.arc(0,0,contact.type==='crystal'?2.5:2,0,TAU);g.fill();}
+      g.restore();
+    }
+    for(const threat of surveyThreats){
+      if(threat.until<=clock)continue;const p=chartPoint(threat.x,threat.y);g.globalAlpha=clamp((threat.until-clock)/SURVEY.contactLife,.25,1);g.fillStyle='#ec8c85';g.beginPath();g.arc(p.x,p.y,3.5,0,TAU);g.fill();g.globalAlpha=1;
+    }
+    const pin=field.survey.waypoint;
+    if(pin){const p=chartPoint(pin.x,pin.y);g.strokeStyle='#efd6a3';g.lineWidth=1.5;g.beginPath();g.arc(p.x,p.y,9,0,TAU);g.moveTo(p.x-13,p.y);g.lineTo(p.x+13,p.y);g.moveTo(p.x,p.y-13);g.lineTo(p.x,p.y+13);g.stroke();}
+    const p=chartPoint(player.x,player.y);g.save();g.translate(p.x,p.y);g.rotate(player.facing);g.shadowColor='#a8ffe5';g.shadowBlur=9;g.fillStyle='#b9ffe6';g.beginPath();g.moveTo(8,0);g.lineTo(-5,-5);g.lineTo(-2,0);g.lineTo(-5,5);g.closePath();g.fill();g.restore();
+    const metres=Math.round(80/scale/10);$('mapScale').textContent='80 px ≈ '+metres+' m';$('mapClear').disabled=!pin;
+  }
+  function bindSurvey(){
+    $('surveyBtn').addEventListener('click',openSurvey);$('pauseMapBtn').addEventListener('click',openSurvey);
+    $('surveyClose').addEventListener('click',()=>closeExplorerDialog('surveyDialog'));
+    $('surveyDialog').addEventListener('cancel',e=>{e.preventDefault();closeExplorerDialog('surveyDialog');});
+    $('mapZoomIn').addEventListener('click',()=>mapZoom(1.4));$('mapZoomOut').addEventListener('click',()=>mapZoom(1/1.4));
+    $('mapCentre').addEventListener('click',()=>{mapView.x=player.x;mapView.y=player.y;mapView.scale=Math.min(.45,Math.max(.12,window.innerWidth/2100));clampMap();drawSurvey();});
+    $('mapOverview').addEventListener('click',()=>{mapView.x=centerAt(MAX_WORLD_Y/2);mapView.y=MAX_WORLD_Y/2;mapView.scale=Math.min((mapView.w-55)/2400,(mapView.h-35)/(MAX_WORLD_Y+200));drawSurvey();});
+    $('mapClear').addEventListener('click',()=>{field.survey.waypoint=null;persist();$('mapMessage').textContent='Waypoint cleared.';drawSurvey();updateUI();});
+    const c=$('surveyCanvas'),local=e=>{const r=c.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};};
+    c.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='mouse'&&e.button!==0)return;e.preventDefault();c.focus({preventScroll:true});c.setPointerCapture(e.pointerId);
+      const p=local(e);mapView.pointers.set(e.pointerId,p);
+      if(mapView.pointers.size===1)mapView.drag={id:e.pointerId,start:p,last:p,moved:false};
+      else if(mapView.pointers.size===2){const [a,b]=[...mapView.pointers.values()];mapView.pinch=Math.hypot(a.x-b.x,a.y-b.y);if(mapView.drag)mapView.drag.moved=true;}
+    });
+    c.addEventListener('pointermove',e=>{
+      if(!mapView.pointers.has(e.pointerId))return;e.preventDefault();const p=local(e);mapView.pointers.set(e.pointerId,p);
+      if(mapView.pointers.size>=2){const [a,b]=[...mapView.pointers.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(mapView.pinch>4)mapZoom(d/mapView.pinch,{x:(a.x+b.x)/2,y:(a.y+b.y)/2});mapView.pinch=d;return;}
+      const drag=mapView.drag;if(!drag||drag.id!==e.pointerId)return;
+      if(Math.hypot(p.x-drag.start.x,p.y-drag.start.y)>6)drag.moved=true;
+      if(drag.moved){mapView.x-=(p.x-drag.last.x)/mapView.scale;mapView.y-=(p.y-drag.last.y)/mapView.scale;clampMap();drawSurvey();}drag.last=p;
+    });
+    const release=e=>{
+      if(!mapView.pointers.has(e.pointerId))return;
+      if(e.type==='pointerup'&&mapView.pointers.size===1&&mapView.drag?.id===e.pointerId&&!mapView.drag.moved){const p=local(e),w=chartWorld(p.x,p.y);setWaypoint(w.x,w.y);}
+      mapView.pointers.delete(e.pointerId);mapView.pinch=null;mapView.drag=null;
+    };
+    for(const event of ['pointerup','pointercancel','lostpointercapture'])c.addEventListener(event,release);
+    c.addEventListener('wheel',e=>{e.preventDefault();mapZoom(Math.exp(-e.deltaY*.0015),local(e));},{passive:false});
+    c.addEventListener('keydown',e=>{const k=e.key;if(k==='+'||k==='='){e.preventDefault();mapZoom(1.4);}else if(k==='-'){e.preventDefault();mapZoom(1/1.4);}else if(k==='Enter'){e.preventDefault();setWaypoint(mapView.x,mapView.y);}else if(k.startsWith('Arrow')){e.preventDefault();mapView.x+=(k==='ArrowRight'?1:k==='ArrowLeft'?-1:0)*60/mapView.scale;mapView.y+=(k==='ArrowDown'?1:k==='ArrowUp'?-1:0)*60/mapView.scale;clampMap();drawSurvey();}});
+    new ResizeObserver(sizeSurvey).observe(c.parentElement);
+  }
+
+  // === Compact HUD, full telemetry on demand, and accessible sound controls ===
+  function openTelemetry(){
+    if(!running||!openExplorerDialog('telemetryDialog'))return;
+    const rows=[['PRESSURE LIMIT',safeDepth().toLocaleString('en-GB')+' m'],['CURRENT DEPTH',depthOf(player.y).toLocaleString('en-GB')+' m'],
+      ['HULL',Math.ceil(player.hull)+' / '+maxHull()+' HP'],['OXYGEN',Math.ceil(player.oxygen)+' / '+maxOxygen()],['POWER',Math.ceil(player.battery)+' / '+maxBattery()],
+      ['NOISE',Math.round(player.noise)+'%'],['SHIELD',shieldCapacity()?Math.ceil(player.shield)+' / '+shieldCapacity()+' HP':'NOT FITTED'],
+      ['BOOST',boostUnlocked()?Math.round(player.boost/boostCapacity()*100)+'% · '+(boostCapacity()/BOOST.drain)+'s CAPACITY':'MK I THRUSTERS REQUIRED'],
+      ['SONAR',player.scanCooldown>0?Math.ceil(player.scanCooldown)+'s COOLDOWN':'READY · '+scanPowerCost()+' POWER'],
+      ['MINE AMMUNITION',player.mineAmmo+' / '+mineCapacity()],['CARGO',player.cargo.scrap+' SCRAP · '+player.cargo.crystal+' CRYSTALS'],
+      ['RECORDERS',player.cargo.recorders.length+' ABOARD · '+saved.secured.length+'/'+RECORDERS_TOTAL+' BANKED']];
+    $('telemetryBody').innerHTML='<div class="telemetry-grid">'+rows.map(([label,value])=>'<div><span>'+label+'</span><strong>'+value+'</strong></div>').join('')+'</div><p class="telemetry-target">'+$('targetInfo').textContent+'</p><p class="telemetry-save">'+(storageHealthy?'ACTIVE DIVE SAVED · RESUMES PAUSED':'STORAGE WARNING · THIS DIVE COULD NOT BE SAVED')+'</p>';
+    $('telemetryClose').focus({preventScroll:true});
+  }
+  function refreshAudioSettings(){
+    const audio=window.AbyssAudio,settings=audio?.settings()||{effects:.5,ambience:.35,muted:true};
+    $('effectsVolume').value=Math.round(settings.effects*100);$('ambienceVolume').value=Math.round(settings.ambience*100);
+    $('effectsValue').textContent=Math.round(settings.effects*100)+'%';$('ambienceValue').textContent=Math.round(settings.ambience*100)+'%';
+    $('audioMute').textContent=settings.muted?'SOUND MUTED · TAP TO ENABLE':'SOUND ON · TAP TO MUTE';$('audioMute').setAttribute('aria-pressed',String(settings.muted));
+    $('audioState').textContent=!audio?.status().available?'Audio is not available in this browser. All visual warnings still work.':audio.status().blocked?'Audio is blocked. Tap TEST SONAR SOUND to try again.':'Effects and ambience can be adjusted independently.';
+  }
+  function openAudio(){
+    if(!openExplorerDialog('audioDialog'))return;refreshAudioSettings();$('audioClose').focus({preventScroll:true});
+  }
+  function bindLivingUI(){
+    bindSurvey();
+    $('telemetryBtn').addEventListener('click',openTelemetry);
+    $('telemetryClose').addEventListener('click',()=>closeExplorerDialog('telemetryDialog'));
+    $('telemetryDialog').addEventListener('cancel',e=>{e.preventDefault();closeExplorerDialog('telemetryDialog');});
+    $('telemetryAudioBtn').addEventListener('click',()=>{closeExplorerDialog('telemetryDialog');openAudio();});
+    for(const id of ['menuAudioBtn','pauseAudioBtn'])$(id).addEventListener('click',openAudio);
+    $('audioClose').addEventListener('click',()=>closeExplorerDialog('audioDialog'));
+    $('audioDialog').addEventListener('cancel',e=>{e.preventDefault();closeExplorerDialog('audioDialog');});
+    for(const [id,key] of [['effectsVolume','effects'],['ambienceVolume','ambience']])$(id).addEventListener('input',()=>{window.AbyssAudio?.unlock();window.AbyssAudio?.configure({[key]:Number($(id).value)/100});refreshAudioSettings();});
+    $('audioMute').addEventListener('click',()=>{window.AbyssAudio?.unlock();window.AbyssAudio?.configure({muted:!window.AbyssAudio.settings().muted});refreshAudioSettings();});
+    $('audioTest').addEventListener('click',async()=>{await window.AbyssAudio?.unlock();const audio=window.AbyssAudio,status=audio?.status();
+      if(!status?.available){$('audioState').textContent='Audio is not available in this browser. All visual warnings still work.';return;}
+      if(status.muted){$('audioState').textContent='Sound is muted. Enable sound to hear the preview.';return;}
+      if(status.state!=='running'){$('audioState').textContent='Audio has not started. Check browser sound permissions and try again.';return;}
+      audio.event('sonar');$('audioState').textContent='Sonar preview played at your effects volume.';
+    });
+    const activate=()=>{if(!document.hidden)window.AbyssAudio?.unlock();};
+    document.addEventListener('pointerdown',activate,{capture:true,passive:true});document.addEventListener('keydown',activate,{capture:true});
+  }
+  function updateLivingHUD(){
+    const force=currentAt(player.x,player.y),pin=field.survey.waypoint;
+    if(force.strength>5&&$('statusStat').textContent==='NOMINAL'){$('statusStat').textContent='CURRENT '+(force.x>0?'→':'←')+' '+(force.strength/10).toFixed(1)+'m/s';$('statusStat').className='status-warning';}
+    const hint=$('waypointHint');hint.classList.toggle('hidden',!pin);
+    if(pin){const d=distance(player,pin)/10;hint.textContent='⌖ '+(d<6?'WAYPOINT REACHED':Math.round(d)+' m TO PIN')+' · '+depthOf(pin.y)+' m DEPTH';}
+    if(!storageHealthy){$('statusStat').textContent='SAVE FAILED · KEEP APP OPEN';$('statusStat').className='status-danger';}
+  }
+  function audioFrame(){
+    const audio=window.AbyssAudio;if(!audio)return;
+    if($('audioDialog').open&&!document.hidden)return; // Allow explicit paused preview.
+    if(!running||paused||document.hidden){if(audio.status().state==='running')audio.suspend();return;}
+    const threats=scene.predators.filter(e=>predatorAlive(e)&&e.aggression>.15&&distance(e,player)<300&&!inHarbour(player));
+    const nearest=threats.sort((a,b)=>distance(a,player)-distance(b,player))[0];
+    audio.tick({speed:Math.hypot(player.vx,player.vy),depth:depthOf(player.y),boost:player.boosting,quiet:player.quiet,airborne:player.airborne,harbour:inHarbour(player),pressure:depthOf(player.y)/safeDepth(),threat:Boolean(nearest),pan:nearest?clamp((nearest.x-player.x)/200,-1,1):0});
+  }
+
   function frame(now){
     if(!previousTime)previousTime=now;
     const dt=Math.min(.045,(now-previousTime)/1000||.016);previousTime=now;
-    if(running&&!paused)update(dt);
-    else if(!paused)clock+=dt*.3;
-    render();
+    if(running&&!paused)advanceSimulation(dt);
+    else if(!paused&&!loadedActive)clock+=dt*.3;
+    audioFrame();render();
     requestAnimationFrame(frame);
   }
   beamTexture=buildBeamTexture();
@@ -2166,10 +2609,10 @@
   },3500);
 
   // Tiny inspection hook for automated smoke tests.
-  window.AbyssDiagnostics={state:()=>({airborne:Boolean(player.airborne),dockSafe:inHarbour(player),surfaceY:SURFACE.y,splashCount:surfaceEffects.length,version:BUILD.version,versionName:BUILD.name,buildId:BUILD.id,shield:player.shield,shieldCapacity:shieldCapacity(),shieldDelay:player.shieldDelay,magnetRange:magnetRange(),magnetPower:magnetPower(),disruptorMark:saved.upgrades.disruptor,scanPowerCost:scanPowerCost(),upgradeOpen:$('upgradeDialog').open,storageHealthy,campaignId,levelId:LEVEL_ID,levelName:currentLevel().name,crystals:saved.crystals,totalRecorders:totalRecorders(),achievements:ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length,recoveryPods:field.recoveries.length,levelComplete:levelComplete(LEVEL_ID),boostCapacity:boostCapacity(),boostUnlocked:boostUnlocked(),boostMultiplier:boostMultiplier(),boostSeconds:boostCapacity()/BOOST.drain,joystickVisible:$('mobileJoystick').classList.contains('engaged'),zoom:viewport.zoom,flashlightMark:saved.upgrades.flashlight,flashlightLength:flashlightSpec().length,flashlightAngle:flashlightSpec().halfAngle*360/Math.PI,flashlightPowerRate:flashlightPowerRate(),worldWidth:widthAt(player.y)*2,populationCycle:field.cycle,mineAmmo:player.mineAmmo,mineCapacity:mineCapacity(),minePower:saved.upgrades.minePower,mineCapacityMark:saved.upgrades.mineCapacity,mineDamage:mineDamage(),mineCooldown:player.mineCooldown,deployedMines:scene.mines.length,kills:player.kills,normalSpeed:normalSpeedAt(saved.upgrades.engine),maxNormalSpeed:normalSpeedAt(THRUST.maxMark),ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),inputMode:touchControls?'touch':'desktop',vesselLabel:vesselLabel(),boost:player.boost,boosting:player.boosting,boostLocked:player.boostLocked,boostNeedsRelease:player.boostNeedsRelease,boostRechargeDelay:player.boostRechargeDelay,boostPowerRate:boostPowerRate(),boostRechargeRate:boostRechargeRate(),scanCooldown:player.scanCooldown,sonarCost:sonarCost(),mouseHeld:mouseHelm.pointerId!==null,boostHeld,facing:player.facing,hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier==='common').length,reaperCount:scene.predators.filter(e=>e.tier==='reaper').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
+  window.AbyssDiagnostics={state:()=>({airborne:Boolean(player.airborne),dockSafe:inHarbour(player),surfaceY:SURFACE.y,splashCount:surfaceEffects.length,version:BUILD.version,versionName:BUILD.name,buildId:BUILD.id,shield:player.shield,shieldCapacity:shieldCapacity(),shieldDelay:player.shieldDelay,magnetRange:magnetRange(),magnetPower:magnetPower(),disruptorMark:saved.upgrades.disruptor,scanPowerCost:scanPowerCost(),upgradeOpen:$('upgradeDialog').open,storageHealthy,campaignId,levelId:LEVEL_ID,levelName:currentLevel().name,crystals:saved.crystals,totalRecorders:totalRecorders(),achievements:ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length,recoveryPods:field.recoveries.length,levelComplete:levelComplete(LEVEL_ID),boostCapacity:boostCapacity(),boostUnlocked:boostUnlocked(),boostMultiplier:boostMultiplier(),boostSeconds:boostCapacity()/BOOST.drain,joystickVisible:$('mobileJoystick').classList.contains('engaged'),zoom:viewport.zoom,flashlightMark:saved.upgrades.flashlight,flashlightLength:flashlightSpec().length,flashlightAngle:flashlightSpec().halfAngle*360/Math.PI,flashlightPowerRate:flashlightPowerRate(),worldWidth:widthAt(player.y)*2,populationCycle:field.cycle,mineAmmo:player.mineAmmo,mineCapacity:mineCapacity(),minePower:saved.upgrades.minePower,mineCapacityMark:saved.upgrades.mineCapacity,mineDamage:mineDamage(),mineCooldown:player.mineCooldown,deployedMines:scene.mines.length,kills:player.kills,normalSpeed:normalSpeedAt(saved.upgrades.engine),maxNormalSpeed:normalSpeedAt(THRUST.maxMark),ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),inputMode:touchControls?'touch':'desktop',vesselLabel:vesselLabel(),boost:player.boost,boosting:player.boosting,boostLocked:player.boostLocked,boostNeedsRelease:player.boostNeedsRelease,boostRechargeDelay:player.boostRechargeDelay,boostPowerRate:boostPowerRate(),boostRechargeRate:boostRechargeRate(),scanCooldown:player.scanCooldown,sonarCost:sonarCost(),mouseHeld:mouseHelm.pointerId!==null,boostHeld,facing:player.facing,hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,hasSavedDive:Boolean(loadedActive),lastSaveWall,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier==='common').length,reaperCount:scene.predators.filter(e=>e.tier==='reaper').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,cruiseEnabled,cruiseX:cruiseHeading.x,cruiseY:cruiseHeading.y})};
   if(location.search.includes('testmode=1')||window.ABYSS_TEST_MODE===true){
     window.AbyssDiagnostics.fixture=({x=600,y=700,rocks=[],predators=[],items=[]}={})=>{
-      player.x=x;player.y=y;player.vx=0;player.vy=0;player.airborne=y<SURFACE.y;player.surfaceCooldownUntil=0;player.facing=0;player.noise=0;
+      environmentEnabled=false;player.x=x;player.y=y;player.vx=0;player.vy=0;player.airborne=y<SURFACE.y;player.surfaceCooldownUntil=0;player.facing=0;player.noise=0;
       scene.rocks=rocks.map(rock=>({...rock,vertices:rockPolygon(rock)}));
       scene.predators=predators.map(enemy=>createPredator({...enemy,tier:enemy.tier||'common',vx:0,vy:0,homeX:enemy.x,homeY:enemy.y,phase:0,aggression:enemy.aggression??0,alertUntil:enemy.alertUntil??0,forgetUntil:0,lastHit:-10}));
       scene.mines=[];scene.blasts=[];
@@ -2196,7 +2639,7 @@
     window.AbyssDiagnostics.renderWorld=()=>{const before=running;running=false;render();running=before;};
     window.AbyssDiagnostics.debug=()=>({clock,field:JSON.parse(JSON.stringify(field)),mines:scene.mines.map(m=>({...m})),blasts:scene.blasts.map(b=>({...b})),sonarWaves:sonarWaves.map(({contacts,...w})=>({...w,contacts:contacts.map(c=>({kind:c.kind,hit:c.hit,x:c.object.x,y:c.object.y}))})),camera:{...camera},viewport:{...viewport},sonarTerrainEchoes:sonarTerrainEchoes.map(e=>({...e})),rocks:scene.rocks.map(e=>({...e})),vents:scene.vents.map(e=>({...e})),player:{...player},saved:{...saved,upgrades:{...saved.upgrades}},campaignLevels:JSON.parse(JSON.stringify(campaignLevels)),levels:LEVELS.map((l,i)=>({...l,unlocked:levelUnlocked(i),complete:levelComplete(l.id),resources:resourceProgress(l.id)})),wrecks:scene.wrecks.map(w=>({...w})),predators:scene.predators.map(e=>({...e})),items:scene.items.map(i=>({...i}))});
     window.AbyssDiagnostics.simulationFixture=({depth=500,facing=Math.PI/2,lights=false,battery=maxBattery(),boost=null,upgrades={},items=[],predators=[],rocks=[],wrecks=[],vents=[],mines=[],mineAmmo=null}={})=>{
-      resetPilotInput();Object.assign(saved.upgrades,upgrades);beamTexture=buildBeamTexture();
+      environmentEnabled=false;resetPilotInput();Object.assign(saved.upgrades,upgrades);beamTexture=buildBeamTexture();
       const y=120+depth*10,x=centerAt(y);
       player={...player,x,y,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing,lights,battery,boost:boost??boostCapacity(),hull:maxHull(),oxygen:maxOxygen(),noise:0,quiet:false,boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,damageCooldown:0,scanCooldown:0,mineAmmo:mineAmmo??(saved.upgrades.minePower?mineCapacity():0),mineCooldown:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,trip:{deepest:0,hullDamage:0},cargo:{scrap:0,crystal:0,recorders:[]}};
       saved.mineAmmo=player.mineAmmo;
@@ -2212,7 +2655,7 @@
     };
     window.AbyssDiagnostics.step=(seconds,{heldKeys=[],freezeAfter=true}={})=>{
       keys.clear();heldKeys.forEach(k=>keys.add(k));paused=false;
-      for(let remaining=seconds;remaining>1e-8&&running&&!paused;){const dt=Math.min(1/60,remaining);update(dt);remaining-=dt;}
+      for(let remaining=seconds;remaining>1e-8&&running&&!paused;){const dt=Math.min(1/60,remaining);advanceSimulation(dt);remaining-=dt;}
       keys.clear();if(freezeAfter)paused=true;updateUI();render();return window.AbyssDiagnostics.state();
     };
     window.AbyssDiagnostics.mine=()=>{const before=paused;paused=false;const ok=deployMine();paused=before;render();return ok;};
@@ -2239,6 +2682,14 @@
     window.AbyssDiagnostics.costs=()=>UPGRADES.map(u=>({id:u.id,prices:Array.from({length:u.limit},(_,i)=>({credits:upgradeCost(u,i),crystals:crystalCost(u,i)}))}));
     window.AbyssDiagnostics.setMotion=({vx=0,vy=0,airborne=player.y<SURFACE.y})=>{player.vx=vx;player.vy=vy;player.airborne=airborne;};
     window.AbyssDiagnostics.harbourRules=()=>({harbour:{...HARBOUR},surface:{...SURFACE}});
+    window.AbyssDiagnostics.living=()=>({survey:JSON.parse(JSON.stringify(field.survey)),threats:surveyThreats.map(t=>({...t})),environment:JSON.parse(JSON.stringify(environment)),current:currentAt(player.x,player.y),environmentEnabled,loadedActive:Boolean(loadedActive),clock,audio:window.AbyssAudio?.status()});
+    window.AbyssDiagnostics.surveyNow=()=>{surveyVisibleWater();persist();};
+    window.AbyssDiagnostics.currentAt=(x,y,time=clock)=>currentAt(x,y,time);
+    window.AbyssDiagnostics.enableEnvironment=()=>{buildEnvironment();environmentEnabled=true;};
+    window.AbyssDiagnostics.backgroundPause=backgroundPause;
+    window.AbyssDiagnostics.openSurvey=openSurvey;
+    window.AbyssDiagnostics.setWaypoint=setWaypoint;
+    window.AbyssDiagnostics.restore=restoreActiveDive;
     window.AbyssDiagnostics.grantCredits=(value)=>{saved.credits=Math.max(0,Math.floor(value));persist();updateUI();};
   }
 })();

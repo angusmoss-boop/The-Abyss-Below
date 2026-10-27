@@ -1,18 +1,18 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta name="abyss-build" content="0.13.0-harbour-rising-1">
+  <meta name="abyss-build" content="0.14.0-living-depths-1">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#06121d" />
   <meta name="description" content="The Abyss Below: a submarine exploration and survival game." />
   <title>The Abyss Below | Deepwater Expedition</title>
-  <link rel="manifest" href="manifest.webmanifest?v=0.13.0" />
+  <link rel="manifest" href="manifest.webmanifest?v=0.14.0" />
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="stylesheet" href="styles.css?v=0.13.0" />
+  <link rel="stylesheet" href="styles.css?v=0.14.0" />
 </head>
 <body>
   <div class="app">
@@ -24,21 +24,20 @@
       <div class="play-column">
         <section class="viewport" aria-label="Submarine expedition game">
           <canvas id="gameCanvas" tabindex="0" aria-label="Hold left mouse button to pilot. Space boosts, F deploys a mine, Q scans, E collects, Escape pauses."></canvas>
-          <div class="cockpit-hud" aria-label="Vessel instruments">
+          <div class="cockpit-hud slim-hud" aria-label="Vessel instruments">
             <div class="cockpit-identity">
-              <div class="reference-tab vessel-tab"><span>VESSEL</span><strong id="vesselName">NEREID</strong></div>
-              <div class="reference-tab model-tab"><span>CLASS</span><strong id="vesselMark">MK II</strong></div>
-              <div class="reference-tab pressure-tab" id="pressureTab"><span>PRESSURE LIMIT</span><strong><span id="ratingStat">130</span><small> m</small></strong></div>
+              <div class="ship-signature"><span class="vessel-beacon" aria-hidden="true"></span><div><strong id="vesselName">NEREID</strong><span id="vesselMark">MK II</span></div></div>
+              <div class="pressure-chip" id="pressureTab"><span>LIMIT</span><strong><span id="ratingStat">130</span><small>m</small></strong></div>
               <div class="game-view-tools">
-                <button id="focusHelpBtn" class="view-tool" aria-label="Pilot instructions" title="Pilot instructions"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 8.5a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4M12 16.5v.5"/></svg></button>
-                <button id="focusToggleBtn" class="view-tool" aria-label="Expand play view" title="Expand play view"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5"/></svg></button>
-                <button id="focusPauseBtn" class="view-tool" aria-label="Pause game" title="Pause / resume (Esc)"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14M16 5v14" stroke-width="3"/></svg></button>
+                <button id="surveyBtn" class="view-tool" aria-label="Open expedition map" title="Survey map (M)"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2ZM9 3v16m6-14v16"/></svg></button>
+                <button id="telemetryBtn" class="view-tool" aria-label="Detailed vessel instruments" title="Detailed instruments"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2" fill="#0b212d"/><circle cx="16" cy="12" r="2" fill="#0b212d"/><circle cx="10" cy="18" r="2" fill="#0b212d"/></svg></button>
+                <button id="focusPauseBtn" class="view-tool" aria-label="Pause game" title="Pause / resume (Esc)"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 5v14M16 5v14" stroke-width="3"/></svg></button>
               </div>
             </div>
             <div class="cockpit-systems">
               <div class="instrument-tab depth-tab" id="depthTab"><span class="instrument-label">DEPTH</span><strong><span id="depthStat">0</span><small> m</small></strong><div class="instrument-track"><i id="depthBar"></i></div></div>
               <div class="instrument-tab" id="hullTab"><span class="instrument-label">HULL</span><strong id="hullValue">100%</strong><div class="instrument-track"><i id="hullBar"></i></div></div>
-              <div class="instrument-tab oxygen-tab" id="oxygenTab"><span class="instrument-label">OXYGEN</span><strong id="oxygenValue">100%</strong><div class="instrument-track"><i id="oxygenBar"></i></div></div>
+              <div class="instrument-tab oxygen-tab" id="oxygenTab"><span class="instrument-label">O₂</span><strong id="oxygenValue">100%</strong><div class="instrument-track"><i id="oxygenBar"></i></div></div>
               <div class="instrument-tab power-tab" id="batteryTab"><span class="instrument-label">POWER</span><strong id="batteryValue">100%</strong><div class="instrument-track"><i id="batteryBar"></i></div></div>
               <div class="instrument-tab noise-tab" id="noiseTab"><span class="instrument-label">NOISE</span><strong id="noiseValue">0%</strong><div class="instrument-track"><i id="noiseBar"></i></div></div>
               <div class="capability-group">
@@ -48,7 +47,8 @@
                 <div class="instrument-tab capability shield-tab hidden" id="shieldMeter"><div class="capability-head"><span class="instrument-label">SHIELD</span><strong id="shieldValue">0/0</strong></div><div class="instrument-track"><i id="shieldBar"></i></div><small id="shieldStatus">CHARGED</small></div>
               </div>
             </div>
-            <div class="cockpit-context"><span id="coordsText">01 · THE SHALLOWS</span><span id="statusStat" class="status-safe">NOMINAL</span></div>
+            <div class="cockpit-context"><span id="coordsText">01 · SUNBREAK SHELF</span><span id="statusStat" class="status-safe">NOMINAL</span></div>
+            <div id="waypointHint" class="waypoint-hint hidden"></div>
           </div>
           <div id="interactionPrompt" class="interaction-prompt hidden"></div>
           <div id="notification" class="notification hidden"></div>
@@ -78,6 +78,7 @@
             <span class="key-hint"><kbd>R</kbd><span>REPAIR</span></span>
             <span class="key-hint"><kbd>L</kbd><span>LIGHTS</span></span>
             <span class="key-hint"><kbd>SHIFT</kbd><span>SILENT</span></span>
+            <span class="key-hint"><kbd>M</kbd><span>MAP</span></span>
             <span class="key-hint"><kbd>ESC</kbd><span>PAUSE</span></span>
           </div>
         </section>
@@ -91,14 +92,14 @@
         <button id="dockBtn" class="dock-btn" disabled>◈ RETURN TO STATION TO UPGRADE</button>
       </aside>
     </main>
-    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.13.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
+    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.14.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
   </div>
   <div class="overlay" id="menuOverlay"><div class="menu-card"><div class="menu-kicker">TRANSMISSION // 0001</div><div class="menu-icon">⌁</div><h1>THE ABYSS<br><span>BELOW</span></h1><section class="version-card" aria-label="Game build and update status">
-  <div class="version-heading"><strong id="menuVersion">v0.13.0</strong><span id="menuVersionName">Harbour Rising</span></div>
+  <div class="version-heading"><strong id="menuVersion">v0.14.0</strong><span id="menuVersionName">Living Depths</span></div>
   <div class="sync-indicator" id="syncIndicator" data-state="checking"><span class="sync-dot" aria-hidden="true"></span><strong id="syncStatus" role="status">CHECKING DEPLOYMENT</strong></div>
   <p id="syncDetail">Checking the latest published build. Your campaign stays on this device.</p>
   <div class="version-actions"><button id="checkVersionBtn" class="version-btn">CHECK AGAIN</button><button id="updateVersionBtn" class="version-btn hidden">LOAD UPDATE</button></div>
-</section><p>Five descents. Twenty lost transmissions. Venture from the sunlit shelf to a 1,800-metre abyss, secure each level’s recorders and return for everything you left behind.</p><div class="menu-feature-list"><span>◈ FIVE PERSISTENT LEVELS</span><span>◈ 20 ACHIEVEMENTS</span><span>◈ MINES &amp; PREDATORS</span><span>◈ UPGRADABLE SUB</span></div><button id="startBtn" class="primary-btn">BEGIN EXPEDITION <span>→</span></button><button id="menuHubBtn" class="menu-secondary-btn">⌁ EXPEDITION HUB</button><button id="menuAchievementsBtn" class="menu-secondary-btn achievement-menu-btn">◇ ACHIEVEMENTS <span id="menuAchievementCount">0 / 20</span></button><button id="newGameBtn" class="menu-secondary-btn">✦ NEW GAME</button><p id="menuProgress" class="menu-progress" aria-live="polite"></p><p id="saveStatus" class="save-status"></p><button id="instructionsBtn" class="text-btn">VIEW PILOT BRIEFING</button><button id="installBtn" class="install-btn hidden">⬇ INSTALL ON PHONE</button><div class="menu-bottom">NEREID EXPLORATION PROGRAM · CLASSIFIED</div></div></div>
+</section><p>Five descents. Twenty lost transmissions. Venture from the sunlit shelf to a 1,800-metre abyss, secure each level’s recorders and return for everything you left behind.</p><div class="menu-feature-list"><span>◈ FIVE PERSISTENT LEVELS</span><span>◈ 20 ACHIEVEMENTS</span><span>◈ LIVING ENVIRONMENTS</span><span>◈ SURVEY &amp; RESUME</span></div><button id="startBtn" class="primary-btn">BEGIN EXPEDITION <span>→</span></button><button id="menuHubBtn" class="menu-secondary-btn">⌁ EXPEDITION HUB</button><button id="menuAchievementsBtn" class="menu-secondary-btn achievement-menu-btn">◇ ACHIEVEMENTS <span id="menuAchievementCount">0 / 20</span></button><button id="menuAudioBtn" class="menu-secondary-btn">♫ SOUND SETTINGS</button><button id="newGameBtn" class="menu-secondary-btn">✦ NEW GAME</button><p id="menuProgress" class="menu-progress" aria-live="polite"></p><p id="saveStatus" class="save-status"></p><button id="instructionsBtn" class="text-btn">VIEW PILOT BRIEFING</button><button id="installBtn" class="install-btn hidden">⬇ INSTALL ON PHONE</button><div class="menu-bottom">NEREID EXPLORATION PROGRAM · CLASSIFIED</div></div></div>
   <div class="overlay pause-overlay hidden" id="pauseOverlay" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
     <div class="pause-card">
       <div class="pause-emblem" aria-hidden="true">Ⅱ</div>
@@ -107,10 +108,10 @@
       <p id="pauseStats">Systems holding. The abyss can wait.</p>
       <div class="pause-actions">
         <button id="resumeBtn" class="primary-btn">▶ RESUME <span>→</span></button>
-        <button id="pauseAchievementsBtn" class="menu-secondary-btn achievement-menu-btn">◇ ACHIEVEMENTS <span id="pauseAchievementCount">0 / 20</span></button><button id="pauseMenuBtn" class="menu-secondary-btn">⌂ MENU</button>
+        <button id="pauseMapBtn" class="menu-secondary-btn">⌖ EXPEDITION MAP</button><button id="pauseAudioBtn" class="menu-secondary-btn">♫ SOUND SETTINGS</button><button id="pauseAchievementsBtn" class="menu-secondary-btn achievement-menu-btn">◇ ACHIEVEMENTS <span id="pauseAchievementCount">0 / 20</span></button><button id="pauseMenuBtn" class="menu-secondary-btn">⌂ MENU</button>
         <button id="quitBtn" class="menu-danger-btn">⏻ QUIT</button>
       </div>
-      <div class="pause-note">MENU suspends this dive · QUIT leaves a recovery pod</div>
+      <div class="pause-note">MENU saves this dive · CONTINUE restores paused · QUIT leaves a recovery pod</div>
     </div>
   </div>
   <div class="overlay hidden" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="dialog-card"><div class="dialog-top"><div id="modalKicker" class="menu-kicker">FIELD BRIEFING</div><button id="modalClose" class="close-btn">✕</button></div><h2 id="modalTitle">PILOT BRIEFING</h2><div id="modalBody"></div><div id="modalFooter"></div></div></div>
@@ -136,7 +137,30 @@
     <footer class="achievement-footer">Progress saves across dives and levels. New Game resets this campaign’s awards.</footer>
   </dialog>
   <div id="achievementToast" class="achievement-toast hidden" role="status" aria-live="polite"></div>
-  <script src="game.js?v=0.13.0" defer></script>
-  <script src="version-sync.js?v=0.13.0" defer></script>
+
+  <dialog id="surveyDialog" class="survey-dialog" aria-labelledby="surveyTitle">
+    <header class="explorer-header"><div><span class="menu-kicker">BATHYMETRIC SURVEY / LIVE CHART</span><h2 id="surveyTitle">EXPEDITION MAP</h2><p id="surveySummary"></p></div><button id="surveyClose" class="close-btn" aria-label="Close map">✕</button></header>
+    <div class="map-tools" aria-label="Map controls"><button id="mapZoomOut" aria-label="Zoom map out">−</button><button id="mapZoomIn" aria-label="Zoom map in">+</button><button id="mapCentre">CENTRE ON SUB</button><button id="mapOverview">OVERVIEW</button><button id="mapClear">CLEAR PIN</button></div>
+    <div class="map-surface"><canvas id="surveyCanvas" tabindex="0" aria-label="Side-view expedition map. Drag to pan, use zoom buttons or pinch. Tap surveyed water to set a waypoint. Arrow keys pan; Enter pins the centre."></canvas><span class="map-paused">DIVE PAUSED</span><span id="mapScale" class="map-scale"></span></div>
+    <div class="map-legend"><span class="legend-you">▲ NEREID</span><span class="legend-signal">◇ RECORDER</span><span class="legend-resource">· RESOURCE</span><span class="legend-landmark">⌂ LANDMARK</span><span class="legend-threat">● LAST CONTACT</span><span>✓ CLEARED</span></div>
+    <footer class="explorer-footer"><p id="mapMessage" role="status">Drag to pan. Tap surveyed water to pin a waypoint. Unknown regions stay hidden.</p><small>Terrain stays charted. Predator contacts expire. Closing the chart restores your previous pause state.</small></footer>
+  </dialog>
+  <dialog id="audioDialog" class="audio-dialog" aria-labelledby="audioTitle">
+    <header class="explorer-header"><div><span class="menu-kicker">NEREID / ACOUSTICS</span><h2 id="audioTitle">SOUND SETTINGS</h2></div><button id="audioClose" class="close-btn" aria-label="Close sound settings">✕</button></header>
+    <div class="audio-content"><p>A quiet ocean. An engine you can feel. Every important warning is also visible on screen.</p>
+      <button id="audioMute" class="menu-secondary-btn" aria-pressed="false">SOUND ON</button>
+      <label for="effectsVolume">EFFECTS <output id="effectsValue">50%</output></label><input id="effectsVolume" type="range" min="0" max="100" step="1" value="50">
+      <label for="ambienceVolume">AMBIENCE <output id="ambienceValue">35%</output></label><input id="ambienceVolume" type="range" min="0" max="100" step="1" value="35">
+      <button id="audioTest" class="alt-btn">TEST SONAR SOUND</button><p id="audioState" role="status"></p><small>Settings are saved on this device. Sound pauses with the dive or when you leave the app. No microphone access or external audio downloads.</small>
+    </div>
+  </dialog>
+  <dialog id="telemetryDialog" class="telemetry-dialog" aria-labelledby="telemetryTitle">
+    <header class="explorer-header"><div><span class="menu-kicker">NEREID / MK II</span><h2 id="telemetryTitle">VESSEL TELEMETRY</h2></div><button id="telemetryClose" class="close-btn" aria-label="Close telemetry">✕</button></header>
+    <div id="telemetryBody" class="telemetry-body"></div>
+    <div class="telemetry-tools"><button id="focusToggleBtn" class="alt-btn" aria-label="Expand play view">EXPAND VIEW</button><button id="focusHelpBtn" class="alt-btn">PILOT MANUAL</button><button id="telemetryAudioBtn" class="alt-btn">SOUND</button></div>
+  </dialog>
+  <script src="audio.js?v=0.14.0" defer></script>
+  <script src="game.js?v=0.14.0" defer></script>
+  <script src="version-sync.js?v=0.14.0" defer></script>
 </body>
 </html>

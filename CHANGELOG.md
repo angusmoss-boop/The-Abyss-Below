@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.14.0 | Living Depths
+
+- Compact glass-strip HUD, twelve-reading telemetry dialog, on-demand fullscreen/manual controls and explicit low-hull warning.
+- Full active-expedition snapshots, five-second checkpoints and critical-action saves; paused restoration, no offline simulation, safe backgrounding and atomic end-of-step commits.
+- Persistent per-level survey cells, discovered contacts, temporary predator contacts, paused map, touch/keyboard zoom/pan and one waypoint per level.
+- Five deterministic scenery palettes, fifteen landmarks and bounded horizontal currents with sheltered harbour/central route, without changing fixed terrain/resource RNG.
+- Original procedural Web Audio effects and ambience; independent levels, mute, sound preview and safe pause/background lifecycle.
+- Ten-asset release manifest, audio build verification, saved-expedition reload protection and actual v0.13 compatibility fixture.
+- Preserved upgrade costs, finite stocks, paid ammunition, achievements, harbour safety and momentum breaches.
+
+Current acceptance evidence: VERIFICATION-v0.14.0.md. Historical entries below describe their own release rules.
+
+
 ## v0.13.0 · Harbour Rising (27 October 2026)
 
 - Remodelled the in-world station as twin pontoons around an open berth, with a lit operations cabin, communications mast/dish, crane, service equipment, mooring pylons, downlights and a marked protected approach. Added a separate sky, distant headlands and foreground waterline.

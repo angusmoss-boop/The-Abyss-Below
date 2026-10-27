@@ -1,3 +1,5 @@
+> Historical design notes. For current v0.14 behaviour, use README.md and LIVING-DEPTHS-v0.14.0.md. Active-dive saving, charts and sound supersede earlier limitations here.
+
 # The Abyss Below: current design
 
 ## v0.13.0 / Harbour Rising

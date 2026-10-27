@@ -1,5 +1,5 @@
 /* Shell, dock and menu skin. */
-:root{--abyss-build:"0.13.0-harbour-rising-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
+:root{--abyss-build:"0.14.0-living-depths-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
 body{background:radial-gradient(ellipse at 40% -20%,#12344a 0%,#061019 65%)}
@@ -225,7 +225,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid #d0fff6;outline-
 /* Immersive view preserves the exact same HUD on phones and desktop. */
 body.game-focus{overflow:hidden;overscroll-behavior:none}
 body.game-focus .app{max-width:none;padding:0;margin:0}
-body.game-focus .masthead,body.game-focus .sidebar,body.game-focus footer{display:none!important}
+body.game-focus .masthead,body.game-focus .sidebar,body.game-focus .app>footer{display:none!important}
 body.game-focus .layout{display:block;padding:0;margin:0}
 body.game-focus .play-column{height:100dvh;width:100%;padding:0;margin:0}
 body.game-focus .viewport{position:fixed;inset:0;z-index:10;width:100%;height:100dvh;min-height:0;max-height:none;border:0;border-radius:0;box-shadow:none;touch-action:none}
@@ -291,7 +291,7 @@ body.game-focus .desktop-keybinds{bottom:calc(15px + env(safe-area-inset-bottom,
  .touch-ui .viewport .interaction-prompt{bottom:calc(15px + env(safe-area-inset-bottom,0px));max-width:160px;font-size:8px;padding:8px 10px}
 }
 
-/* v0.13.0: floating helm, persistent campaign and dock stores. */
+/* v0.14.0: floating helm, persistent campaign and dock stores. */
 .floating-joystick{--floating-radius:44px;position:absolute;z-index:10;pointer-events:none;display:none;width:calc(var(--floating-radius)*2 + 18px);height:calc(var(--floating-radius)*2 + 18px);transform:translate(-50%,-50%);border:1px solid #d1eeee60;border-radius:50%;background:#c8f7f006;contain:layout style;}
 .touch-ui .floating-joystick.engaged{display:block}
 .floating-thumb{position:absolute;left:calc(50% - 13px);top:calc(50% - 13px);width:26px;height:26px;border:1px solid #d5fff0a8;background:#b9f5e91c;border-radius:50%;pointer-events:none;will-change:transform}
@@ -332,7 +332,7 @@ body.game-focus .desktop-keybinds{bottom:calc(15px + env(safe-area-inset-bottom,
 @media(max-width:540px){.overlay{padding:12px}.menu-card{padding:20px 18px}.menu-icon{font-size:39px;margin:4px 0}.version-card{padding:11px 12px;margin:13px auto}.version-heading{font-size:11px}.version-card p{font-size:10px}.menu-card h1{font-size:38px}.menu-card>p{font-size:11px}.menu-feature-list{font-size:8px}.ammo-purchases{gap:7px}}
 
 
-/* v0.13.0 / Harbour Rising: a compact three-column refit catalogue. */
+/* v0.14.0 / Living Depths: a compact three-column refit catalogue. */
 .dock-overlay{padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:#020b13e6}
 .dock-overlay .dialog-card{width:min(100%,780px);max-width:780px;max-height:calc(100dvh - 24px);padding:0;overflow:hidden;display:flex;flex-direction:column;border:1px solid #426775;border-radius:20px;background:radial-gradient(ellipse at 100% 0,#17445266,transparent 55%),linear-gradient(145deg,#0c2230,#071722);box-shadow:0 32px 120px #000b}
 .dock-overlay .dialog-top{padding:19px 25px 0;flex:none}
@@ -427,7 +427,7 @@ body.game-focus .desktop-keybinds{bottom:calc(15px + env(safe-area-inset-bottom,
 }
 @media(min-width:361px) and (max-width:540px){.upgrade-tile span{font-size:10px}.dock-overlay .dock-balance{font-size:7px}}
 
-/* v0.12 / Harbour Rising: expedition atlas, two-currency wallet and captain's log. */
+/* v0.12 / Living Depths: expedition atlas, two-currency wallet and captain's log. */
 .dock-wallet{display:flex;gap:20px;align-items:center}.crystal-wallet strong{color:#c9b7ff}.crystal-wallet>span{color:#b3a2d3}
 .dock-departure #departureLevel{max-width:62%;font-size:9px;line-height:1.6}
 .expedition-intro{margin:1px 0 14px}.expedition-intro>span{font:700 9px ui-monospace,monospace;letter-spacing:1px;color:#b2e7db}.expedition-intro p,.expedition-note{font-size:11px;line-height:1.7;color:#8ba6b4;margin:8px 0 0}
@@ -459,7 +459,7 @@ body.game-focus .desktop-keybinds{bottom:calc(15px + env(safe-area-inset-bottom,
 @media(max-width:360px){.dock-wallet{gap:9px}.dock-credit>strong{font-size:18px}.dock-intro p{font-size:9px}.dock-online{font-size:6px}.expedition-metrics{grid-template-columns:1fr 1fr;gap:9px}.expedition-metrics span{font-size:7px}.expedition-metrics strong{font-size:12px}}
 .cockpit-context #coordsText{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.cockpit-context #statusStat{flex:none}
 
-/* v0.13.0 / Harbour Rising: tiers stay visible without opening the detail modal. */
+/* v0.14.0 / Living Depths: tiers stay visible without opening the detail modal. */
 .upgrade-tile{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;text-align:left;padding:16px 12px;min-height:88px}
 .upgrade-tile .upgrade-name{font-size:10px;line-height:1.6;letter-spacing:.45px;max-width:none}
 .upgrade-tile .upgrade-tier{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:38px;padding:7px 5px;border:1px solid #6db1b04a;border-radius:7px;background:#081a237a;color:#a8e5d6;font:700 9px ui-monospace,monospace;letter-spacing:.2px;white-space:nowrap}
@@ -477,3 +477,100 @@ body.game-focus .desktop-keybinds{bottom:calc(15px + env(safe-area-inset-bottom,
 }
 @media(max-width:360px){.upgrade-tile .upgrade-name{font-size:8px}.upgrade-tile .upgrade-tier{font-size:7px;gap:4px;padding:4px}.upgrade-tier small{font-size:6px}}
 @media(min-width:541px) and (max-height:480px){.upgrade-tile{min-height:70px;padding:12px 8px}.upgrade-tile .upgrade-name{font-size:9px}.upgrade-tile .upgrade-tier{font-size:8px;min-width:32px;padding:6px 4px}}
+
+/* v0.14.0 / Living Depths. A slim, shared instrument rail, not stacked cards. */
+body .cockpit-hud.slim-hud{top:10px;left:10px;right:10px;gap:0;max-width:960px;border:1px solid #8fc2ce38;border-radius:13px;background:linear-gradient(115deg,#061923eb,#071823c4);box-shadow:0 5px 22px #0004;overflow:visible;backdrop-filter:blur(5px)}
+body.game-focus .cockpit-hud.slim-hud{top:calc(8px + env(safe-area-inset-top,0px));left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px))}
+body .slim-hud .cockpit-identity{display:flex;align-items:center;gap:8px;padding:0 5px 0 10px;height:36px;border-bottom:1px solid #6e99a725;min-width:0}
+.ship-signature{display:flex;align-items:center;gap:7px;min-width:0;flex:1}
+.vessel-beacon{width:4px;height:18px;border-radius:3px;background:#92ead3;box-shadow:0 0 10px #92ead32b;flex:none}
+.ship-signature>div{display:flex;align-items:baseline;gap:7px;min-width:0}
+.ship-signature strong{color:#bcf2e4;font-size:12px;font-weight:800;letter-spacing:1.5px}
+.ship-signature #vesselMark{font:650 9px ui-monospace,monospace;letter-spacing:.3px;color:#7fa7b5;white-space:nowrap}
+.pressure-chip{display:flex;align-items:baseline;gap:4px;flex:none;color:#a4c0c9;font:600 10px ui-monospace,monospace;white-space:nowrap;padding:3px 7px;border:1px solid #82b9c62a;border-radius:5px;background:#122c354d}
+.pressure-chip>span{font:700 7px system-ui,sans-serif;color:#799aa7;letter-spacing:.7px}
+.pressure-chip strong{font-weight:650}.pressure-chip small{font-size:8px;margin-left:2px;color:#7394a1}
+.pressure-chip.alert{border-color:#ef9487;background:#5b2526;color:#ffd6c9}.pressure-chip.alert>span,.pressure-chip.alert small{color:#ffd6c9}
+body .slim-hud .game-view-tools{display:flex;gap:1px;align-items:center;flex:none}
+body .slim-hud .view-tool{display:grid;place-items:center;border:0;border-radius:7px;background:transparent;box-shadow:none;width:39px;min-width:39px;height:34px;color:#9bc7cd;pointer-events:auto;padding:8px;touch-action:manipulation}
+body .slim-hud .view-tool .ui-icon{width:19px;height:19px}
+body .slim-hud .view-tool:hover,body .slim-hud .view-tool:active{background:#548d9940;color:#e1fff5}
+body .slim-hud #focusPauseBtn{color:#bef8de;border-left:1px solid #62949b30;border-radius:0 7px 7px 0}
+body .slim-hud .cockpit-systems,body .slim-hud .cockpit-systems.with-shield{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;padding:2px 5px 0}
+body .slim-hud .instrument-tab{min-height:32px;padding:1px 7px 3px;gap:2px;border:0;border-right:1px solid #7394a51f;border-radius:0;background:none;box-shadow:none;justify-content:center}
+body .slim-hud .instrument-tab:nth-child(5){border-right:0}
+body .slim-hud .instrument-label{font-size:8px;line-height:1;letter-spacing:.65px;font-weight:750;color:#87a8b2}
+body .slim-hud .instrument-tab>strong{font:650 15px ui-monospace,SFMono-Regular,Consolas,monospace;line-height:1;color:#d6e9eb;white-space:nowrap}
+body .slim-hud .instrument-tab strong small{font-size:9px;color:#7e9ca8}
+body .slim-hud .instrument-track{height:1.5px;background:#83adbb1a}
+body .slim-hud .instrument-tab.alert{border-radius:5px;background:#652e3a8a;--accent:#ff9b90}
+body .slim-hud .instrument-tab.alert .instrument-label,body .slim-hud .instrument-tab.alert>strong{color:#ffb6ab}
+body .slim-hud .capability-group,body .slim-hud .capability-group.with-shield{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;grid-column:1/-1;padding:2px 0 0;border-top:1px solid #84a9b11c;margin-top:2px}
+body .slim-hud .capability-group.with-shield{grid-template-columns:repeat(4,minmax(0,1fr))}
+body .slim-hud .capability{min-height:15px;padding:0 7px 1px;gap:1px;border-right:1px solid #7394a51f}
+body .slim-hud .capability:last-child{border-right:0}
+body .slim-hud .capability-group .capability-head{flex-direction:row;align-items:baseline;gap:3px}
+body .slim-hud .capability-group .capability-head .instrument-label{font-size:7px;letter-spacing:.3px}
+body .slim-hud .capability-group .capability-head strong{font:700 9px ui-monospace,monospace;color:var(--accent)}
+body .slim-hud .capability>small{display:none}
+body .slim-hud .cockpit-context{font-size:8px;letter-spacing:.45px;padding:2px 11px 3px;line-height:1.1;gap:8px}
+body .slim-hud .cockpit-context #coordsText{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;color:#6f929d;font-size:7.5px}
+body .slim-hud .cockpit-context #statusStat{flex:none;font-size:7.5px}
+.waypoint-hint{position:absolute;top:calc(100% + 6px);left:0;font:700 9px ui-monospace,monospace;letter-spacing:.4px;padding:5px 8px;border:1px solid #ddbd7733;border-radius:5px;background:#10212acc;color:#e0c595;pointer-events:none}
+body .telemetry-tools #focusHelpBtn{display:block}
+@media(max-width:360px){
+ body .slim-hud .cockpit-identity{padding-left:7px;gap:4px}.ship-signature{gap:5px}.ship-signature>div{flex-direction:column;gap:1px}.ship-signature strong{font-size:10px}.ship-signature #vesselMark{font-size:8px}
+ .pressure-chip{padding:3px 5px;font-size:9px}.pressure-chip>span{font-size:6px}
+ body .slim-hud .instrument-tab{padding-left:5px;padding-right:5px}body .slim-hud .instrument-tab>strong{font-size:14px}
+ body .slim-hud .capability-group .capability-head .instrument-label{font-size:6px}body .slim-hud .capability-group .capability-head strong{font-size:8px}
+ body .slim-hud .cockpit-context #coordsText,body .slim-hud .cockpit-context #statusStat{font-size:6.7px}
+}
+@container cockpit (min-width:500px){
+ body .slim-hud .cockpit-systems{grid-template-columns:repeat(8,minmax(0,1fr));padding:2px 5px 0}
+ body .slim-hud .cockpit-systems.with-shield{grid-template-columns:repeat(9,minmax(0,1fr))}
+ body .slim-hud .capability-group,body .slim-hud .capability-group.with-shield{display:contents}
+ body .slim-hud .capability{min-height:32px;padding:1px 7px 3px;gap:3px}
+ body .slim-hud .capability-group .capability-head{flex-direction:column;align-items:flex-start;gap:3px}
+ body .slim-hud .capability-group .capability-head .instrument-label{font-size:8px;letter-spacing:.6px}
+ body .slim-hud .capability-group .capability-head strong{font-size:13px}
+ body .slim-hud .cockpit-context{padding-top:2px}
+}
+@media(prefers-reduced-motion:reduce){.slim-hud *{transition:none!important}}
+
+/* Paused expedition chart and settings. Native dialogs isolate touch + keyboard. */
+.survey-dialog,.audio-dialog,.telemetry-dialog{color:#cfe0e6;border:1px solid #4c7280;background:radial-gradient(ellipse at 100% 0,#153542,transparent 60%),#071722;border-radius:17px;box-shadow:0 25px 100px #000b;margin:auto;padding:0;width:min(95vw,1000px);max-width:none;max-height:94dvh}
+.survey-dialog::backdrop,.audio-dialog::backdrop,.telemetry-dialog::backdrop{background:#010a11c9;backdrop-filter:blur(6px)}
+.survey-dialog[open]{display:flex;flex-direction:column;height:min(90dvh,850px)}
+.explorer-header{padding:18px 20px 12px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex:none}
+.explorer-header h2{font-size:20px;letter-spacing:1px;line-height:1.1;margin:5px 0 7px;color:#dcf4f2}.explorer-header .menu-kicker{font-size:8px;letter-spacing:1.3px;color:#83b4b7}
+.explorer-header p{font:600 9px ui-monospace,monospace;color:#86a8b7;margin:0;line-height:1.5}
+.explorer-header .close-btn{min-width:40px;min-height:40px;flex:none;border-radius:9px}
+.map-tools{display:flex;gap:5px;padding:0 14px 10px;flex:none;flex-wrap:wrap}
+.map-tools button{min-width:36px;min-height:38px;padding:5px 9px;color:#abd4d8;border:1px solid #385967;background:#0b2530;border-radius:6px;font-size:9px;font-weight:750;letter-spacing:.3px;touch-action:manipulation}
+.map-tools button:first-child,.map-tools button:nth-child(2){font-size:20px}.map-tools button:disabled{opacity:.4}
+.map-surface{position:relative;flex:1;min-height:80px;margin:0 14px;border:1px solid #31535e;border-radius:9px;overflow:hidden;background:#030c14}
+#surveyCanvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}#surveyCanvas:active{cursor:grabbing}
+.map-paused{position:absolute;top:10px;right:12px;color:#93b5b5;background:#081d27cf;border:1px solid #719b9d40;border-radius:4px;padding:4px 6px;font:600 8px ui-monospace,monospace;pointer-events:none}
+.map-scale{position:absolute;bottom:10px;right:12px;color:#93b5b5;border-top:1px solid #93b5b5aa;width:90px;padding-top:5px;font:9px ui-monospace,monospace;pointer-events:none;background:#05101988}
+.map-legend{display:flex;flex-wrap:wrap;gap:6px 12px;padding:10px 16px 0;font:700 8px ui-monospace,monospace;color:#7f9da9;flex:none}
+.legend-you{color:#bbf9e4}.legend-signal{color:#efcb92}.legend-resource{color:#b9a2d7}.legend-landmark{color:#bdb5d2}.legend-threat{color:#e8a49a}
+.survey-dialog .explorer-footer{margin:0;padding:9px 16px 14px;border:0;display:block;letter-spacing:0;flex:none}
+.explorer-footer p{margin:0 0 3px;font-size:10px;line-height:1.4;color:#aac7d1}.explorer-footer small{font-size:9px;line-height:1.4;color:#70929f}
+.audio-dialog,.telemetry-dialog{width:min(94vw,620px);overflow:auto}
+.audio-content{padding:0 23px 23px}.audio-content p{font-size:13px;line-height:1.6;color:#a2bfc9}.audio-content small{font-size:11px;color:#7e9daa;line-height:1.6;display:block}
+.audio-content label{display:flex;justify-content:space-between;font-size:11px;letter-spacing:1px;margin:23px 0 8px;color:#b8ddd7}
+.audio-content output{color:#8cd8c2;font-family:monospace}.audio-content input[type=range]{width:100%;height:36px;accent-color:#91d7c4;touch-action:pan-x}
+.audio-content .alt-btn{width:100%;min-height:44px;margin-top:14px;border-radius:8px}.audio-content .menu-secondary-btn{max-width:none}
+.telemetry-body{padding:0 20px}.telemetry-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.telemetry-grid>div{padding:12px;background:#102b3677;border:1px solid #51758138;border-radius:8px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.telemetry-grid span{font-size:8px;color:#84a9b6;font-weight:700;letter-spacing:1px}.telemetry-grid strong{font:650 12px ui-monospace,monospace;color:#cae6df;line-height:1.4;overflow-wrap:anywhere}
+.telemetry-target,.telemetry-save{font:10px ui-monospace,monospace;color:#bfba9b;line-height:1.5}.telemetry-save{color:#85b9a8}
+.telemetry-tools{display:flex;gap:7px;padding:8px 20px 20px}.telemetry-tools button{flex:1;min-height:42px;font-size:10px;border-radius:7px}
+.telemetry-tools .ui-icon{width:20px;height:20px}.telemetry-tools #focusToggleBtn{max-width:90px;display:grid;place-items:center}
+@media(max-height:500px){
+ .survey-dialog[open]{height:96dvh;max-height:96dvh;border-radius:10px;width:min(98vw,1100px)}
+ .explorer-header{padding:9px 14px 6px}.explorer-header h2{font-size:16px;margin:3px 0}.explorer-header .menu-kicker{font-size:7px}.explorer-header p{font-size:8px}.explorer-header .close-btn{min-height:34px}
+ .map-tools{padding-bottom:5px}.map-tools button{min-height:30px}.map-legend{padding-top:5px;font-size:7px;gap:4px 12px}
+ .survey-dialog .explorer-footer{padding:5px 16px 7px}.explorer-footer p{font-size:9px}.explorer-footer small{display:none}
+ .telemetry-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.telemetry-grid>div{padding:8px}
+}
