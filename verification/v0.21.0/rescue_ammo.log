@@ -1,0 +1,2 @@
+PASS death replaces lower/equal/higher stocks with exactly 10 / 3 / 3; firing spends stock; docking and reload do not replenish; another genuine death resets exactly
+PASS reserves survive unfitted launchers and later purchases; no free unlocks; three usable starter-rack mines; normal paid fill remains two slots with no negative-price exploit

@@ -1,0 +1,5 @@
+PASS real damage death retains scrap, crystals and recorders; automatic beacon; manual single transfer; reload/paused resume; unique banked delivery; empty loss preserves banked progress
+PASS repeated losses keep earlier wrecks; re-loss creates one new manifest with no duplication; only banking both recovered recorders unlocks Level 2
+PASS recorder-only cargo survives as an independently recoverable wreck
+PASS surface losses settle underwater; obstacle losses move to nearby clear water; pressure deaths preserve actual loss depth
+PASS explicit quit keeps all cargo but does not grant defeat stock

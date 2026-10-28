@@ -1,0 +1,5 @@
+PASS no seeking before 0.65-second arm delay; partial-frame arming, 3.2 m/s drift, delayed hit outside old trigger radius, no self-damage or second ammo charge
+PASS local omnidirectional sensing, out-of-range rejection, original-drop leash and stop-on-loss behaviour
+PASS rock-blocked homing, no through-wall proximity detonation or blast damage
+PASS relative swept predator/mine contact; no tunnelling or hits during the unarmed part of a frame
+PASS unchanged area damage, kill credit and salvage drops with moving mines

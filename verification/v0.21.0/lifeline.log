@@ -1,0 +1,3 @@
+PASS exact oxygen consumption at all 6 marks, upgrade detail endurance and very low idle battery draw
+PASS all 5 thruster ratings: empty-battery propulsion exactly half normal commanded speed, no free boost or sonar, no immobility
+PASS boost and sonar dominate measured draw; lamp preserved; empty-power transition is bounded; actual paused frames freeze air and power
