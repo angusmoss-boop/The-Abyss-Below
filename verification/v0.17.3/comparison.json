@@ -1,0 +1,240 @@
+{
+  "before": {
+    "redundantGestureAutomation": 700,
+    "water": {
+      "joinJump": 0.2945201452821493,
+      "maximumInteriorJump": 0.07039684057235718
+    },
+    "sceneHandlers": [
+      {
+        "mode": "menu",
+        "handlerMilliseconds": 187.10000000009313
+      },
+      {
+        "mode": "dock",
+        "handlerMilliseconds": 166.69999999995343
+      },
+      {
+        "mode": "pause",
+        "handlerMilliseconds": 282.20000000006985
+      }
+    ],
+    "status": {
+      "buildId": "0.17.2-delta-helm-1",
+      "effects": 0.5,
+      "ambience": 0.35,
+      "music": 0.3,
+      "muted": false,
+      "available": true,
+      "unlocked": true,
+      "state": "running",
+      "blocked": false,
+      "suspendPending": false,
+      "worldMuted": true,
+      "worldGain": 0,
+      "outputGain": 1,
+      "voices": 0,
+      "active": false,
+      "eventCounts": {},
+      "maxVoices": 28,
+      "musicMode": "pause",
+      "musicPlaying": true,
+      "musicNotes": 276,
+      "musicDuration": 40
+    },
+    "musicHashes": [
+      {
+        "duration": 24,
+        "hashes": [
+          1569071252,
+          2687991415
+        ]
+      },
+      {
+        "duration": 21.818185941043083,
+        "hashes": [
+          710456851,
+          2689975993
+        ]
+      },
+      {
+        "duration": 40,
+        "hashes": [
+          1265599618,
+          3615254882
+        ]
+      }
+    ],
+    "rapidResume": {
+      "pauseEdgeJump": 0.05540091544389725,
+      "minEngineGainAfterResume": 0,
+      "maxSampleJump": 8.268656529253349e-06,
+      "samples": [
+        {
+          "t": 0.49,
+          "gain": 0.055076804012060165
+        },
+        {
+          "t": 0.5,
+          "gain": 0.05536455288529396
+        },
+        {
+          "t": 0.55,
+          "gain": 0
+        },
+        {
+          "t": 0.6,
+          "gain": 7.063955308694858e-06
+        },
+        {
+          "t": 0.7,
+          "gain": 5.767895345343277e-06
+        },
+        {
+          "t": 0.8,
+          "gain": 4.804560376214795e-06
+        },
+        {
+          "t": 0.85,
+          "gain": 1.8509372239350341e-06
+        },
+        {
+          "t": 0.88,
+          "gain": 5.513429641723633e-07
+        },
+        {
+          "t": 0.9,
+          "gain": 0
+        },
+        {
+          "t": 1,
+          "gain": 0.006966754794120789
+        },
+        {
+          "t": 1.1,
+          "gain": 0.032547250390052795
+        }
+      ]
+    }
+  },
+  "after": {
+    "redundantGestureAutomation": 0,
+    "water": {
+      "joinJump": 0.023063361644744873,
+      "maximumInteriorJump": 0.06982302665710449
+    },
+    "sceneHandlers": [
+      {
+        "mode": "menu",
+        "handlerMilliseconds": 1.400000000023283
+      },
+      {
+        "mode": "dock",
+        "handlerMilliseconds": 0.10000000009313226
+      },
+      {
+        "mode": "pause",
+        "handlerMilliseconds": 0.09999999997671694
+      }
+    ],
+    "status": {
+      "buildId": "0.17.3-smooth-signals-1",
+      "effects": 0.5,
+      "ambience": 0.35,
+      "music": 0.3,
+      "muted": false,
+      "available": true,
+      "unlocked": true,
+      "state": "running",
+      "blocked": false,
+      "suspendPending": false,
+      "worldMuted": true,
+      "worldGain": 0,
+      "outputGain": 1,
+      "voices": 0,
+      "active": false,
+      "eventCounts": {},
+      "maxVoices": 28,
+      "musicMode": "pause",
+      "musicPreparing": null,
+      "musicRenderMode": "worker",
+      "musicPlaying": true,
+      "musicNotes": 276,
+      "musicDuration": 40
+    },
+    "musicHashes": [
+      {
+        "duration": 24,
+        "hashes": [
+          1569071252,
+          2687991415
+        ]
+      },
+      {
+        "duration": 21.818185941043083,
+        "hashes": [
+          710456851,
+          2689975993
+        ]
+      },
+      {
+        "duration": 40,
+        "hashes": [
+          1265599618,
+          3615254882
+        ]
+      }
+    ],
+    "rapidResume": {
+      "pauseEdgeJump": 4.675239324569702e-06,
+      "minEngineGainAfterResume": 0.05733316391706467,
+      "maxSampleJump": 3.0919909477233887e-07,
+      "samples": [
+        {
+          "t": 0.49,
+          "gain": 0.055076804012060165
+        },
+        {
+          "t": 0.5,
+          "gain": 0.05536455288529396
+        },
+        {
+          "t": 0.55,
+          "gain": 0.04830572009086609
+        },
+        {
+          "t": 0.6,
+          "gain": 0.051172297447919846
+        },
+        {
+          "t": 0.7,
+          "gain": 0.0552431158721447
+        },
+        {
+          "t": 0.8,
+          "gain": 0.05733316391706467
+        },
+        {
+          "t": 0.85,
+          "gain": 0.057958297431468964
+        },
+        {
+          "t": 0.88,
+          "gain": 0.0582447350025177
+        },
+        {
+          "t": 0.9,
+          "gain": 0.058406222611665726
+        },
+        {
+          "t": 1,
+          "gain": 0.05895715579390526
+        },
+        {
+          "t": 1.1,
+          "gain": 0.05923999845981598
+        }
+      ]
+    }
+  }
+}
