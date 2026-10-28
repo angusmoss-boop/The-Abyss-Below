@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const root = document.documentElement;
-  const buildId = '0.22.0-deepwater-rescue-1';
+  const buildId = '0.23.0-sunken-strongholds-1';
   let finished = false, reason = 'loading', ready = false, imageTimer, finishTimer;
   root.classList.add('abyss-launching');
   // A missing/corrupt game or an unavailable image must never trap the menu.

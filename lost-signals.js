@@ -2,7 +2,7 @@
    Backups are portable JSON, not encrypted, cloud-synchronised or cheat-proof. */
 (() => {
   'use strict';
-  const buildId='0.22.0-deepwater-rescue-1';
+  const buildId='0.23.0-sunken-strongholds-1';
   const levels=['sunbreak-shelf','glassbone-rift','drowned-gardens','midnight-cathedral','calypso-abyss'];
   const lengths=[2,3,4,5,6];
   const chapters=['The wrong timestamp','Something in the walls','An ocean that remembers','The listening chamber','The other end of the call'];
@@ -94,7 +94,7 @@
       for(const key of ['drops','recoveries'])if(!Array.isArray(f[key])||f[key].length>6000)fail('Invalid recovery data.');
       const ids=new Set(),heldRecorders=new Set(f.secured);
       for(const r of f.recoveries){
-        if(!r||typeof r.id!=='string'||!/^recovery-/.test(r.id)||ids.has(r.id)||!Number.isFinite(r.x)||(r.x<-2440||r.x>3640)||!Number.isFinite(r.y)||r.y<58||r.y>18120||!['scrap','crystal'].every(k=>Number.isInteger(r[k])&&r[k]>=0&&r[k]<=1e9))fail('Invalid recovery manifest.');
+        if(!r||typeof r.id!=='string'||!/^recovery-/.test(r.id)||ids.has(r.id)||!Number.isFinite(r.x)||(r.x<-4800||r.x>6000)||!Number.isFinite(r.y)||r.y<58||r.y>18120||!['scrap','crystal'].every(k=>Number.isInteger(r[k])&&r[k]>=0&&r[k]<=1e9))fail('Invalid recovery manifest.');
         ids.add(r.id);
         if(r.recorders!==undefined&&(!Array.isArray(r.recorders)||!r.recorders.every(n=>Number.isInteger(n)&&n>=0&&n<lengths[i])||new Set(r.recorders).size!==r.recorders.length))fail('Invalid recovery recorders.');
         for(const n of r.recorders||[]){if(heldRecorders.has(n))fail('A recorder has more than one owner.');heldRecorders.add(n);}
@@ -117,7 +117,7 @@
       if(!q.cargo||!['scrap','crystal'].every(k=>Number.isInteger(q.cargo[k])&&q.cargo[k]>=0)||!Array.isArray(q.cargo.recorders)||!q.cargo.recorders.every(i=>Number.isInteger(i)&&i>=0&&i<lengths[levels.indexOf(a.levelId)]))fail('Invalid dive cargo.');
       if(!a.items.every(n=>Number.isFinite(n.x)&&Number.isFinite(n.y)&&['scrap','crystal','air','recorder','recovery','battery'].includes(n.type)))fail('Invalid dive items.');
       if(!a.predators.every(n=>['common','apex','reaper','warden'].includes(n.tier)&&Number.isFinite(n.x)&&Number.isFinite(n.y)&&Number.isFinite(n.health)))fail('Invalid dive contacts.');
-      if(!Number.isFinite(a.clock)||a.clock<0||q.x<-2440||q.x>3640||q.y<-2000||q.y>120+[300,600,1000,1400,1800][levels.indexOf(a.levelId)]*10+10)fail('Dive position or clock is invalid.');
+      if(!Number.isFinite(a.clock)||a.clock<0||q.x<-4800||q.x>6000||q.y<-2000||q.y>120+[300,600,1000,1400,1800][levels.indexOf(a.levelId)]*10+10)fail('Dive position or clock is invalid.');
       const guidanceValid=o=>(o.targetId==null||typeof o.targetId==='string'&&o.targetId.length<=100||Number.isInteger(o.targetId)&&o.targetId>=0&&o.targetId<=1e9)&&['launchHeading','originX','originY','heading','vx','vy'].every(k=>o[k]===undefined||Number.isFinite(o[k])&&Math.abs(o[k])<=100000);
       if(!a.mines.every(m=>Number.isFinite(m.x)&&Number.isFinite(m.y)&&Number.isFinite(m.armedAt)&&Number.isFinite(m.damage)&&m.damage>=0&&guidanceValid(m)))fail('Invalid mine checkpoint.');
       if(!a.waves.every(w=>Number.isFinite(w.x)&&Number.isFinite(w.y)&&Number.isFinite(w.birth)&&Number.isFinite(w.radius)&&Array.isArray(w.contacts)&&w.contacts.every(c=>['items','predators','rocks','wrecks','vents','mines','landmarks','derelictMines','ventFields','schools','signals','giantObjects','rescueObjects','wall','floor'].includes(c.kind)&&typeof c.hit==='boolean')))fail('Invalid sonar checkpoint.');
@@ -136,7 +136,7 @@
     window.AbyssGiants?.validateBackup(data);window.AbyssRescue?.validateCampaign(data);
     return true;
   }
-  function pack(payload,version='0.22.0'){
+  function pack(payload,version='0.23.0'){
     validateCampaign(payload);const text=JSON.stringify(payload);
     return JSON.stringify({format:'the-abyss-below/campaign',formatVersion:1,gameVersion:version,exportedAt:new Date().toISOString(),integrity:{algorithm:'fnv1a32',value:checksum(text)},payload},null,2);
   }

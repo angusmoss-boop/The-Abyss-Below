@@ -2,7 +2,7 @@
    Start/resume only after user input. Settings persist independently of campaigns. */
 (() => {
   'use strict';
-  const KEY='abyss-audio-v1', BUILD='0.22.0-deepwater-rescue-1';
+  const KEY='abyss-audio-v1', BUILD='0.23.0-sunken-strongholds-1';
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   let settings={effects:.5,ambience:.35,music:.3,muted:false};
   try { const v=JSON.parse(localStorage.getItem(KEY)||'null'); if(v){
@@ -162,6 +162,10 @@
       case 'lights':play(170,310,.09,.035);break;
       // Spatial background details go through the ambience bus, not the effects slider.
       case 'chain':play(178,165,.6,.055,pan,'triangle',0,'ambience');play(420,330,.16,.022,pan,'sine',.24,'ambience');break;
+      case 'wreckWarning':play(180,210,.22,.045,pan,'sine');play(180,230,.22,.035,pan,'sine',.3);break;
+      case 'wreckArc':hiss(.45,.10,1700,'bandpass');play(95,47,.38,.04,pan,'triangle');break;
+      case 'wreckRelay':play(220,330,.3,.07,pan,'sine');play(330,440,.38,.055,pan,'sine',.18);break;
+      case 'wreckAlarm':play(140,210,.55,.065,pan,'triangle');play(140,210,.55,.05,pan,'triangle',.7);break;
       case 'ventWarning':hiss(.95,.085,440,'lowpass',0,'ambience');play(62,84,1.15,.045,pan,'sine',0,'ambience');break;
       case 'ventErupt':hiss(1.8,.18,720,'lowpass',0,'ambience');play(70,39,1.7,.055,pan,'triangle',0,'ambience');break;
       case 'kelp':hiss(.75,.045,1000,'bandpass',0,'ambience');break;

@@ -1,15 +1,15 @@
 # The Abyss Below
-## v0.22.0: Deepwater Rescue
+## v0.23.0: Sunken Strongholds
 
 A mobile-first, side-scrolling submarine exploration game built with HTML, CSS, Canvas and JavaScript. The same game supports desktop mouse/keyboard play and a touch-first installable web-app interface. This archive is the web/PWA source, not a signed native Android release.
 
-**Current update:** optional research-drone escorts, limited oxygen stations, occasional underwater encounters, and an honest expedition debrief with a persistent harbour fleet. See [the Deepwater Rescue guide](DEEPWATER-RESCUE-v0.22.0.md) for exact rules and migration details.
+**Current update:** five enlarged, three-deck wrecks with guarded identification vaults, two sonar-identifiable isolation relays, cycling electrical/pressure hazards and permanent clearing progress. See [the Sunken Strongholds guide](SUNKEN-STRONGHOLDS-v0.23.0.md) for exact rules and migration details. All Deepwater Rescue features remain.
 
 ## Install and update
 
-Use the complete ZIP for a fresh repository. Apply the extracted update ZIP over **v0.21.0** at the repository root. Save and export a campaign backup first; banking cargo is a sensible precaution. Upload changed runtime files together. These files do not deploy themselves.
+Use the complete ZIP for a fresh repository. Apply the extracted update ZIP over **v0.22.0** at the repository root. Save and export a campaign backup first; banking cargo is a sensible precaution. Upload changed runtime files together. These files do not deploy themselves.
 
-Reopen your existing game address online after deployment and check for **v0.22.0 / Deepwater Rescue**. Do not clear site data, uninstall or start a new campaign to update. Keep the same browser profile and origin. The menu's version checker distinguishes verified, outdated, incomplete, local and offline states rather than assuming a deployment succeeded.
+Reopen your existing game address online after deployment and check for **v0.23.0 / Sunken Strongholds**. Do not clear site data, uninstall or start a new campaign to update. Keep the same browser profile and origin. The menu's version checker distinguishes verified, outdated, incomplete, local and offline states rather than assuming a deployment succeeded.
 
 ## Controls
 
@@ -32,7 +32,7 @@ Standard air lasts approximately 5:33 uninterrupted active minutes; Air Recycler
 
 Normal travel has much lower power draw than boost or sonar. At empty power, reserve thrust is half the fitted normal movement rating and boost cannot run. New rare golden battery cells restore up to 25 power and become eligible to return after eight active dive minutes, with a 90-second per-level stagger and no visible respawning. No offline, pause or dock-screen farming. Crystals still never regenerate.
 
-Existing upgrade prices, mine/gun ammunition costs, salvage regeneration, combat stats, flashlight marks, controls and music are unchanged in v0.22.0.
+Existing upgrade prices, mine/gun ammunition costs, salvage regeneration, combat stats, flashlight marks, controls and music are unchanged in v0.23.0.
 
 ## Deepwater Rescue
 
@@ -41,6 +41,12 @@ Explore to detect an optional distress signal, use sonar to locate it, then hold
 Hold USE at an air station for up to 25% of fitted oxygen capacity per station, replenished only after physically returning to that destination's harbour. Stations do not bank cargo, repair hull or protect against predators. No battery is required.
 
 The main and pause menus include a Rescue Log. The dock upgrade view starts with a compact recent-expedition summary and a View Report button. No automatic report modal interrupts arrival.
+
+## Sunken Strongholds
+
+Each optional wreck is now approximately five times its previous interior footprint, with three decks and nine named compartments. The entry breach never locks. Find both isolation relays on the upper and lower decks, scan each with sonar, then use it to disable its circuit. Both circuits must be isolated before the identification vault opens. A separate service panel opens a permanent shortcut and lower escape hatch; recovering the plate opens it too.
+
+Wrecks contain 3/4/5/6/8 additional territorial defenders and 3/4/5/6/7 electrical/pressure traps. Traps warn for 1.8 seconds before 2.2 seconds of activity, with a quiet interval. Defenders use existing tier statistics and solid collision/navigation. Wounds, kills, isolated circuits, scan status and shortcuts persist per campaign, so returning to dock does not undo your progress. Carry the plate home to earn the existing cosmetic finish. Existing banked/carried/lost plates are grandfathered without duplication.
 
 ## Development
 
@@ -56,18 +62,19 @@ After **every runtime edit**, rebuild release checksums:
 python tests/build_release.py
 ```
 
-The offline worker and deployment verifier intentionally reject an incomplete or checksum-mismatched release. `version.json` covers 18 runtime assets. Do not update only one script and expect the verifier to show a consistent release.
+The offline worker and deployment verifier intentionally reject an incomplete or checksum-mismatched release. `version.json` covers 19 runtime assets. Do not update only one script and expect the verifier to show a consistent release.
 
 ## Verification
 
 Current runner:
 
 ```sh
-python tests/run_v0220.py
+python tests/run_v0230.py
+python tests/v0230_stronghold_routes_test.py
 ```
 
-See [current verification](VERIFICATION-v0.22.0.md), `verification/v0.22.0/` and [test reproduction](tests/README-v0.22.0.md). Earlier reports in the archive are historical, not evidence for this build. Browser tests use actual production code with isolated synthetic storage, never the user's live saves.
+See [current verification](VERIFICATION-v0.23.0.md), `verification/v0.23.0/` and [test reproduction](tests/README-v0.23.0.md). Earlier reports in the archive are historical, not evidence for this build. Browser tests use actual production code with isolated synthetic storage, never the user's live saves.
 
 ## Archive
 
-`CHANGELOG.md` and prior feature guides retain the development history. The current code, Deepwater Rescue guide and Lifeline resource settings take precedence over older feature descriptions, especially older free-ammunition, salvage and save rules.
+`CHANGELOG.md` and prior feature guides retain the development history. The current code, Sunken Strongholds and Deepwater Rescue guides, and Lifeline resource settings take precedence over older feature descriptions, especially older free-ammunition, salvage and save rules.

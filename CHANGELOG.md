@@ -1,3 +1,13 @@
+# v0.23.0: Sunken Strongholds
+
+- Enlarge the five optional wrecks to 1340x740 through 2000x1120 world units; add three decks, nine named compartments, thematic equipment, wiring, ribs and visible machinery.
+- Require sonar identification and USE activation of two isolation relays to open the guarded plate vault; add a separate service shortcut and escape hatch, and preserve the always-open entrance.
+- Add 3/4/5/6/8 territorial defenders and 3/4/5/6/7 cycling electrical/pressure hazards. Reuse existing enemy stats, obstacle navigation, damage and loot rules.
+- Persist defender wounds/deaths, isolated circuits, relay scans, shortcuts, hazard phase and hit cooldowns. Collecting the plate alerts surviving guards without spawning reinforcements.
+- Expand survey/checkpoint bounds for the larger hulls. Preserve old earned/carried/lost plates, original resources, rocks and ordinary enemies.
+- Relocate only old entities newly embedded in wreck geometry, including the submarine, recovery pods, predator salvage and escort drone. Rebind relocated recovery coordinates after checkpoint restoration.
+- Add clear sonar/HUD/journal feedback and four fade-safe procedural security cues. Keep existing controls, economy, music, campaigns, achievements and respawn rules.
+
 # v0.22.0: Deepwater Rescue
 
 - Add one persistent, named research-drone rescue per level, approximate distress areas, sonar identification and manual restart/follow/wait through existing USE.

@@ -3,7 +3,7 @@
  */
 (() => {
   'use strict';
-  const buildId='0.22.0-deepwater-rescue-1';
+  const buildId='0.23.0-sunken-strongholds-1';
   const TAU=Math.PI*2;
   const NAMES=['PIP','MICA','FERN','ECHO','NOVA'];
   const REWARDS=[180,260,340,420,500];
@@ -16,7 +16,7 @@
   ];
   const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
   const finite=(x,a=0,b=1e9)=>Number.isFinite(x)&&x>=a&&x<=b;
-  const point=p=>p&&finite(p.x,-2440,3640)&&finite(p.y,70,18120);
+  const point=p=>p&&finite(p.x,-4800,6000)&&finite(p.y,70,18120);
   const copy=x=>JSON.parse(JSON.stringify(x));
   const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
   const states=['stranded','follow','wait','rescued'];
