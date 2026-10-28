@@ -1,0 +1,168 @@
+{
+  "livePauseFade": [
+    {
+      "t": 0,
+      "gain": 0.05541593208909035
+    },
+    {
+      "t": 0.02031746031746029,
+      "gain": 0.05245627835392952
+    },
+    {
+      "t": 0.04063492063492069,
+      "gain": 0.04949335381388664
+    },
+    {
+      "t": 0.05804988662131516,
+      "gain": 0.046953704208135605
+    },
+    {
+      "t": 0.07836734693877556,
+      "gain": 0.043990783393383026
+    },
+    {
+      "t": 0.09868480725623585,
+      "gain": 0.04102785885334015
+    },
+    {
+      "t": 0.11900226757369614,
+      "gain": 0.03806493431329727
+    },
+    {
+      "t": 0.13931972789115643,
+      "gain": 0.035102009773254395
+    },
+    {
+      "t": 0.15963718820861683,
+      "gain": 0.032139088958501816
+    },
+    {
+      "t": 0.17995464852607712,
+      "gain": 0.029176222160458565
+    },
+    {
+      "t": 0.20897959183673476,
+      "gain": 0.02494347281754017
+    },
+    {
+      "t": 0.22929705215419505,
+      "gain": 0.02198054827749729
+    },
+    {
+      "t": 0.24961451247165534,
+      "gain": 0.019017627462744713
+    },
+    {
+      "t": 0.25832199546485257,
+      "gain": 0.017747798934578896
+    },
+    {
+      "t": 0.290249433106576,
+      "gain": 0.013091749511659145
+    },
+    {
+      "t": 0.3105668934240363,
+      "gain": 0.010128824971616268
+    },
+    {
+      "t": 0.3279818594104309,
+      "gain": 0.007589183282107115
+    },
+    {
+      "t": 0.3482993197278912,
+      "gain": 0.00462626526132226
+    },
+    {
+      "t": 0.3686167800453515,
+      "gain": 0.0016633335035294294
+    },
+    {
+      "t": 0.38893424036281177,
+      "gain": 0
+    },
+    {
+      "t": 0.40925170068027206,
+      "gain": 0
+    },
+    {
+      "t": 0.42956916099773235,
+      "gain": 0
+    },
+    {
+      "t": 0.44988662131519286,
+      "gain": 0
+    },
+    {
+      "t": 0.47020408163265315,
+      "gain": 0
+    }
+  ],
+  "backgroundSuspends": [
+    {
+      "time": 2.1420408163265305,
+      "gain": 0
+    }
+  ],
+  "worker": {
+    "status": {
+      "buildId": "0.18.0-lost-signals-1",
+      "effects": 0.5,
+      "ambience": 0.35,
+      "music": 0.3,
+      "muted": false,
+      "available": true,
+      "unlocked": true,
+      "state": "running",
+      "blocked": false,
+      "suspendPending": false,
+      "worldMuted": true,
+      "worldGain": 0,
+      "outputGain": 1,
+      "voices": 0,
+      "active": false,
+      "eventCounts": {},
+      "maxVoices": 28,
+      "musicMode": "dock",
+      "musicPreparing": null,
+      "musicRenderMode": "worker",
+      "musicPlaying": true,
+      "musicNotes": 276,
+      "musicDuration": 21.818185941043083
+    },
+    "heartbeats": 253,
+    "initialLoopDurations": [
+      21.818185941043083
+    ]
+  },
+  "fallback": {
+    "status": {
+      "buildId": "0.18.0-lost-signals-1",
+      "effects": 0.5,
+      "ambience": 0.35,
+      "music": 0.3,
+      "muted": false,
+      "available": true,
+      "unlocked": true,
+      "state": "running",
+      "blocked": false,
+      "suspendPending": false,
+      "worldMuted": true,
+      "worldGain": 0,
+      "outputGain": 1,
+      "voices": 0,
+      "active": false,
+      "eventCounts": {},
+      "maxVoices": 28,
+      "musicMode": "dock",
+      "musicPreparing": null,
+      "musicRenderMode": "yielding-fallback",
+      "musicPlaying": true,
+      "musicNotes": 276,
+      "musicDuration": 21.818185941043083
+    },
+    "heartbeats": 293,
+    "initialLoopDurations": [
+      21.818185941043083
+    ]
+  }
+}

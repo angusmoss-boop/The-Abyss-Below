@@ -1,0 +1,1 @@
+PASS actual v0.17.4 migration: balances, every upgrade credit/crystal price, ammo, finite resources/depletion, regeneration, survey, wildlife, enemies, cargo and paused dive preserved; inactive slots remain byte-for-byte unchanged.

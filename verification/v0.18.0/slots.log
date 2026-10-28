@@ -1,0 +1,4 @@
+PASS actual v0.15 campaign migrates into Slot 1; all 3 named slots independent; no overwrite when full; loading restores paused cargo and depleted map unchanged
+PASS delete confirmation/cancel, other campaigns intact, pagehide cannot resurrect deleted current save; original legacy never reimported
+PASS backup recovery, quota failure blocks switching, optimistic stale-window guard refuses to overwrite newer save
+PASS unreadable campaign preserved, explicit alternative-slot recovery remains usable
