@@ -1,5 +1,5 @@
 /* Shell, dock and menu skin. */
-:root{--abyss-build:"0.17.4-crystal-descent-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
+:root{--abyss-build:"0.18.0-lost-signals-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
 body{background:radial-gradient(ellipse at 40% -20%,#12344a 0%,#061019 65%)}
@@ -713,7 +713,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 }
 @media(prefers-reduced-motion:reduce){body.touch-ui .action-circle,body.touch-ui .ring-value,body.touch-ui .stock-value{transition:none}}
 
-/* v0.17.4 / Crystal Descent: approved artwork, unchanged cockpit and controls. */
+/* v0.18.0 / Lost Signals: approved artwork, unchanged cockpit and controls. */
 .brand-app-icon{width:44px;height:44px;object-fit:cover;border-radius:12px;box-shadow:0 0 20px #48bcdf22;border:1px solid #4a8c9b66;flex:none}
 #menuOverlay{background:radial-gradient(ellipse at 25% 30%,#123c4be8,#030c15f5 70%);padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
 #menuOverlay .crystal-menu{display:grid;grid-template-columns:43% minmax(0,1fr);width:min(950px,100%);max-height:calc(100dvh - 36px);padding:0;overflow:auto;border:1px solid #38657399;border-radius:22px;background:#071923;box-shadow:0 30px 110px #000b;text-align:left;scrollbar-width:thin;scrollbar-color:#3c6470 #071923}
@@ -780,3 +780,85 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
  #menuOverlay .version-card{margin-top:12px}.menu-launch-art{object-position:50% 45%}
 }
 @media(prefers-reduced-motion:reduce){#menuOverlay button{transition:none}}
+
+/* v0.18.0 Lost Signals: the archive and dispatch desk share the existing cockpit palette. */
+.dock-tabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:thin;flex-shrink:0;padding-bottom:5px;}
+.dock-tabs>[role=tab]{flex:1 0 auto;min-width:82px;padding:11px 10px;font-size:10px;white-space:nowrap;}
+.signals-intro{padding:8px 0 18px;border-bottom:1px solid #24444e;margin-bottom:16px;}
+.signals-intro h3{font-size:22px;letter-spacing:-.4px;margin:8px 0 10px;color:#dbf3ee;}
+.signals-intro p,.contract-card p,.active-contract p,.journal-page p,.backup-tools p{font-size:13px;line-height:1.65;color:#a0bac4;margin:8px 0;}
+.contract-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.contract-card{border:1px solid #2a4752;border-radius:14px;background:linear-gradient(140deg,#0c2431,#07151e);padding:18px;display:flex;flex-direction:column;min-width:0;position:relative;overflow:hidden;}
+.contract-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#99dccc,transparent);}
+.contract-eyebrow{display:flex;align-items:center;justify-content:space-between;gap:10px;font:10px/1.45 ui-monospace,monospace;color:#8ebdbd;letter-spacing:1px;}
+.contract-eyebrow strong{color:#edce8e;font-size:14px;white-space:nowrap;}
+.contract-card h3{font-size:19px;line-height:1.25;margin:16px 0 4px;color:#e1f2ee;}
+.contract-meta{font:10px/1.6 ui-monospace,monospace;color:#b4d7d3;border-block:1px solid #23414d;padding:10px 0;margin:10px 0;}
+.contract-card .contract-note{font-size:12px;color:#87a2b0;margin-bottom:18px;}
+.contract-card .slot-primary{margin-top:auto;min-height:44px;font-size:11px;white-space:normal;}
+.active-contract{border:1px solid #76bbaa;border-radius:14px;background:#12302c77;padding:18px;margin-bottom:18px;}
+.active-contract h3{font-size:18px;margin:14px 0 4px;color:#dff5e9;}
+.signal-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px;}
+.signal-actions button{min-height:44px;flex:1 1 auto;font-size:11px;}
+.archive-chapters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0 20px;}
+.archive-chapter{display:flex;flex-direction:column;text-align:left;gap:8px;border:1px solid #304553;border-radius:12px;background:#0a1e29;padding:16px;color:#d5e5ed;min-height:104px;}
+.archive-chapter span{color:#92b9c2;font:10px ui-monospace,monospace;letter-spacing:1px;}
+.archive-chapter strong{font-size:17px;font-weight:600;}
+.archive-chapter small{font:10px/1.5 ui-monospace,monospace;color:#91a9b4;}
+.archive-chapter:hover,.archive-chapter:focus-visible{border-color:#9ae0ca;background:#10313b;}
+.signals-dialog{width:min(960px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:0;border:1px solid #365260;border-radius:20px;background:#06151f;color:#d6edf0;box-shadow:0 25px 90px #000b;overflow:hidden;}
+.signals-dialog[open]{display:flex;flex-direction:column;}
+.signals-dialog::backdrop{background:#010811ce;backdrop-filter:blur(5px);}
+.signals-dialog .explorer-header{flex-shrink:0;}
+.signals-dialog .explorer-header h2{font-size:27px;letter-spacing:1px;}
+.journal-tabs{display:flex;gap:5px;padding:0 20px 12px;flex-shrink:0;border-bottom:1px solid #25424c;}
+.journal-tabs button{flex:1;min-height:44px;border:1px solid #284550;background:#0b212d;border-radius:8px;color:#a1becb;font:11px ui-monospace,monospace;}
+.journal-tabs button[aria-selected=true]{color:#d3fff1;background:#153631;border-color:#70b8a5;}
+#signalsContent{overflow:auto;overscroll-behavior:contain;min-height:0;scrollbar-width:thin;}
+.archive-layout{display:grid;grid-template-columns:280px minmax(0,1fr);min-height:380px;}
+.transmission-list{padding:12px;border-right:1px solid #233a46;max-height:56vh;overflow:auto;scrollbar-width:thin;}
+.transmission-list h3{font:10px/1.5 ui-monospace,monospace;color:#87a5b5;letter-spacing:.5px;margin:14px 6px 8px;text-transform:uppercase;}
+.transmission-list button{display:grid;grid-template-columns:26px minmax(0,1fr);gap:4px 7px;width:100%;border:1px solid transparent;border-radius:8px;background:transparent;text-align:left;color:#bfd7df;padding:12px 8px;min-height:60px;}
+.transmission-list button>span{grid-row:span 2;color:#92b5bd;font:12px ui-monospace,monospace;}
+.transmission-list button b{font-size:12px;font-weight:600;}
+.transmission-list button small{font:9px ui-monospace,monospace;color:#73909e;}
+.transmission-list button[aria-pressed=true]{background:#17313c;border-color:#385b66;}
+.transcript{padding:30px 36px;min-width:0;}
+.transcript h3{font-size:29px;line-height:1.2;color:#e7f4f0;margin:14px 0;letter-spacing:-.5px;}
+.transcript-byline{font:11px/1.6 ui-monospace,monospace!important;color:#9cc1c7!important;letter-spacing:.6px;}
+.transcript-rule{height:1px;background:linear-gradient(90deg,#82b9ad,transparent);margin:24px 0;}
+.transcript p{font-size:15px;line-height:1.8;color:#c1d2dc;margin:0 0 17px;}
+.transcript-footer{font:9px/1.6 ui-monospace,monospace;color:#6f959f;border-top:1px solid #28404b;padding-top:15px;margin-top:26px;letter-spacing:.6px;}
+.journal-page{padding:28px 32px;max-width:720px;margin:auto;}
+.journal-page h3{font-size:29px;letter-spacing:-.5px;margin:12px 0;color:#e2f1ed;}
+.journal-page p{font-size:14px;margin:14px 0;}
+.assignment-readout{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:15px;background:#12322c7a;border:1px solid #3d7161;border-radius:9px;margin:20px 0;font:11px/1.5 ui-monospace,monospace;}
+.assignment-readout span{color:#e2c78e;}
+.warden-sigil{float:right;color:#bd99dc;font-size:60px;line-height:1;margin:10px 0 12px 15px;text-shadow:0 0 30px #9865b544;}
+.livery-choice{display:flex;flex-direction:column;gap:10px;font:11px ui-monospace,monospace;margin:20px 0;color:#d3bb85;}
+.livery-choice select,.backup-tools select{background:#102733;color:#d6ecec;border:1px solid #3b626a;border-radius:8px;padding:11px;font:12px ui-monospace,monospace;min-height:44px;}
+.slot-actions{flex-wrap:wrap;}
+.slot-export{border:1px solid #4a6b75;border-radius:9px;background:#12313a;color:#b9e0de;padding:10px 13px;min-height:44px;font:11px ui-monospace,monospace;}
+.backup-tools{margin:0 20px 16px;padding:18px;border:1px solid #304d59;border-radius:13px;background:#091f2a;}
+.backup-tools .signal-actions label{display:flex;align-items:center;gap:8px;font:10px ui-monospace,monospace;color:#9ebac2;}
+.import-preview{padding:16px;margin-top:18px;background:#142c31;border:1px solid #5e817b;border-radius:10px;}
+.import-preview h3{font-size:20px;word-break:break-word;}
+.slots-dialog[open]{overflow-y:auto;}
+.signals-dialog button:focus-visible,.backup-tools button:focus-visible,.slot-export:focus-visible{outline:2px solid #a6e6d5;outline-offset:2px;}
+@media(max-width:720px){
+ .contract-list{grid-template-columns:1fr;gap:10px;}.contract-card{padding:16px;}.contract-card h3{font-size:18px;margin-top:10px;}
+ .signals-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);border-radius:15px;}
+ .signals-dialog .explorer-header{padding:16px;}.signals-dialog .explorer-header h2{font-size:23px;}.signals-dialog .explorer-header p{font-size:11px;}
+ .journal-tabs{padding:0 12px 10px;}.journal-tabs button{font-size:10px;}
+ .archive-layout{display:flex;flex-direction:column;}.transmission-list{max-height:190px;border-right:0;border-bottom:1px solid #294450;padding:8px 12px;}
+ .transmission-list h3{margin:8px 0 6px;}.transmission-list button{min-height:52px;padding:9px 8px;}
+ .transcript{padding:22px 20px;}.transcript h3{font-size:25px;}.transcript p{font-size:14px;line-height:1.75;}
+ .journal-page{padding:22px 20px;}.journal-page h3{font-size:26px;}.journal-page p{font-size:13px;}
+ .archive-chapters{grid-template-columns:1fr;}.archive-chapter{min-height:92px;}
+ .backup-tools{margin:0 12px 12px;padding:14px;}.backup-tools .signal-actions{align-items:stretch;}.backup-tools .signal-actions label{flex:1 1 100%;justify-content:space-between;}
+ .signals-dialog>.explorer-footer{font-size:10px;padding:12px 16px;}
+}
+@media(max-height:500px) and (min-width:600px){
+ .signals-dialog .explorer-header{padding:10px 18px;}.signals-dialog .explorer-header h2{font-size:20px;margin:4px 0;}.signals-dialog .explorer-header p{display:none;}
+ .journal-tabs{padding-bottom:8px;}.journal-tabs button{min-height:36px;}.archive-layout{display:grid;grid-template-columns:225px 1fr;}.transmission-list{max-height:180px;}.transcript{padding:18px 22px;}.transcript h3{font-size:23px;}.signals-dialog .explorer-footer{padding:8px 18px;}
+}

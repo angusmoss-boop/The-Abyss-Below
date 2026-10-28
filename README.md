@@ -1,22 +1,28 @@
 # The Abyss Below
 
-## v0.17.4: Crystal Descent
+## v0.18.0: Lost Signals
 
-A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. This branding patch uses the approved enlarged-submarine crystal-cavern image for installed-app icons, the in-game loading screen, the title menu and browser branding. Gameplay, audio, local campaign data and the seven-button controls are unchanged.
+A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. This update adds persistent optional contracts, twenty banked recorder transcripts, the optional Cathedral Warden encounter and portable campaign backups. Existing campaign resources, prices, paid ammunition, approved artwork, seven-button controls and audio fixes are preserved.
 
-See [CRYSTAL-DESCENT-v0.17.4.md](CRYSTAL-DESCENT-v0.17.4.md) and [VERIFICATION-v0.17.4.md](VERIFICATION-v0.17.4.md).
+Read [LOST-SIGNALS-v0.18.0.md](LOST-SIGNALS-v0.18.0.md) for the new features and [VERIFICATION-v0.18.0.md](VERIFICATION-v0.18.0.md) for the evidence and limits.
 
 ## Install or update
 
-Apply the update ZIP over v0.17.3 at the repository root. Save first; banking and quitting an active dive is safest. Upload the extracted contents together, including launch.js, launch-art.webp, the replacement icons, manifest, worker and version.json. Use the complete ZIP for a fresh checkout. These files do not deploy themselves.
+Apply the update ZIP over v0.17.4 at the repository root. Save first; banking and quitting an active dive is safest. Upload the extracted contents together, including the new `lost-signals.js`, all changed runtime files, worker and `version.json`. Use the complete ZIP for a fresh checkout. These files do not deploy themselves.
 
-Reopen the same site online and check for **v0.17.4 / Crystal Descent**. Keep the same origin and browser profile. Do not clear site data, uninstall or create a new campaign to update. Local/offline/unverified menu status is not proof of a hosted update. Installed icons may require a separate browser-approved app identity refresh; see the branding guide. All gameplay rules below remain as in v0.17.3.
+Reopen the same site online and check for **v0.18.0 / Lost Signals**. Keep the same origin and browser profile. Do not clear site data, uninstall or create a new campaign to update. Local/offline/unverified menu status is not proof of a hosted update. Export a campaign backup from SAVE / LOAD CAMPAIGNS after updating.
+
+## Lost Signals
+
+At the physical dock, CONTRACTS offers three assignments with one active at a time. Cargo recovery, three-point surveys, predator control and quiet recovery pay credits only after a real return. Offers and progress persist. No countdown or crystal reward. ARCHIVE contains twenty short recorder transcripts, unlocked only by banking, and the optional Warden dossier. Journal: main/pause menus or J on desktop.
+
+The Cathedral Warden sleeps near 1,170 m in Level 4 until you explicitly activate its observation buoy. Listen, evade its telegraphed charge, and attack during recovery. It stays in its territory and retains damage across returns. Its one-time dock bounty is 1,200 credits plus a cosmetic hull finish. It does not gate the story or required resources.
 
 ## Campaigns
 
 SAVE / LOAD CAMPAIGNS is in both main and pause menus. Up to three independent, named campaigns retain their own world resources, upgrades, currencies, achievements, magazines and saved dive. NEW CAMPAIGN chooses an empty slot, never silently overwrites. Deletion requires a separate confirmation. Loading saves the departing slot and reloads into the selected campaign's menu; CONTINUE restores an expedition paused.
 
-All storage is local, not cloud-synchronised. SAVE NOW, automatic checkpoints and action saves write the current slot. A previous-checkpoint backup, storage failure warnings and stale-window checks help protect saves but are not external backups. Close duplicate game windows before playing. Native Android storage and portable export/import are not part of this build.
+All storage is local, not cloud-synchronised. SAVE NOW, automatic checkpoints and action saves write the current slot. A previous-checkpoint backup, storage failure warnings and stale-window checks help protect saves but are not external backups. Close duplicate game windows before playing. EXPORT creates a portable .abyss.json campaign backup. Import shows a preview and requires confirmation before replacing the selected slot; imported copies progress independently. Native Android storage and cloud saves are not part of this build.
 
 ## Automatic salvage
 
@@ -52,6 +58,7 @@ Mobile has an icon-only weapon triangle (railgun above torpedo and mine). A sing
 | Repair | R | Wrench icon |
 | Lights | L | Sliders / telemetry → FLASHLIGHT |
 | Map | M | Map icon |
+| Journal | J | Main/pause menu or dock Archive |
 | Pause | Escape | Pause icon |
 
 ## Five-level campaign
@@ -87,9 +94,9 @@ The version manifest includes the exact runtime checksums. Inconsistent deployed
 Current targeted test runner:
 
 ```sh
-python tests/run_v0174.py
+python tests/run_v0180.py
 ```
 
-Tests require Python, Pillow, Playwright, Node and Chromium. Current evidence is in `verification/v0.17.4/`. The UI tests render production files in isolated documents with synthetic storage and the actual image bytes. They are not a real Android install or a hosted/offline integration result. Historical test runners remain in the archive for reference and may assert old release markers.
+Tests require Python, Pillow, Playwright, Node and Chromium. Current evidence is in `verification/v0.18.0/`. The UI tests render production files in isolated documents with synthetic storage and the actual image bytes. They are not a real Android install or a hosted/offline integration result. Historical test runners remain in the archive for reference and may assert old release markers.
 
-This remains a web/PWA source package, not a signed Android app bundle or Play Store release. Read **VERIFICATION-v0.17.4.md** for current tested/untested boundaries and **SALVAGE-SUPPLY-v0.17.0.md** for economy details.
+This remains a web/PWA source package, not a signed Android app bundle or Play Store release. Read **VERIFICATION-v0.18.0.md** for current tested/untested boundaries and **SALVAGE-SUPPLY-v0.17.0.md** for economy details.

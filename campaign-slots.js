@@ -79,8 +79,26 @@
       error='';return true;
     }catch(_){error='Could not delete that campaign. Storage is unavailable.';return false;}
   }
-  window.AbyssSlots={active,key,title:()=>cleanName(index.titles[active-1],active),load,save,summaries,activate,remove,
-    buildId:'0.17.4-crystal-descent-1',status:()=>({active,key,error,recovered,disabled,corruptActive}),
+  function exportSlot(i){
+    if(![1,2,3].includes(i))return null;
+    const raw=get(keyFor(i)),data=parse(raw);if(usable(data))return data;
+    const backup=parse(get(keyFor(i)+'.backup'));return usable(backup)?backup:null;
+  }
+  function token(i){return get(keyFor(i));}
+  function importSlot(i,data,expectedToken){
+    if(![1,2,3].includes(i)||disabled)return false;
+    try{
+      window.AbyssSignals.validateCampaign(data);
+      if(get(INDEX)!==expectedIndex||get(keyFor(i))!==expectedToken){error='This slot changed while the preview was open. Choose the file again; nothing was replaced.';return false;}
+      const next=JSON.stringify({...data,title:cleanName(data.title,i),updatedAt:Date.now()});
+      if(usable(parse(expectedToken)))put(keyFor(i)+'.backup',expectedToken);
+      put(keyFor(i),next);
+      if(i===active){expected=next;corruptActive=false;}
+      error='';return true;
+    }catch(e){error=e.message||'Import failed. Existing campaigns are unchanged.';return false;}
+  }
+  window.AbyssSlots={active,key,title:()=>cleanName(index.titles[active-1],active),load,save,summaries,activate,remove,exportSlot,importSlot,token,
+    buildId:'0.18.0-lost-signals-1',status:()=>({active,key,error,recovered,disabled,corruptActive}),
     // Only pre-v3 profiles may enter the old converter on a first-ever installation.
     allowLegacy:()=>active===1&&isEmpty(expected)&&!oldIndex&&!get(LEGACY)&&!get(LEGACY+'.backup')};
 })();

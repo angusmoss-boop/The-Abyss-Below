@@ -1,8 +1,8 @@
-/* Crystal Descent: original procedural audio, no downloads or permissions.
+/* Lost Signals: original procedural audio, no downloads or permissions.
    Start/resume only after user input. Settings persist independently of campaigns. */
 (() => {
   'use strict';
-  const KEY='abyss-audio-v1', BUILD='0.17.4-crystal-descent-1';
+  const KEY='abyss-audio-v1', BUILD='0.18.0-lost-signals-1';
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   let settings={effects:.5,ambience:.35,music:.3,muted:false};
   try { const v=JSON.parse(localStorage.getItem(KEY)||'null'); if(v){
@@ -127,6 +127,14 @@
     const play=(f,e,d,g,p=pan,type='sine',delay=0,bus='effects')=>tone(f*variation,e*variation,d,g*strength,p,type,delay,preview||kind==='dock'?'preview':bus);
     const hiss=(d,g,f=600,type='lowpass',delay=0,bus='effects')=>noise(d,g*strength,pan,f,type,delay,preview||kind==='dock'?'preview':bus);
     switch(kind){
+      case 'radioOpen':hiss(.16,.025,1900,'bandpass');play(440,442,.25,.04);break;
+      case 'assignmentScan':play(520,640,.25,.07);play(780,880,.32,.055,pan,'sine',.16);break;
+      case 'contractComplete':[330,440,554,660].forEach((f,i)=>play(f,f,.5,.055,0,'sine',i*.12));break;
+      case 'wardenWake':play(48,36,1.8,.12,pan,'triangle');play(96,72,1.5,.04,pan,'sine',.2);break;
+      case 'wardenWarning':play(110,210,1.3,.11,pan,'triangle');play(220,420,1.2,.04,pan,'sine');break;
+      case 'wardenCharge':hiss(.7,.15,450);play(90,40,.8,.12,pan,'triangle');break;
+      case 'wardenImpact':hiss(.75,.13,600);play(65,26,.9,.14,pan,'triangle');break;
+      case 'wardenDefeated':play(84,22,2,.12,pan,'triangle');hiss(1.5,.11,300);break;
       case 'railgun':play(740,170,.16,.095,pan,'triangle');hiss(.09,.045,2400,'bandpass');break;
       case 'railHit':play(360,100,.12,.10,pan,'triangle');break;
       case 'torpedo':play(130,52,.35,.14,pan,'triangle');hiss(.3,.08,650);break;

@@ -1,3 +1,13 @@
+# v0.18.0 / Lost Signals
+
+- Persistent contract board: three offers, one active assignment, four mission types, accessible targets, bank-only credit rewards and free retries.
+- Twenty optional written recorder transmissions in five chapters; only banked recordings decrypt. Journal from main, pause, dock or J.
+- Optional, explicitly activated Cathedral Warden with listening, telegraphed charge and recovery phases, territorial retreat, persistent wounds and checkpoint state.
+- One-time 1,200 CR dock bounty and selectable cosmetic gold-and-teal Warden Hunter hull finish.
+- Export each campaign to a portable .abyss.json file; preview-and-confirm imports with validation, corruption checks, overwrite warnings and stale-slot/write-failure guards.
+- New radio, assignment and resident-encounter cues retain prior music and click-free transition envelopes.
+- No new currencies, upgrade costs, combat buttons, compulsory missions or crystal replenishment. Existing finite resources and all previous campaign systems are retained.
+
 # v0.17.4 / Crystal Descent
 
 - Approved crystal-cavern art replaces launcher, Apple touch, favicon and title-menu branding.

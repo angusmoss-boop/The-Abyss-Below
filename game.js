@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const BUILD = Object.freeze({version:'0.17.4',name:'Crystal Descent',id:'0.17.4-crystal-descent-1'});
+  const BUILD = Object.freeze({version:'0.18.0',name:'Lost Signals',id:'0.18.0-lost-signals-1'});
   window.AbyssBuild=BUILD;
   const $ = id => document.getElementById(id);
   const canvas = $('gameCanvas');
@@ -57,7 +57,7 @@
   });
   const MAGNET = Object.freeze({range:[60,100,140,180,220],power:[0,1.2,1,.8,.6]});
   const SHIELD = Object.freeze({capacity:[0,20,35,50,70],recharge:[0,2,3,4,5],delay:8,powerPerPoint:.35});
-  const DISRUPTOR = Object.freeze({range:[0,180,220,260,300],seconds:[0,1.2,1.6,2,2.4],power:[0,3,4,5,6],resistance:{common:1,apex:.8,reaper:.6}});
+  const DISRUPTOR = Object.freeze({range:[0,180,220,260,300],seconds:[0,1.2,1.6,2,2.4],power:[0,3,4,5,6],resistance:{common:1,apex:.8,reaper:.6,warden:.35}});
   const PREDATOR_SALVAGE = Object.freeze({common:2,apex:4,reaper:8});
   const SONAR = Object.freeze({waveSpeed:520,echoSeconds:4.5,cooldown:5.5});
   const LIGHTING = Object.freeze({blackoutDepth:1000,fadeExponent:1.35,bowOffset:30,nearHalfWidth:5});
@@ -132,6 +132,7 @@
   const PREDATOR_TIERS = {
     common:{name:'DRIFTER',level:1,health:100,speed:96,patrolSpeed:25,detectionCap:245,leash:345,awareness:1,damage:13,cooldown:1.7,reach:35},
     apex:{name:'ABYSS STALKER',level:2,health:200,speed:158,patrolSpeed:36,detectionCap:370,leash:505,awareness:1.52,damage:27,cooldown:1.35,reach:43},
+    warden:{name:'CATHEDRAL WARDEN',level:4,health:1200,speed:410,patrolSpeed:35,detectionCap:500,leash:520,awareness:1,damage:54,cooldown:2.4,reach:48},
     reaper:{name:'CRIMSON REAPER',level:3,health:400,speed:normalSpeedAt(THRUST.maxMark),patrolSpeed:46,detectionCap:440,leash:610,awareness:1.85,damage:42,cooldown:1.15,reach:48}
   };
   const UPGRADES = [
@@ -212,7 +213,7 @@
     campaignLevels[LEVEL_ID]=field;
     if(buildingWorld)return true;
     const activeDive=running&&player&&player.hull>0?captureActiveDive():loadedActive;
-    const snapshot={schema:3,id:campaignId,title:campaignTitle,selectedLevel:LEVEL_ID,profile:saved,levels:campaignLevels,activeDive};
+    const snapshot={schema:3,id:campaignId,title:campaignTitle,selectedLevel:LEVEL_ID,profile:saved,levels:campaignLevels,signals,activeDive};
     storageHealthy=window.AbyssSlots.save(snapshot,validCampaign);
     if(storageHealthy)lastSaveWall=Date.now();
     return storageHealthy;
@@ -406,7 +407,7 @@
   function populateWorld(){
     scene.items=[];scene.predators=[];scene.mines=[];scene.blasts=[];scene.projectiles=[];
     sonarWaves=[];sonarTerrainEchoes=[];
-    for(const kind of ['rocks','wrecks','vents','derelictMines','ventFields','schools'])for(const object of (scene[kind]||[]))object.revealUntil=0;
+    for(const kind of ['rocks','wrecks','vents','derelictMines','ventFields','schools','signals'])for(const object of (scene[kind]||[]))object.revealUntil=0;
     const looted=new Set(field.looted);
     for(const w of scene.wrecks){
       if(!saved.secured.includes(w.index))scene.items.push(makeItem(w.x,w.y,'recorder',{id:'recorder-'+w.index,index:w.index}));
@@ -457,7 +458,7 @@
     }else for(const [tier,count,minY] of [['common',WORLD.common,800],['apex',WORLD.apex,4250],['reaper',WORLD.reaper,8300]]){
       for(let i=0;i<count;i++)addPredator(minY+(i+r())/count*(MAX_WORLD_Y-120-minY),tier,i%3);
     }
-    scene.predators=scene.predators.filter(predatorAlive);
+    scene.predators=scene.predators.filter(predatorAlive);buildWarden();
   }
   function createWorld() {
     idCounter=0;
@@ -483,7 +484,7 @@
       const y=r()*MAX_WORLD_Y;
       scene.dust.push({x:lerp(leftAt(y)-120,rightAt(y)+120,r()),y,phase:r()*TAU,size:.5+r()*1.7});
     }
-    populateWorld();buildEnvironment();hydrateSurvey();buildWildWaters();persistField();
+    populateWorld();buildEnvironment();hydrateSurvey();buildWildWaters();buildWarden();persistField();
   }
   function refreshDockPopulation(){
     field.cycle++;field.health={};
@@ -574,13 +575,14 @@
       const d=distance(player,item);
       if(d<range&&((d<60&&clearSalvageLine(item))||remoteSalvageAvailable(item))) {range=d;candidate=item;}
     }
-    return candidate;
+    return candidate||nearestSignal();
   }
   function interact(silentMiss=false) {
     if(!running||paused)return;
     const item=nearestInteractable();
     if(!item) {if(!silentMiss)announce('NOTHING IN SALVAGE RANGE',1.25);return;}
     if(item.type==='station') {depositAndDock();return;}
+    if(item.type==='signal'){interactSignal(item);return;}
     collectItem(item);
   }
   function collectItem(item,automatic=false){
@@ -621,7 +623,7 @@
       const d=distance(origin,object);
       if(d<=range+100)contacts.push({kind,object,previousDistance:d,hit:false});
     };
-    for(const kind of ['items','predators','rocks','wrecks','vents','mines','landmarks','derelictMines','ventFields','schools'])for(const object of (scene[kind]||[]))add(kind,object);
+    for(const kind of ['items','predators','rocks','wrecks','vents','mines','landmarks','derelictMines','ventFields','schools','signals'])for(const object of (scene[kind]||[]))add(kind,object);
     for(let y=Math.floor((camera.y-30)/24)*24;y<=camera.y+viewport.h+30;y+=24){
       if(y<120)continue;
       for(const side of [-1,1])add('wall',{x:side<0?leftAt(y):rightAt(y),y,side});
@@ -649,7 +651,7 @@
         const object=contact.object,d=distance(wave,object);
         // Crossing test handles moving predators and large simulation steps.
         if(d<=wave.front&&(contact.previousDistance>=previous||previous===0)){
-          contact.hit=true;rememberSurveyObject(contact.kind,object);
+          contact.hit=true;rememberSurveyObject(contact.kind,object);if(contact.kind==='signals')missionWave(object,wave);
           if(['items','predators'].includes(contact.kind))window.AbyssAudio?.event('echo',clamp((object.x-player.x)/300,-1,1));
           object.revealUntil=Math.max(object.revealUntil||0,clock+wave.echoSeconds);
           object.echoDuration=wave.echoSeconds;
@@ -718,12 +720,14 @@
     const t=(-b-Math.sqrt(discriminant))/(2*a);
     return t>=0&&t<=1?armedFraction+(1-armedFraction)*t:null;
   }
-  function damagePredator(enemy,amount,credited=true){
+  function damagePredator(enemy,amount,credited=true,source=null){
     if(!predatorAlive(enemy)||!Number.isFinite(amount)||amount<=0)return;
+    if(enemy.tier==='warden')amount=damageWarden(enemy,amount,source);
     enemy.health=Math.max(0,enemy.health-amount);enemy.lastDamaged=clock;
+    if(enemy.tier==='warden'){signals.warden.health=enemy.health;if(enemy.health===0)wardenDefeated(enemy);else enemy.alertUntil=clock+5;persist();return;}
     if(typeof enemy.id==='string')field.health[enemy.id]=enemy.health;
     if(enemy.health===0){
-      enemy.dead=true;enemy.aggression=0;enemy.alertUntil=0;if(credited){player.kills++;addStat('kills',1);if(enemy.tier==='reaper')addStat('reaperKills',1);checkAchievements();}
+      enemy.dead=true;enemy.aggression=0;enemy.alertUntil=0;missionKilled(enemy,credited);if(credited){player.kills++;addStat('kills',1);if(enemy.tier==='reaper')addStat('reaperKills',1);checkAchievements();}
       const quantity=PREDATOR_SALVAGE[enemy.tier]||2;
       const id='drop-'+field.cycle+'-'+(enemy.id??('fixture-'+idCounter++));
       if(!field.drops.some(n=>n.id===id)){
@@ -753,7 +757,7 @@
       let hits=0;
       for(const enemy of scene.predators)if(predatorAlive(enemy)){
         const x=lerp(enemy.previousX??enemy.x,enemy.x,contact),y=lerp(enemy.previousY??enemy.y,enemy.y,contact);
-        if(Math.hypot(x-mine.x,y-mine.y)<=MINES.blastRadius){damagePredator(enemy,mine.damage);hits++;}
+        if(Math.hypot(x-mine.x,y-mine.y)<=MINES.blastRadius){damagePredator(enemy,mine.damage,true,mine);hits++;}
       }
       player.noise=Math.min(100,player.noise+24);
       if(hits)announce('MINE HIT · '+mine.damage+' DAMAGE · '+hits+' CONTACT'+(hits===1?'':'S'),1.8);
@@ -837,7 +841,7 @@
     $('achievementsDialog').close();paused=achievementReturnPause;syncPauseButtons();
   }
   function stashCargo(){
-    if(!player)return;
+    if(!player)return;missionDiveLost();
     if(player.cargo.scrap||player.cargo.crystal)addRecovery(field,{x:player.x,y:player.y,scrap:player.cargo.scrap,crystal:player.cargo.crystal});
     field.pendingCargo=null;player.cargo={scrap:0,crystal:0,recorders:[]};
   }
@@ -893,6 +897,8 @@
     for(const i of player.cargo.recorders)if(!saved.secured.includes(i)&&i>=0&&i<RECORDERS_TOTAL)saved.secured.push(i);
     player.cargo={scrap:0,crystal:0,recorders:[]};field.pendingCargo=null;
     player.hull=maxHull();player.oxygen=maxOxygen();player.battery=maxBattery();player.noise=0;resetBoost();resetShield();resupplyMines();syncWeaponStock();player.trip={deepest:0,hullDamage:0};
+    settleSignalsAtDock(realReturn);
+    if(delivered)addEvent('Recovered transmissions decrypted · read them in the Field Journal');
     if(realReturn){refreshDockPopulation();dockVisitActive=true;}
     checkAchievements();persist();updateUI();
     addEvent('Docked · +'+gained+' CR · +'+bankedCrystals+' crystals · systems restored');
@@ -956,18 +962,18 @@
       default:return [];
     }
   }
-  const DOCK_TABS=[['upgradesTab','upgrades'],['ammunitionTab','ammunition'],['expeditionsTab','expeditions']];
+  const DOCK_TABS=[['upgradesTab','upgrades'],['ammunitionTab','ammunition'],['expeditionsTab','expeditions'],['contractsTab','contracts'],['archiveTab','archive']];
   function showDock(tab='upgrades') {
     showingDock=true;dockTab=tab;syncWeaponStock();persist();
     openDialog('SURFACE OPERATIONS / CAMPAIGN HUB','NEREID EXPEDITION HUB',
-      '<div class="dock-intro"><div><span class="dock-online"><i></i> VESSEL SECURED</span><p>Refit. Revisit. Go deeper.</p></div><div class="dock-wallet"><div class="dock-credit"><span>CREDITS</span><strong id="dockCredits">0</strong></div><div class="dock-credit crystal-wallet"><span>CRYSTALS</span><strong id="dockCrystals">0</strong></div></div></div><div id="dockBalance" class="dock-balance"></div><div class="dock-tabs" role="tablist" aria-label="Dock services"><button id="upgradesTab" role="tab" aria-controls="dockPanel">SHIP UPGRADES</button><button id="ammunitionTab" role="tab" aria-controls="dockPanel">AMMUNITION</button><button id="expeditionsTab" role="tab" aria-controls="dockPanel">EXPEDITIONS</button></div><div id="dockPanel" role="tabpanel"></div>',
+      '<div class="dock-intro"><div><span class="dock-online"><i></i> VESSEL SECURED</span><p>Refit. Revisit. Go deeper.</p></div><div class="dock-wallet"><div class="dock-credit"><span>CREDITS</span><strong id="dockCredits">0</strong></div><div class="dock-credit crystal-wallet"><span>CRYSTALS</span><strong id="dockCrystals">0</strong></div></div></div><div id="dockBalance" class="dock-balance"></div><div class="dock-tabs" role="tablist" aria-label="Dock services"><button id="upgradesTab" role="tab" aria-controls="dockPanel">SHIP UPGRADES</button><button id="ammunitionTab" role="tab" aria-controls="dockPanel">AMMUNITION</button><button id="expeditionsTab" role="tab" aria-controls="dockPanel">EXPEDITIONS</button><button id="contractsTab" role="tab" aria-controls="dockPanel">CONTRACTS</button><button id="archiveTab" role="tab" aria-controls="dockPanel">ARCHIVE</button></div><div id="dockPanel" role="tabpanel"></div>',
       '<div class="dock-departure"><span id="departureLevel">'+currentLevel().name+'<br>Seabed '+currentLevel().depth.toLocaleString('en-GB')+' m · bank all recorders to unlock the next level.</span><button class="primary-btn" id="launchAgain">UNDOCK <span aria-hidden="true">↗</span></button></div>');
     dialogReturnPause=false;
     for(const [id,tabName] of DOCK_TABS){
       $(id).addEventListener('click',()=>{dockTab=tabName;drawDockPanel();});
       $(id).addEventListener('keydown',e=>{
         if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();
-        let i=DOCK_TABS.findIndex(t=>t[1]===dockTab);i=e.key==='Home'?0:e.key==='End'?2:(i+(e.key==='ArrowRight'?1:2))%3;dockTab=DOCK_TABS[i][1];drawDockPanel();$(DOCK_TABS[i][0]).focus();
+        let i=DOCK_TABS.findIndex(t=>t[1]===dockTab);i=e.key==='Home'?0:e.key==='End'?DOCK_TABS.length-1:(i+(e.key==='ArrowRight'?1:DOCK_TABS.length-1))%DOCK_TABS.length;dockTab=DOCK_TABS[i][1];drawDockPanel();$(DOCK_TABS[i][0]).focus();
       });
     }
     window.AbyssAudio?.unlock();window.AbyssAudio?.setScene('dock');
@@ -981,7 +987,7 @@
     for(const [id,tab] of DOCK_TABS){$(id).setAttribute('aria-selected',String(dockTab===tab));$(id).tabIndex=dockTab===tab?0:-1;}
     $('dockPanel').setAttribute('aria-labelledby',DOCK_TABS.find(t=>t[1]===dockTab)[0]);
     if(dockTab==='upgrades'){$('dockPanel').innerHTML='<div class="dock-grid-caption"><span>SELECT A SYSTEM</span><span>CREDITS + CRYSTALS</span></div><div class="upgrade-grid" id="upgradeList"></div>';drawUpgrades();}
-    else if(dockTab==='ammunition')drawAmmunition();else drawExpeditions();
+    else if(dockTab==='ammunition')drawAmmunition();else if(dockTab==='contracts')drawContracts();else if(dockTab==='archive')drawArchiveDock();else drawExpeditions();
   }
   function drawExpeditions(){
     $('dockPanel').innerHTML='<div class="expedition-intro"><span>'+totalRecorders()+' / 20 RECORDERS BANKED</span><p>Crystals are finite. Scrap sites recover gradually during active diving. Stocks show units available now; survey completion counts each original site once.</p></div><div class="expedition-list">'+LEVELS.map((l,i)=>{
@@ -1288,9 +1294,11 @@
     const zone=zoneFor(depth);
     if(zone.name!==lastZone){if(lastZone)addEvent('Entered '+zone.name);lastZone=zone.name;}
     updateShield(dt);
+    updateAssignments();
     updateSonar();
     for(const enemy of scene.predators){
       if(!predatorAlive(enemy))continue;
+      if(enemy.tier==='warden'){updateWarden(enemy,dt);continue;}
       keepPredatorOutsideHarbour(enemy);
       enemy.previousX=enemy.x;enemy.previousY=enemy.y;
       if((enemy.stunnedUntil||0)>clock){enemy.vx=0;enemy.vy=0;continue;}
@@ -1335,7 +1343,7 @@
     updateProjectiles(dt);if(!running)return;
     for(const enemy of scene.predators){
       const tier=PREDATOR_TIERS[enemy.tier];
-      if(!inHarbour(player)&&!player.airborne&&predatorAlive(enemy)&&(enemy.stunnedUntil||0)<=clock&&enemy.aggression>.13&&distance(player,enemy)<tier.reach&&clock-enemy.lastHit>tier.cooldown){
+      if(!inHarbour(player)&&!player.airborne&&predatorAlive(enemy)&&(enemy.tier!=='warden'||enemy.wardenPhase==='charge')&&(enemy.stunnedUntil||0)<=clock&&enemy.aggression>.13&&distance(player,enemy)<tier.reach&&clock-enemy.lastHit>tier.cooldown){
         enemy.lastHit=clock;
         takeDamage(Math.round(tier.damage*currentLevel().damage),tier.name+' attack');
         if(!running)return;
@@ -1408,6 +1416,7 @@
     drawWildSeabed();
     for(const wreck of scene.wrecks)if(onscreen(wreck.x,wreck.y))drawWreck(wreck);
     if(headlightsActive())drawLightBeam();
+    drawSignalObjects();
     for(const item of scene.items)if(!item.collected&&onscreen(item.x,item.y)){
       const d=player?distance(player,item):0;
       const shown=d<(headlightsActive()?155:80)||item.revealUntil>clock||item.type==='recorder'&&d<225||beamIntersects(item.x,item.y,44)||saved.upgrades.magnet>0&&['scrap','crystal'].includes(item.type)&&d<magnetRange()&&ambientLightAt(item.y)>.08;
@@ -1439,7 +1448,7 @@
     // World illumination stays black at 1,000 m. Sonar is a separate, timed
     // instrument echo layer: silhouettes only, never an ambient-light reset.
     applyDepthDarkness(ambient);
-    drawSonarEchoes();drawWildEchoes();
+    drawSonarEchoes();drawWildEchoes();drawSignalObjects(true);
     if(environmentEnabled){ctx.save();ctx.translate(-camera.x,-camera.y);for(const l of environment.landmarks)if(l.revealUntil>clock&&onscreen(l.x,l.y,200)){ctx.globalAlpha=clamp((l.revealUntil-clock)/sonarEchoSeconds(),0,.9);drawLandmark(l,true);}ctx.restore();}
     if(player.damageFlashUntil>clock){ctx.save();ctx.translate(-camera.x,-camera.y);drawDamageFlash();ctx.restore();}
     drawMouseTarget();
@@ -1655,12 +1664,13 @@
     ctx.save();if(!local)ctx.translate(enemy.x,enemy.y);
     ctx.fillStyle='#05121cd9';ctx.fillRect(-w/2-3,-50,w+6,22);
     ctx.fillStyle=enemy.tier==='reaper'?'#ff9a86':enemy.tier==='apex'?'#d3a1ff':'#a5e0df';
-    ctx.font='bold 8px monospace';ctx.textAlign='center';ctx.fillText('T'+tier.level+' · '+Math.ceil(enemy.health)+'/'+enemy.maxHealth,0,-39);
+    ctx.font='bold 8px monospace';ctx.textAlign='center';ctx.fillText((enemy.tier==='warden'?'WARDEN':'T'+tier.level)+' · '+Math.ceil(enemy.health)+'/'+enemy.maxHealth,0,-39);
     ctx.fillStyle='#314352';ctx.fillRect(-w/2,-34,w,3);
     ctx.fillStyle=clock-(enemy.lastDamaged??-100)<.2?'#fff1d1':enemy.tier==='reaper'?'#fa7e70':enemy.tier==='apex'?'#c991f4':'#78cbbb';
     ctx.fillRect(-w/2,-34,w*clamp(enemy.health/enemy.maxHealth,0,1),3);ctx.restore();
   }
   function drawEnemy(enemy){
+    if(enemy.tier==='warden'){drawWarden(enemy);return;}
     if(enemy.tier==='reaper'){drawReaper(enemy);return;}
     const alert=enemy.aggression>.15,apex=enemy.tier==='apex';
     const a=Math.atan2(enemy.vy,enemy.vx);
@@ -1750,7 +1760,8 @@
     }
 
     const shell=ctx.createLinearGradient(0,-13,0,14);
-    shell.addColorStop(0,'#d2edf0');shell.addColorStop(.15,'#6dabb8');shell.addColorStop(.43,'#285e70');shell.addColorStop(.72,'#15394e');shell.addColorStop(1,'#092837');
+    const hunter=signals.warden.claimed&&signals.warden.livery==='hunter';
+    shell.addColorStop(0,hunter?'#f4dba2':'#d2edf0');shell.addColorStop(.15,hunter?'#b79358':'#6dabb8');shell.addColorStop(.43,hunter?'#266d69':'#285e70');shell.addColorStop(.72,'#15394e');shell.addColorStop(1,'#092837');
     ctx.shadowColor='#0e070f';ctx.shadowBlur=10;ctx.shadowOffsetY=3;
     ctx.beginPath();ctx.moveTo(-26,-7);
     ctx.bezierCurveTo(-17,-12,10,-13,20,-8);
@@ -1759,7 +1770,7 @@
     ctx.bezierCurveTo(10,13,-17,12,-26,7);
     ctx.quadraticCurveTo(-30,0,-26,-7);ctx.closePath();
     ctx.fillStyle=shell;ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-    ctx.strokeStyle='#b2f2ec';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.strokeStyle=hunter?'#f1cd86':'#b2f2ec';ctx.lineWidth=1.5;ctx.stroke();
 
     // Sleek top ridge, segmented pressure ribs, and glowing cyan equipment rail.
     ctx.strokeStyle='#edffff';ctx.lineWidth=.75;ctx.globalAlpha*=.5;
@@ -1815,8 +1826,8 @@
       }else if(kind==='predators'){
         const tier=PREDATOR_TIERS[object.tier]||PREDATOR_TIERS.common;
         ctx.strokeStyle=object.tier==='reaper'?'#ff796e':object.tier==='apex'?'#d597ff':'#ffac99';
-        ctx.save();ctx.rotate(Math.atan2(object.vy,object.vx));
-        if(object.tier==='reaper')reaperOutline();
+        ctx.save();ctx.rotate(object.tier==='warden'?object.heading:Math.atan2(object.vy,object.vx));
+        if(object.tier==='warden')wardenOutline();else if(object.tier==='reaper')reaperOutline();
         else{
           if(object.tier==='apex')ctx.scale(1.25,1.25);
           ctx.beginPath();ctx.moveTo(24,0);ctx.quadraticCurveTo(2,-14,-17,-10);ctx.lineTo(-31,-19);ctx.lineTo(-27,0);ctx.lineTo(-31,19);ctx.lineTo(-17,10);ctx.quadraticCurveTo(2,14,24,0);
@@ -1890,7 +1901,7 @@
   let slotsReturnPause=false;
   const escapeHTML=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function openSlots(newCampaign=false){
-    slotsReturnPause=paused;paused=true;resetPilotInput();
+    slotsReturnPause=paused;paused=true;resetPilotInput();importPreview=null;importToken=null;$('importPreview').innerHTML='';
     const ok=persist();renderSlots();
     $('slotsMessage').textContent=ok?(newCampaign?'Choose an empty slot to start a separate campaign. Existing campaigns are never overwritten.':'Autosaves stay in the selected slot. Loading another slot first saves your current expedition.'):(window.AbyssSlots.status().error||'Save unavailable. Switching is blocked to protect your current dive.');
     $('slotsDialog').showModal();$('slotsClose').focus({preventScroll:true});
@@ -1907,8 +1918,9 @@
       const title=escapeHTML(s.title),level=LEVELS.find(l=>l.id===s.levelId)?.name||'SUNBREAK SHELF';
       return '<article class="campaign-slot'+(s.active?' current-slot':'')+'" data-slot="'+s.slot+'"><div class="slot-topline"><span>SLOT 0'+s.slot+'</span><b>'+(s.empty?'EMPTY':s.corrupt?'SAVE NEEDS ATTENTION':s.active?'CURRENT CAMPAIGN':'SAVED CAMPAIGN')+'</b></div>'+
         (s.empty?'<h3>A new descent</h3><label class="slot-name-label" for="slotName'+s.slot+'">CAMPAIGN NAME</label><input id="slotName'+s.slot+'" class="slot-name-input" maxlength="32" value="Campaign '+s.slot+'" autocomplete="off"><button class="slot-primary" data-new-slot="'+s.slot+'">START NEW CAMPAIGN →</button>':
-        '<h3>'+title+'</h3><p class="slot-location">'+(s.corrupt?'The stored files have been preserved.':level)+'</p><div class="slot-metrics"><span><strong>'+s.recorders+'/20</strong> RECORDERS</span><span><strong>'+s.credits.toLocaleString('en-GB')+'</strong> CREDITS</span><span><strong>'+s.crystals+'</strong> CRYSTALS</span></div><div class="slot-checkpoint"><span>'+(s.activeDive?'DIVE SAVED · '+s.diveDepth+' m · RESUMES PAUSED':'AT HUB / READY TO LAUNCH')+'</span><small>'+time+(s.recovered?' · BACKUP AVAILABLE':'')+'</small></div><div class="slot-actions"><button class="slot-primary" '+(s.corrupt?'disabled':'')+' data-load-slot="'+s.slot+'">'+(s.active?'SAVE NOW':'LOAD CAMPAIGN')+'</button><button class="slot-delete" data-delete-slot="'+s.slot+'" aria-label="Delete '+title+'">DELETE</button></div>')+'</article>';
+        '<h3>'+title+'</h3><p class="slot-location">'+(s.corrupt?'The stored files have been preserved.':level)+'</p><div class="slot-metrics"><span><strong>'+s.recorders+'/20</strong> RECORDERS</span><span><strong>'+s.credits.toLocaleString('en-GB')+'</strong> CREDITS</span><span><strong>'+s.crystals+'</strong> CRYSTALS</span></div><div class="slot-checkpoint"><span>'+(s.activeDive?'DIVE SAVED · '+s.diveDepth+' m · RESUMES PAUSED':'AT HUB / READY TO LAUNCH')+'</span><small>'+time+(s.recovered?' · BACKUP AVAILABLE':'')+'</small></div><div class="slot-actions"><button class="slot-primary" '+(s.corrupt?'disabled':'')+' data-load-slot="'+s.slot+'">'+(s.active?'SAVE NOW':'LOAD CAMPAIGN')+'</button><button class="slot-export" '+(s.corrupt?'disabled':'')+' data-export-slot="'+s.slot+'">EXPORT</button><button class="slot-delete" data-delete-slot="'+s.slot+'" aria-label="Delete '+title+'">DELETE</button></div>')+'</article>';
     }).join('');
+    document.querySelectorAll('[data-export-slot]').forEach(b=>b.onclick=()=>exportCampaign(+b.dataset.exportSlot));
     document.querySelectorAll('[data-load-slot]').forEach(b=>b.onclick=()=>{const i=+b.dataset.loadSlot;if(i===window.AbyssSlots.active){const ok=persist();renderSlots();$('slotsMessage').textContent=ok?'CHECKPOINT SAVED · '+campaignTitle:window.AbyssSlots.status().error;}else transitionSlot(i);});
     document.querySelectorAll('[data-new-slot]').forEach(b=>b.onclick=()=>transitionSlot(+b.dataset.newSlot,$('slotName'+b.dataset.newSlot).value));
     document.querySelectorAll('[data-delete-slot]').forEach(b=>b.onclick=()=>{
@@ -2003,7 +2015,7 @@
     scene.blasts.push({x:p.x,y:p.y,birth:clock,radius:radius||28,weapon:p.kind});
     if(!radius)return;
     window.AbyssAudio?.event('torpedoHit',clamp((p.x-player.x)/300,-1,1));
-    for(const e of scene.predators)if(predatorAlive(e)&&distance(p,e)<=radius+15&&projectileTerrainHit(p,e,0)===null)damagePredator(e,p.damage);
+    for(const e of scene.predators)if(predatorAlive(e)&&distance(p,e)<=radius+15&&projectileTerrainHit(p,e,0)===null)damagePredator(e,p.damage,true,p);
     // Only abandoned hazards can chain. Player-laid mines are never spent by friendly fire.
     for(const m of scene.derelictMines||[])if(!m.detonated&&distance(p,m)<=radius&&projectileTerrainHit(p,m,0)===null)detonateDerelict(m);
   }
@@ -2014,7 +2026,7 @@
       const a={x:p.x,y:p.y},b={x:p.x+p.vx*time,y:p.y+p.vy*time};
       let first=projectileTerrainHit(a,b,p.radius),target=first===null?null:'terrain';
       for(const e of scene.predators)if(predatorAlive(e)){
-        const t=sweptActorHit(a,b,e,p.radius+(e.tier==='reaper'?25:e.tier==='apex'?21:17));
+        const t=sweptActorHit(a,b,e,p.radius+(e.tier==='warden'?35:e.tier==='reaper'?25:e.tier==='apex'?21:17));
         if(t!==null&&(first===null||t<first)){first=t;target=e;}
       }
       for(const m of scene.derelictMines||[])if(!m.detonated){
@@ -2024,7 +2036,7 @@
       if(first!==null){
         const t=target==='terrain'?Math.max(0,first-.1):first;p.x=lerp(a.x,b.x,t);p.y=lerp(a.y,b.y,t);
         if(target!=='terrain'&&target.anchorX!==undefined)detonateDerelict(target);
-        else if(target!=='terrain'&&p.kind==='railgun'){damagePredator(target,p.damage);window.AbyssAudio?.event('railHit',clamp((p.x-player.x)/300,-1,1));}
+        else if(target!=='terrain'&&p.kind==='railgun'){damagePredator(target,p.damage,true,p);window.AbyssAudio?.event('railHit',clamp((p.x-player.x)/300,-1,1));}
         projectileBlast(p);continue;
       }
       p.x=b.x;p.y=b.y;p.remaining-=distanceThisFrame;
@@ -2158,7 +2170,7 @@
     $('dockBtn').disabled=!station;$('dockBtn').textContent=station?'◈ DOCK · BANK SALVAGE · UPGRADE':'◈ RETURN TO STATION TO UPGRADE';
     const close=nearestInteractable();const prompt=$('interactionPrompt');
     if(running&&!paused&&close){
-      prompt.textContent=(touchControls?'HOLD USE · ':'[ E ] ')+(close.type==='station'?'DOCK & UPGRADE':close.type==='recorder'?'RECOVER BLACK BOX':close.type==='air'?'CLAIM SUPPLY CACHE':close.type==='recovery'?'RECOVER LOST CARGO':distance(player,close)>=60?'MAGNET '+close.type.toUpperCase()+' · '+magnetPower()+' POWER':'SALVAGE '+close.type.toUpperCase());prompt.classList.remove('hidden');
+      prompt.textContent=(touchControls?'HOLD USE · ':'[ E ] ')+(close.type==='station'?'DOCK & UPGRADE':close.type==='signal'?(close.kind==='warden-site'?'OBSERVATION BUOY · OPTIONAL':'RECOVER ASSIGNMENT CARGO'):close.type==='recorder'?'RECOVER BLACK BOX':close.type==='air'?'CLAIM SUPPLY CACHE':close.type==='recovery'?'RECOVER LOST CARGO':distance(player,close)>=60?'MAGNET '+close.type.toUpperCase()+' · '+magnetPower()+' POWER':'SALVAGE '+close.type.toUpperCase());prompt.classList.remove('hidden');
     } else prompt.classList.add('hidden');
     $('mobileInteract').classList.toggle('available',Boolean(running&&!paused&&close));
     $('mobileRepair').setAttribute('aria-disabled',String(paused||!running||player.cargo.scrap<2||player.hull>=maxHull()));
@@ -2286,7 +2298,7 @@
     document.body.classList.toggle('desktop-ui',!touchControls);
   }
   function bind() {
-    syncInputMode();bindLivingUI();bindSlots();bindWeaponInputs();
+    syncInputMode();bindLivingUI();bindSlots();bindWeaponInputs();bindSignalsUI();
     const cockpitObserver=new ResizeObserver(syncCockpitLayout);
     for(const node of [canvas.parentElement,...document.querySelectorAll('.cockpit-hud,.mobile-controls,.desktop-keybinds')])cockpitObserver.observe(node);
     primaryPointer.addEventListener('change',()=>{resetPilotInput();syncInputMode();resize();syncCockpitLayout();updateUI();});
@@ -2315,7 +2327,7 @@
     $('pauseBtn').addEventListener('click',togglePause);
     $('dockBtn').addEventListener('click',()=>{if(running&&!paused&&nearestInteractable()?.type==='station')depositAndDock();});
     window.addEventListener('keydown',e=>{
-      if($('surveyDialog').open||$('audioDialog').open||$('telemetryDialog').open)return;
+      if($('signalsDialog').open||$('surveyDialog').open||$('audioDialog').open||$('telemetryDialog').open)return;
       if($('achievementsDialog').open||$('slotsDialog').open)return;
       const k=e.key.toLowerCase();
       if($('upgradeDialog').open){if(k==='escape'){e.preventDefault();closeUpgradeDetails();}return;}
@@ -2325,6 +2337,7 @@
         return;
       }
       if(e.target instanceof Element&&e.target.closest('input,textarea,select,[contenteditable="true"]'))return;
+      if(k==='j'&&!e.repeat){e.preventDefault();openJournal();return;}
       if(k==='m'&&running&&!e.repeat){e.preventDefault();openSurvey();return;}
       if(k==='escape'){if(!e.repeat)togglePause();return;}
       if(!running||paused)return;
@@ -2473,7 +2486,7 @@
     const terrain=[];for(const kind of ['rocks','wrecks','vents','landmarks','derelictMines','ventFields','schools'])(scene[kind]||[]).forEach((o,i)=>{if(o.revealUntil>clock)terrain.push({kind,i,revealUntil:o.revealUntil,echoDuration:o.echoDuration});});
     return {schema:1,build:BUILD.version,levelId:LEVEL_ID,seed:field.seed,cycle:field.cycle,clock,idCounter,dockVisitActive,
       player:{...player},projectiles:scene.projectiles||[],items:scene.items,predators:scene.predators,mines:scene.mines,blasts:scene.blasts,waves,echoes:sonarTerrainEchoes,terrain,
-      events:eventLines.slice(0,3),threatContacts:surveyThreats,surfaceEffects,wildlife:captureWildlife()};
+      events:eventLines.slice(0,3),signals:scene.signals,threatContacts:surveyThreats,surfaceEffects,wildlife:captureWildlife()};
   }
   function restoreActiveDive(){
     const snapshot=loadedActive;if(!snapshot)return false;
@@ -2482,6 +2495,7 @@
     clock=snapshot.clock;idCounter=Math.max(cleanCount(snapshot.idCounter),scene.items.length+1);
     player=JSON.parse(JSON.stringify(snapshot.player));player.trip=player.trip||{deepest:depthOf(player.y),hullDamage:0};
     scene.items=JSON.parse(JSON.stringify(snapshot.items));scene.predators=JSON.parse(JSON.stringify(snapshot.predators));
+    if(Array.isArray(snapshot.signals)&&snapshot.signals.length<=5)scene.signals=JSON.parse(JSON.stringify(snapshot.signals));
     scene.mines=JSON.parse(JSON.stringify(snapshot.mines)).filter(m=>!m.detonated);scene.blasts=JSON.parse(JSON.stringify(snapshot.blasts));
     player.weaponAmmo={...saved.weaponAmmo};player.weaponCooldown={railgun:0,torpedo:0,...player.weaponCooldown};
     player.damageFlashUntil=Number.isFinite(player.damageFlashUntil)?player.damageFlashUntil:0;
@@ -2510,7 +2524,7 @@
   function backgroundPause(){
     if(slotTransition)return;
     resetPilotInput();
-    const explorerOpen=document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open]');
+    const explorerOpen=document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open],#signalsDialog[open]');
     if(explorerOpen){explorerReturnPause=true;if(running&&$('menuOverlay').classList.contains('hidden'))showPause();}
     if(running&&!paused&&$('menuOverlay').classList.contains('hidden'))showPause();
     else if(running)paused=true;
@@ -3031,7 +3045,7 @@
     chartArea(wave.x,wave.y,front,(x,y)=>Math.hypot(x-wave.x,y-wave.y)>=Math.max(0,previous-SURVEY.cell));
   }
   function openExplorerDialog(id){
-    if(document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open]'))return false;
+    if(document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open],#signalsDialog[open]'))return false;
     explorerReturnPause=paused;explorerReturnFocus=document.activeElement;
     paused=true;resetPilotInput();persist();
     $(id).showModal();syncPauseButtons();audioFrame();return true;
@@ -3045,7 +3059,7 @@
     updateUI();persist();
   }
   function closeExplorationDialogs(){
-    for(const id of ['surveyDialog','audioDialog','telemetryDialog'])if($(id)?.open)$(id).close();
+    for(const id of ['surveyDialog','audioDialog','telemetryDialog','signalsDialog'])if($(id)?.open)$(id).close();
     mapView.pointers.clear();mapView.drag=null;mapView.pinch=null;
   }
   function openSurvey(){
@@ -3122,6 +3136,7 @@
     for(const threat of surveyThreats){
       if(threat.until<=clock)continue;const p=chartPoint(threat.x,threat.y);g.globalAlpha=clamp((threat.until-clock)/SURVEY.contactLife,.25,1);g.fillStyle='#ec8c85';g.beginPath();g.arc(p.x,p.y,3.5,0,TAU);g.fill();g.globalAlpha=1;
     }
+    drawMissionChart(g);
     const pin=field.survey.waypoint;
     if(pin){const p=chartPoint(pin.x,pin.y);g.strokeStyle='#efd6a3';g.lineWidth=1.5;g.beginPath();g.arc(p.x,p.y,9,0,TAU);g.moveTo(p.x-13,p.y);g.lineTo(p.x+13,p.y);g.moveTo(p.x,p.y-13);g.lineTo(p.x,p.y+13);g.stroke();}
     const p=chartPoint(player.x,player.y);g.save();g.translate(p.x,p.y);g.rotate(player.facing);g.shadowColor='#a8ffe5';g.shadowBlur=9;g.fillStyle='#b9ffe6';g.beginPath();g.moveTo(8,0);g.lineTo(-5,-5);g.lineTo(-2,0);g.lineTo(-5,5);g.closePath();g.fill();g.restore();
@@ -3225,8 +3240,345 @@
     }
     const hint=$('waypointHint');hint.classList.toggle('hidden',!pin);
     if(pin){const d=distance(player,pin)/10;hint.textContent='⌖ '+(d<6?'WAYPOINT REACHED':Math.round(d)+' m TO PIN')+' · '+depthOf(pin.y)+' m DEPTH';}
+    const resident=scene.predators.find(e=>e.tier==='warden'&&predatorAlive(e)&&distance(e,player)<600);
+    if(resident&&!['PRESSURE ALERT','LOW HULL','LOW OXYGEN','LOW POWER'].includes($('statusStat').textContent)){$('statusStat').textContent='WARDEN '+resident.wardenPhase.toUpperCase()+' · '+Math.ceil(resident.health/12)+'%';$('statusStat').className=resident.wardenPhase==='recover'?'status-safe':'status-danger';}
     if(!storageHealthy){$('statusStat').textContent='SAVE FAILED · KEEP APP OPEN';$('statusStat').className='status-danger';}
   }
+  // === Lost Signals: one assignment, banked transcripts and an optional resident ===
+  let signals=window.AbyssSignals.normalise(campaign?.signals);
+  let journalTab='transmissions',selectedRecord=null,importPreview=null,importToken=null,signalPulse=0;
+  const signalData=window.AbyssSignals;
+  const WARDEN=Object.freeze({health:1200,reward:1200,radius:430,speed:410,charge:1.25,windup:1.5,recovery:3.4});
+  const signalEscape=value=>escapeHTML(value??'');
+  const missionName=c=>signalData.kinds[c.kind].title;
+  const isPhysicalDock=()=>showingDock&&running&&paused&&nearestInteractable()?.type==='station';
+  function missionProgress(c){
+    if(!c)return 'No active assignment';
+    if(c.status==='retry')return 'RETRY AT DOCK';
+    if(c.status==='return')return 'COMPLETE · RETURN TO DOCK';
+    if(c.kind==='hunt')return c.kills+' / '+c.required+' '+PREDATOR_TIERS[c.tier].name+'S';
+    if(c.kind==='survey')return c.points.filter(p=>p.done).length+' / 3 SURVEYS';
+    return c.kind==='silent'?'RECOVER PACKAGE · QUIET ZONE':'LOCATE THE CONTAINER';
+  }
+  function missionPoint(r,depth,ordinal=0){
+    let fallback=null;
+    for(let i=0;i<100;i++){
+      const y=120+depth*10+(i?((r()-.5)*150):0),p=populationPoint(r,y,{lane:(ordinal+i)%3});fallback=p;
+      if(distance(p,HARBOUR)<470||scene.items.some(n=>distance(n,p)<85)||scene.wrecks.some(n=>distance(n,p)<160)||projectileSolid(p.x,p.y,26))continue;
+      if((scene.derelictMines||[]).some(n=>!n.detonated&&distance(n,p)<175)||(scene.ventFields||[]).some(n=>Math.abs(n.x-p.x)<n.rx+60&&p.y>n.y-n.height-60&&p.y<n.y+50))continue;
+      return p;
+    }
+    // Protected lane remains navigable; suppress only overlapping optional hazards,
+    // never move collision geometry or any crystal/salvage deposit.
+    const p=fallback||{x:laneAt(120+depth*10,1),y:120+depth*10};protectWildArrival(p,150);return p;
+  }
+  function ensureContracts(){
+    let b=signals.boards[LEVEL_ID];if(!b)b=signals.boards[LEVEL_ID]={serial:1,offers:[]};
+    if(b.offers.length)return b;
+    const levelIndex=LEVELS.findIndex(l=>l.id===LEVEL_ID),r=randGen(field.seed^Math.imul(b.serial,31991));
+    const maxDepth=Math.max(70,Math.min(safeDepth()-22,currentLevel().depth-30)),minDepth=Math.max(45,maxDepth*.42);
+    const armed=['railgun','torpedo','minePower'].some(id=>saved.upgrades[id]>0);
+    const types=armed?(b.serial%2?['cargo','survey','hunt']:['silent','survey','hunt']):['cargo','survey','silent'];
+    b.offers=types.map((kind,index)=>{
+      const count=kind==='survey'?3:kind==='hunt'?0:1,points=[];
+      for(let i=0;i<count;i++){
+        const depth=lerp(minDepth,maxDepth,count===1?.6:(i+.4)/count);
+        const p=missionPoint(r,depth,i+index);points.push({...p,id:'assignment-'+b.serial+'-'+index+'-'+i,done:false,located:false,searchX:p.x+(r()-.5)*160,searchY:p.y+(r()-.5)*160});
+      }
+      const tier=levelIndex>=2&&safeDepth()>=900?'apex':'common';
+      return {id:LEVEL_ID+'-'+b.serial+'-'+kind,kind,levelId:LEVEL_ID,reward:(kind==='hunt'?230:kind==='survey'?180:kind==='silent'?220:160)+levelIndex*65,
+        maxDepth:Math.ceil(maxDepth),points,required:kind==='hunt'?(levelIndex>=2?3:2):count,kills:0,tier,status:'active'};
+    });persist();return b;
+  }
+  function acceptContract(id){
+    if(!isPhysicalDock()||signals.active)return false;
+    const c=ensureContracts().offers.find(c=>c.id===id);if(!c)return false;
+    if(c.kind==='hunt'&&!['railgun','torpedo','minePower'].some(k=>saved.upgrades[k]>0))return false;
+    signals.active=JSON.parse(JSON.stringify(c));refreshSignalObjects();persist();drawDockPanel();return true;
+  }
+  function retryContract(){
+    if(!isPhysicalDock()||signals.active?.status!=='retry')return false;
+    const c=signals.active;c.status='active';c.kills=0;c.points.forEach(p=>{p.done=false;p.located=false;});
+    refreshSignalObjects();persist();drawDockPanel();return true;
+  }
+  function abandonContract(){
+    if(!isPhysicalDock()||!signals.active)return false;
+    const id=signals.active.levelId,b=signals.boards[id];if(b){b.serial++;b.offers=[];}
+    signals.active=null;refreshSignalObjects();persist();drawDockPanel();return true;
+  }
+  function drawContracts(){
+    const b=ensureContracts(),c=signals.active;
+    const card=offer=>'<article class="contract-card"><div class="contract-eyebrow"><span>'+signalEscape(missionName(offer))+'</span><strong>'+offer.reward+' CR</strong></div><h3>'+({cargo:'Bring something home',survey:'Listen beyond the chart',hunt:'Clear a hunting ground',silent:'A quieter approach'}[offer.kind])+'</h3><p>'+signalData.kinds[offer.kind].verb+'</p><div class="contract-meta">'+signalEscape(currentLevel().name)+' · '+(offer.kind==='hunt'?'REACHABLE '+offer.tier.toUpperCase()+' CONTACTS':'TARGETS BELOW '+offer.maxDepth+' m')+'</div><p class="contract-note">'+signalData.kinds[offer.kind].hint+'</p><button class="slot-primary" data-accept-contract="'+offer.id+'" '+(c?'disabled':'')+'>'+(c?'ONE ASSIGNMENT AT A TIME':'ACCEPT ASSIGNMENT')+'</button></article>';
+    $('dockPanel').innerHTML='<div class="signals-intro"><span class="menu-kicker">HARBOUR DISPATCH / OPTIONAL WORK</span><h3>A reason for the next descent.</h3><p>Credits only. No countdown. Payment on a real return to the dock. '+signals.completed+' completed.</p></div>'+
+      (c?'<article class="active-contract"><div class="contract-eyebrow"><span>ACTIVE · '+signalEscape(LEVELS.find(l=>l.id===c.levelId)?.name)+'</span><strong>'+c.reward+' CR</strong></div><h3>'+missionName(c)+'</h3><p>'+missionProgress(c)+'</p><p>'+signalData.kinds[c.kind].verb+'</p><div class="signal-actions"><button id="contractTrack" class="alt-btn">VIEW IN JOURNAL</button>'+(c.status==='retry'?'<button id="contractRetry" class="alt-btn">RETRY ASSIGNMENT</button>':'')+'<button id="contractAbandon" class="menu-danger-btn">ABANDON</button></div><div id="contractConfirm"></div></article>':'')+
+      '<div class="contract-list">'+b.offers.map(card).join('')+'</div><p class="expedition-note">Offers persist between visits. Hull upgrades do not move accepted targets. You may refuel mid-assignment; quitting or losing the vessel resets unfinished field work for a free retry.</p>';
+    document.querySelectorAll('[data-accept-contract]').forEach(b=>b.onclick=()=>acceptContract(b.dataset.acceptContract));
+    if($('contractTrack'))$('contractTrack').onclick=()=>openJournal('assignment');
+    if($('contractRetry'))$('contractRetry').onclick=retryContract;
+    if($('contractAbandon'))$('contractAbandon').onclick=()=>{
+      $('contractConfirm').innerHTML='<p>Abandon without payment? Your currencies and other progress are untouched.</p><button id="confirmAbandonContract" class="alt-btn">CONFIRM ABANDON</button> <button id="keepContract" class="alt-btn">KEEP IT</button>';
+      $('confirmAbandonContract').onclick=abandonContract;$('keepContract').onclick=drawDockPanel;
+    };
+  }
+  function missionFailed(reason){
+    const c=signals.active;if(!c||c.status==='retry')return;
+    c.status='retry';c.kills=0;c.points.forEach(p=>p.done=false);refreshSignalObjects();persist();
+    addEvent(reason+' · assignment can be retried at dock');
+  }
+  function missionDiveLost(){if(signals.active)missionFailed('Field assignment interrupted');}
+  function missionKilled(enemy,credited){
+    const c=signals.active;if(!credited||!c||c.status!=='active'||c.kind!=='hunt'||c.levelId!==LEVEL_ID||enemy.tier!==c.tier)return;
+    c.kills=Math.min(c.required,c.kills+1);
+    if(c.kills>=c.required){c.status='return';announce('ASSIGNMENT COMPLETE · RETURN FOR '+c.reward+' CR',3);}
+  }
+  function missionWave(object,wave){
+    if(object.kind==='warden-site'){signals.warden.discovered=true;return;}
+    const c=signals.active;if(!c||c.levelId!==LEVEL_ID||c.status!=='active')return;
+    const p=c.points[object.pointIndex];if(!p)return;p.located=true;
+    if(c.kind==='survey'&&distance(wave,object)<=200){
+      if(p.done)return;p.done=true;object.collected=true;window.AbyssAudio?.event('assignmentScan');
+      announce('SURVEY '+c.points.filter(p=>p.done).length+'/3 LOGGED',1.8);
+      if(c.points.every(p=>p.done)){c.status='return';announce('SURVEY COMPLETE · RETURN FOR '+c.reward+' CR',3);}
+    }
+    persist();
+  }
+  function updateAssignments(){
+    const c=signals.active;
+    if(c?.status==='active'&&c.kind==='silent'&&c.levelId===LEVEL_ID&&player.boosting&&c.points.some(p=>distance(player,p)<250)){
+      missionFailed('Quiet-zone package disturbed');announce('QUIET ZONE BROKEN · RETRY AT DOCK',3);
+    }
+  }
+  function settleSignalsAtDock(realReturn){
+    if(!realReturn)return;
+    const c=signals.active;
+    if(c?.status==='return'){
+      saved.credits+=c.reward;signals.earned+=c.reward;signals.completed++;
+      const b=signals.boards[c.levelId];if(b){b.serial++;b.offers=[];}
+      signals.active=null;addEvent('Assignment banked · +'+c.reward+' CR');
+      window.AbyssAudio?.event('contractComplete',0,1,true);
+    }
+    const w=signals.warden;if(w.defeated&&w.pending&&!w.claimed){
+      saved.credits+=WARDEN.reward;w.pending=false;w.claimed=true;w.livery='hunter';
+      addEvent('Warden bounty +1,200 CR · Hunter livery unlocked');window.AbyssAudio?.event('contractComplete',0,1,true);
+    }
+    refreshSignalObjects();
+  }
+  function refreshSignalObjects(){
+    scene.signals=[];const c=signals.active;
+    if(c?.levelId===LEVEL_ID&&c.status==='active')c.points.forEach((p,i)=>{
+      if(p.done)return;scene.signals.push({...p,id:p.id,pointIndex:i,kind:c.kind==='survey'?'survey-buoy':'contract-package',type:'signal',revealUntil:0,echoDuration:0,collected:false});
+    });
+    if(LEVEL_ID==='midnight-cathedral'&&signals.warden.site&&!signals.warden.defeated&&!signals.warden.activated){
+      const p=signals.warden.site;scene.signals.push({x:p.x,y:p.y-170,id:'warden-beacon',kind:'warden-site',type:'signal',revealUntil:0,collected:false});
+    }
+  }
+  function nearestSignal(){
+    if(!player||player.airborne)return null;let best=null,range=60;
+    for(const s of scene.signals||[]){if(s.collected||s.kind==='survey-buoy')continue;const d=distance(s,player);if(d<range&&clearSalvageLine(s)){best=s;range=d;}}
+    return best;
+  }
+  function interactSignal(s){
+    if(s.kind==='warden-site'){showWardenPrompt();return;}
+    const c=signals.active;if(!c||c.status!=='active')return;
+    c.points[s.pointIndex].done=true;s.collected=true;c.status='return';window.AbyssAudio?.event('recorder');
+    announce('ASSIGNMENT CARGO SECURED · RETURN FOR '+c.reward+' CR',3);persist();updateUI();
+  }
+  function bankedRecord(r){return Boolean(campaignLevels[r.levelId]?.secured.includes(r.index));}
+  function drawArchiveDock(){
+    $('dockPanel').innerHTML='<div class="signals-intro"><span class="menu-kicker">RECOVERY ARCHIVE</span><h3>Twenty voices. One interrupted expedition.</h3><p>Bank recorders to decrypt the story. Reading is optional and never interrupts a dive.</p></div><div class="archive-chapters">'+LEVELS.map((l,i)=>'<button class="archive-chapter" data-chapter="'+i+'"><span>CHAPTER 0'+(i+1)+'</span><strong>'+signalData.chapters[i]+'</strong><small>'+signalEscape(l.name)+' · '+(campaignLevels[l.id]?.secured.length||0)+' / '+l.recorders.length+' BANKED</small></button>').join('')+'</div><button class="slot-primary" id="wardenDossierBtn">OPTIONAL ENCOUNTER / WARDEN DOSSIER</button>';
+    document.querySelectorAll('[data-chapter]').forEach(b=>b.onclick=()=>{const records=signalData.records.filter(r=>r.levelId===LEVELS[+b.dataset.chapter].id);selectedRecord=records.find(bankedRecord)?.id||records[0].id;openJournal('transmissions');});
+    $('wardenDossierBtn').onclick=()=>openJournal('warden');
+  }
+  function openJournal(tab='transmissions'){
+    journalTab=tab;if(!openExplorerDialog('signalsDialog'))return;renderJournal();$('signalsClose').focus({preventScroll:true});
+  }
+  function renderJournal(){
+    document.querySelectorAll('[data-journal-tab]').forEach(b=>{b.setAttribute('aria-selected',String(b.dataset.journalTab===journalTab));b.tabIndex=b.dataset.journalTab===journalTab?0:-1;});
+    const target=$('signalsContent');
+    if(journalTab==='transmissions'){
+      const chosen=signalData.records.find(r=>r.id===selectedRecord)||signalData.records.find(bankedRecord)||signalData.records[0];selectedRecord=chosen.id;
+      const open=bankedRecord(chosen);
+      target.innerHTML='<div class="archive-layout"><nav class="transmission-list" aria-label="Recovered transmissions">'+LEVELS.map((l,i)=>'<h3>0'+(i+1)+' / '+signalData.chapters[i]+'</h3>'+signalData.records.filter(r=>r.levelId===l.id).map(r=>'<button data-record="'+r.id+'" aria-pressed="'+(r.id===selectedRecord)+'"><span>'+String(r.number).padStart(2,'0')+'</span><b>'+(bankedRecord(r)?r.title:'ENCRYPTED RECORDING')+'</b><small>'+(bankedRecord(r)?'DECRYPTED':'BANK TO UNLOCK')+'</small></button>').join('')).join('')+'</nav><article class="transcript"><div class="menu-kicker">'+(open?'DECRYPTED TRANSMISSION':'RECOVERY REQUIRED')+' / '+String(chosen.number).padStart(2,'0')+'</div><h3>'+(open?chosen.title:'A voice still below')+'</h3><p class="transcript-byline">'+(open?chosen.speaker:LEVELS.find(l=>l.id===chosen.levelId).name)+'</p><div class="transcript-rule"></div>'+(open?chosen.text.split('\n\n').map(p=>'<p>'+signalEscape(p)+'</p>').join(''):'<p>Find this recorder and bank it at the harbour to decrypt the transmission. Carrying it aboard is not enough.</p>')+'<div class="transcript-footer">'+totalRecorders()+' / 20 RECORDERS BANKED · STORY IS OPTIONAL</div></article></div>';
+      target.querySelectorAll('[data-record]').forEach(b=>b.onclick=()=>{selectedRecord=b.dataset.record;renderJournal();if(bankedRecord(signalData.records.find(r=>r.id===selectedRecord)))window.AbyssAudio?.event('radioOpen',0,.35,true);});
+    }else if(journalTab==='assignment'){
+      const c=signals.active;
+      target.innerHTML='<div class="journal-page"><span class="menu-kicker">HARBOUR CONTRACTS</span><h3>'+(c?missionName(c):'Your next assignment awaits')+'</h3><p>'+(c?signalData.kinds[c.kind].verb:'Visit CONTRACTS at the dock to accept one optional assignment. There is no time limit, and rewards use credits only.')+'</p>'+(c?'<div class="assignment-readout"><strong>'+missionProgress(c)+'</strong><span>'+c.reward+' CR ON RETURN</span></div><p>'+signalEscape(LEVELS.find(l=>l.id===c.levelId).name)+'</p><p>'+signalData.kinds[c.kind].hint+'</p><button id="pinAssignment" class="slot-primary" '+(c.levelId!==LEVEL_ID||!running?'disabled':'')+'>PIN NEXT SEARCH AREA</button>':'')+'<p class="contract-note">A vessel loss or abandoned dive resets unfinished field work. Retry at the dock without a fee. Reopening menus does not reroll offers.</p></div>';
+      if($('pinAssignment'))$('pinAssignment').onclick=()=>pinAssignment();
+    }else renderWardenDossier(target);
+  }
+  function pinAssignment(){
+    const c=signals.active;if(!c||c.levelId!==LEVEL_ID||!running)return;
+    const p=c.points.find(p=>!p.done);if(!p){announce(c.kind==='hunt'?'HUNT ASSIGNED CONTACTS IN THIS LEVEL':'RETURN TO HARBOUR',2);return;}
+    field.survey.waypoint={x:p.located?p.x:p.searchX,y:p.located?p.y:p.searchY};persist();$('pinAssignment').textContent='SEARCH AREA PINNED · OPEN MAP WITH M';
+  }
+  function renderWardenDossier(target){
+    const w=signals.warden,unlocked=levelUnlocked(3);
+    target.innerHTML='<div class="journal-page warden-dossier"><span class="menu-kicker">OPTIONAL ENCOUNTER / MIDNIGHT CATHEDRAL</span><div class="warden-sigil" aria-hidden="true">◈</div><h3>The Cathedral Warden</h3><p>A territorial listener in the outer passages. It never guards a campaign recorder. The observation buoy must be deliberately activated before it will attack.</p><div class="assignment-readout"><strong>'+(w.defeated?'WARDEN DEFEATED':w.activated?'RESIDENT ACTIVE':unlocked?'OBSERVATION SITE AVAILABLE':'UNLOCK LEVEL 4 TO INVESTIGATE')+'</strong><span>1,200 CR + HUNTER LIVERY</span></div><p><b>Listen.</b> Slow movement lowers your signature. Sonar and weapons draw its attention.</p><p><b>Evade.</b> An amber wind-up and warning tone precede each committed charge. Use terrain or boost across its path.</p><p><b>Answer.</b> A missed charge leaves its armour open. The recovery phase takes full damage; side and rear hits are more effective than frontal hits at other times.</p><p>Recommended: 1,330 m hull, upgraded weapons and spare ammunition. The resident stays within its chamber. Damage persists between trips.</p>'+(w.defeated?'<p>'+(w.claimed?'Bounty claimed. The cosmetic does not alter ship statistics.':'Return to the dock to claim the bounty and hull finish.')+'</p>':'<p>Approximate depth: '+(w.site?depthOf(w.site.y):1180)+' m. Investigating is your choice; leaving the chamber is always allowed.</p>')+
+      (unlocked&&running&&LEVEL_ID==='midnight-cathedral'&&w.site&&!w.defeated?'<button id="pinWarden" class="slot-primary">PIN OBSERVATION BUOY</button>':'')+
+      (w.claimed?'<label class="livery-choice">HULL FINISH <select id="hullLivery"><option value="standard" '+(w.livery==='standard'?'selected':'')+'>NEREID / STANDARD</option><option value="hunter" '+(w.livery==='hunter'?'selected':'')+'>WARDEN HUNTER / GOLD & TEAL</option></select></label>':'')+'</div>';
+    if($('pinWarden'))$('pinWarden').onclick=()=>{field.survey.waypoint={x:w.site.x,y:w.site.y-170};persist();$('pinWarden').textContent='BUOY PINNED';};
+    if($('hullLivery'))$('hullLivery').onchange=e=>{w.livery=e.target.value==='hunter'?'hunter':'standard';persist();render();};
+  }
+  function buildWarden(){
+    if(LEVEL_ID!=='midnight-cathedral'){refreshSignalObjects();return;}
+    const w=signals.warden;
+    if(!w.site){
+      const r=randGen(field.seed^993174);
+      for(let i=0;i<120;i++){
+        const y=11720+(i%12)*35,p={x:laneAt(y,i%2?0:2),y};
+        if(projectileSolid(p.x,p.y,28)||projectileSolid(p.x,p.y-170,28)||scene.wrecks.some(v=>distance(p,v)<600))continue;
+        w.site=p;break;
+      }
+      if(!w.site){const y=11920;w.site={x:laneAt(y,1),y};}
+    }
+    // createWorld builds optional wildlife after its first population pass. Apply
+    // the observation approach exclusion again once those hazards are available.
+    protectWildArrival(w.site,120);protectWildArrival({x:w.site.x,y:w.site.y-170},105);
+    if(w.activated&&!w.defeated&&!scene.predators.some(e=>e.tier==='warden')){
+      const p=w.site;scene.predators.push({id:'cathedral-warden',tier:'warden',x:p.x,y:p.y,homeX:p.x,homeY:p.y,health:Math.max(1,w.health),maxHealth:WARDEN.health,dead:false,
+        vx:0,vy:0,phase:0,aggression:0,lastHit:-10,alertUntil:0,forgetUntil:0,revealUntil:0,wardenPhase:'listen',phaseLeft:3,heading:-Math.PI/2,aimX:0,aimY:-1});
+    }
+    refreshSignalObjects();
+  }
+  function showWardenPrompt(){
+    openDialog('OPTIONAL ENCOUNTER / OBSERVATION BUOY','WAKE THE LISTENER?',
+      '<p class="dialog-info">This buoy emits a test signal that awakens the Cathedral Warden. No essential recorder or upgrade material is locked behind this encounter.</p><p class="dialog-info">Recommended: 1,330 m hull, upgraded weapons and enough ammunition. Its amber warning precedes a committed charge. Strike during recovery. You may retreat beyond its chamber at any time.</p>',
+      '<div class="dialog-actions"><button id="leaveWarden" class="alt-btn">LEAVE IT SLEEPING</button><button id="wakeWarden" class="danger-btn">ACTIVATE OBSERVATION SIGNAL</button></div>');
+    $('leaveWarden').onclick=closeDialog;
+    $('wakeWarden').onclick=()=>{closeDialog();const w=signals.warden;w.activated=true;w.discovered=true;buildWarden();window.AbyssAudio?.event('wardenWake');announce('WARDEN AWAKE · WATCH THE WIND-UP',4);persist();};
+  }
+  function updateWarden(e,dt){
+    e.previousX=e.x;e.previousY=e.y;e.phaseLeft=Math.max(0,e.phaseLeft-dt);
+    const home={x:e.homeX,y:e.homeY},d=distance(player,e),inside=distance(player,home)<WARDEN.radius+90;
+    if(!inside||player.airborne){e.wardenPhase='listen';e.phaseLeft=2;e.aggression=0;e.alertUntil=0;}
+    if((e.stunnedUntil||0)>clock){e.vx=0;e.vy=0;return;}
+    let vx=0,vy=0;
+    if(e.wardenPhase==='listen'){
+      e.aggression=inside?.25:0;
+      const hears=inside&&(d<130||player.noise>14&&d<430||e.alertUntil>clock&&d<560);
+      if(hears&&e.phaseLeft<=0){
+        e.wardenPhase='windup';e.phaseLeft=WARDEN.windup;const dist=Math.max(1,d);e.aimX=(player.x-e.x)/dist;e.aimY=(player.y-e.y)/dist;
+        e.heading=Math.atan2(e.aimY,e.aimX);window.AbyssAudio?.event('wardenWarning',clamp((e.x-player.x)/300,-1,1));announce('WARDEN WIND-UP · MOVE ACROSS ITS PATH',1.6);
+      }else{
+        const tx=home.x+Math.sin(clock*.3)*30,ty=home.y+Math.cos(clock*.22)*75;
+        const n=Math.max(1,Math.hypot(tx-e.x,ty-e.y));vx=(tx-e.x)/n*35;vy=(ty-e.y)/n*35;
+      }
+    }else if(e.wardenPhase==='windup'){
+      e.aggression=1;if(e.phaseLeft<=0){e.wardenPhase='charge';e.phaseLeft=WARDEN.charge;window.AbyssAudio?.event('wardenCharge',clamp((e.x-player.x)/300,-1,1));}
+    }else if(e.wardenPhase==='charge'){
+      e.aggression=1;vx=e.aimX*WARDEN.speed;vy=e.aimY*WARDEN.speed;
+      if(e.phaseLeft<=0||distance(e,home)>WARDEN.radius){e.wardenPhase='recover';e.phaseLeft=WARDEN.recovery;vx=0;vy=0;}
+    }else{
+      e.aggression=0;if(e.phaseLeft<=0){e.wardenPhase='listen';e.phaseLeft=2.5;}
+    }
+    const next={x:e.x+vx*dt,y:e.y+vy*dt};
+    if(projectileTerrainHit(e,next,22)!==null){
+      if(e.wardenPhase==='charge'){e.wardenPhase='recover';e.phaseLeft=WARDEN.recovery+1;window.AbyssAudio?.event('wardenImpact',clamp((e.x-player.x)/300,-1,1));}
+      vx=0;vy=0;
+    }else{e.x=next.x;e.y=next.y;}
+    if(distance(e,home)>WARDEN.radius+35){const angle=Math.atan2(e.y-home.y,e.x-home.x);e.x=home.x+Math.cos(angle)*WARDEN.radius;e.y=home.y+Math.sin(angle)*WARDEN.radius;}
+    e.vx=vx;e.vy=vy;
+    if(e.wardenPhase==='listen'&&Math.hypot(vx,vy)>2)e.heading=lerpAngle(e.heading,Math.atan2(vy,vx),dt*2);
+    signals.warden.health=e.health;
+  }
+  function damageWarden(e,amount,source){
+    if(e.wardenPhase==='recover')return amount;
+    if(!source)return amount*.65;
+    const a=Math.atan2(source.y-e.y,source.x-e.x),front=Math.cos(a-e.heading)>.45;
+    return amount*(front?.3:.8);
+  }
+  function wardenDefeated(e){
+    const w=signals.warden;w.health=0;w.defeated=true;w.activated=false;w.discovered=true;w.pending=!w.claimed;
+    e.dead=true;e.aggression=0;e.alertUntil=0;player.kills++;addStat('kills',1);checkAchievements();
+    scene.blasts.push({x:e.x,y:e.y,birth:clock,radius:150});window.AbyssAudio?.event('wardenDefeated');
+    announce('WARDEN DEFEATED · RETURN FOR BOUNTY & HUNTER LIVERY',5);refreshSignalObjects();
+  }
+  function wardenOutline(){
+    ctx.beginPath();ctx.moveTo(66,0);ctx.quadraticCurveTo(40,-28,-4,-21);ctx.bezierCurveTo(-30,-17,-65,-21,-100,-36);
+    ctx.lineTo(-87,-4);ctx.lineTo(-113,23);ctx.quadraticCurveTo(-57,14,-26,19);ctx.quadraticCurveTo(32,31,66,0);ctx.closePath();
+  }
+  function drawWarden(e){
+    ctx.save();ctx.translate(e.x,e.y);ctx.rotate(e.heading||0);
+    const recovering=e.wardenPhase==='recover',warning=e.wardenPhase==='windup',accent=recovering?'#91f9d3':warning?'#ffd790':'#ad92e3';
+    wardenOutline();const gradient=ctx.createLinearGradient(0,-28,0,28);gradient.addColorStop(0,'#536881');gradient.addColorStop(.4,'#263750');gradient.addColorStop(1,'#100e24');ctx.fillStyle=gradient;ctx.fill();ctx.strokeStyle=accent;ctx.lineWidth=1.7;ctx.stroke();
+    for(let i=0;i<6;i++){
+      const x=35-i*15,spread=recovering?1.4:1;ctx.beginPath();ctx.moveTo(x+10,-13);ctx.lineTo(x,-(26+i%2*6)*spread);ctx.lineTo(x-9,-15);ctx.moveTo(x+10,13);ctx.lineTo(x,(26+i%2*6)*spread);ctx.lineTo(x-9,15);ctx.stroke();
+      ctx.strokeStyle=recovering?'#c7ffe8':'#647295';ctx.beginPath();ctx.moveTo(x,-14);ctx.quadraticCurveTo(x-6,0,x,14);ctx.stroke();ctx.strokeStyle=accent;
+    }
+    ctx.fillStyle=warning?'#ffe8a2':'#e6b4ff';ctx.shadowColor=accent;ctx.shadowBlur=8;
+    for(const y of [-8,8]){ctx.beginPath();ctx.ellipse(44,y,5,2.3,0,0,TAU);ctx.fill();}ctx.shadowBlur=0;
+    ctx.strokeStyle='#ded6ef';ctx.beginPath();ctx.moveTo(57,-8);ctx.lineTo(62,0);ctx.lineTo(57,8);ctx.stroke();
+    if(warning){ctx.strokeStyle='#edbb7780';ctx.setLineDash([10,9]);ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(70,0);ctx.lineTo(340,0);ctx.stroke();}
+    ctx.restore();
+  }
+  function drawSignalObjects(echo=false){
+    ctx.save();if(echo)ctx.translate(-camera.x,-camera.y);
+    for(const s of scene.signals||[]){
+      if(s.collected||!onscreen(s.x,s.y,90))continue;
+      if(echo&&!(s.revealUntil>clock))continue;
+      if(!echo&&distance(s,player)>160&&!beamIntersects(s.x,s.y,25))continue;
+      ctx.save();ctx.translate(s.x,s.y);ctx.strokeStyle=s.kind==='warden-site'?'#d0a3ef':'#e6c887';ctx.lineWidth=1.6;
+      if(echo)ctx.globalAlpha=clamp((s.revealUntil-clock)/(s.echoDuration||5),0,.9);else ctx.fillStyle='#152b39';
+      if(s.kind==='survey-buoy'){ctx.beginPath();ctx.arc(0,0,12,0,TAU);ctx.moveTo(0,-21);ctx.lineTo(0,21);ctx.moveTo(-21,0);ctx.lineTo(21,0);ctx.stroke();}
+      else if(s.kind==='warden-site'){ctx.beginPath();ctx.moveTo(0,-21);ctx.lineTo(15,0);ctx.lineTo(0,21);ctx.lineTo(-15,0);ctx.closePath();if(!echo)ctx.fill();ctx.stroke();ctx.beginPath();ctx.arc(0,0,6,0,TAU);ctx.stroke();}
+      else{if(!echo)ctx.fillRect(-15,-10,30,20);ctx.strokeRect(-15,-10,30,20);ctx.strokeRect(-7,-5,14,10);ctx.beginPath();ctx.moveTo(-15,0);ctx.lineTo(-7,0);ctx.moveTo(7,0);ctx.lineTo(15,0);ctx.stroke();}
+      ctx.restore();
+    }ctx.restore();
+  }
+  function drawMissionChart(g){
+    const c=signals.active;
+    g.save();g.font='10px ui-monospace,monospace';g.textAlign='center';
+    if(c?.levelId===LEVEL_ID&&c.status==='active')for(const point of c.points){
+      if(point.done)continue;const exact=point.located||c.kind==='silent',p=chartPoint(exact?point.x:point.searchX,exact?point.y:point.searchY),radius=Math.max(9,(c.kind==='silent'?250:150)*mapView.scale);
+      g.strokeStyle='#e4c78c';g.fillStyle='#e4c78c10';g.setLineDash([5,4]);g.beginPath();g.arc(p.x,p.y,radius,0,TAU);g.fill();g.stroke();g.setLineDash([]);g.fillStyle='#e4c78c';g.fillText(c.kind==='silent'?'QUIET ZONE':point.located?'ASSIGNMENT':'SEARCH AREA',p.x,p.y-radius-6);
+    }
+    const w=signals.warden;if(LEVEL_ID==='midnight-cathedral'&&w.site){const p=chartPoint(w.site.x,w.site.y-170);g.fillStyle=w.defeated?'#719287':'#c3a3e8';g.fillText(w.defeated?'WARDEN / CLEARED':'OPTIONAL OBSERVATION BUOY',p.x,p.y-12);g.strokeStyle=g.fillStyle;g.strokeRect(p.x-4,p.y-4,8,8);}
+    g.restore();
+  }
+  function exportCampaign(slot){
+    try{
+      if(slot===window.AbyssSlots.active&&!persist())throw Error(window.AbyssSlots.status().error);
+      const payload=window.AbyssSlots.exportSlot(slot);if(!payload)throw Error('This campaign cannot be read.');
+      const text=signalData.pack(payload,BUILD.version),blob=new Blob([text],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+      a.href=url;a.download='abyss-'+String(payload.title||'campaign').replace(/[^a-z0-9_-]+/gi,'-').slice(0,40)+'-'+new Date().toISOString().slice(0,10)+'.abyss.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+      $('slotsMessage').textContent='Campaign exported. Keep the file somewhere safe; it contains your progress, not a cloud link.';return text;
+    }catch(e){$('slotsMessage').textContent=e.message;return null;}
+  }
+  function showImportPreview(text,slot){
+    const parsed=signalData.unpack(text);importPreview={...parsed,slot};importToken=window.AbyssSlots.token(slot);
+    const title=signalEscape(parsed.payload.title||'Imported campaign'),p=parsed.payload.profile;
+    const current=window.AbyssSlots.summaries().find(s=>s.slot===slot),count=Object.values(parsed.payload.levels).reduce((n,f)=>n+f.secured.length,0);
+    $('importPreview').innerHTML='<div class="import-preview"><span class="menu-kicker">BACKUP VALIDATED / SLOT 0'+slot+'</span><h3>'+title+'</h3><p>'+count+'/20 recorders · '+p.credits.toLocaleString('en-GB')+' CR · '+p.crystals+' crystals</p><p>'+(parsed.payload.activeDive?'Saved expedition will resume paused.':'Ready at the harbour.')+'</p><p class="slot-delete-warning">'+(current.empty?'This empty slot will receive the campaign.':'This replaces “'+signalEscape(current.title)+'”. Export it first to keep a separate copy.')+'</p><div class="signal-actions"><button id="confirmImport" class="slot-primary">'+(current.empty?'IMPORT INTO SLOT ':'REPLACE SLOT ')+slot+'</button><button id="cancelImport" class="alt-btn">CANCEL</button></div></div>';
+    $('confirmImport').onclick=confirmImport;$('cancelImport').onclick=()=>{importPreview=null;importToken=null;$('importPreview').innerHTML='';};
+    $('confirmImport').focus({preventScroll:true});$('importPreview').scrollIntoView({block:'nearest'});return true;
+  }
+  function confirmImport(){
+    if(!importPreview||slotTransition)return false;
+    const {slot,payload}=importPreview;
+    if(slot!==window.AbyssSlots.active&&!persist()){$('slotsMessage').textContent='Could not save your current campaign. Import cancelled.';return false;}
+    if(!window.AbyssSlots.importSlot(slot,payload,importToken)){$('slotsMessage').textContent=window.AbyssSlots.status().error;return false;}
+    importPreview=null;importToken=null;$('importPreview').innerHTML='';
+    if(slot===window.AbyssSlots.active){slotTransition=true;reloadForSlot();}
+    else{renderSlots();$('slotsMessage').textContent='Backup imported. Your active campaign is unchanged. Choose LOAD CAMPAIGN to switch.';}
+    return true;
+  }
+  function bindSignalsUI(){
+    for(const id of ['menuJournalBtn','pauseJournalBtn'])$(id).onclick=()=>openJournal();
+    $('signalsClose').onclick=()=>closeExplorerDialog('signalsDialog');
+    $('signalsDialog').addEventListener('cancel',e=>{e.preventDefault();closeExplorerDialog('signalsDialog');});
+    const tabs=[...document.querySelectorAll('[data-journal-tab]')];tabs.forEach((b,i)=>{
+      b.onclick=()=>{journalTab=b.dataset.journalTab;renderJournal();};
+      b.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const n=e.key==='Home'?0:e.key==='End'?tabs.length-1:(i+(e.key==='ArrowRight'?1:tabs.length-1))%tabs.length;tabs[n].click();tabs[n].focus();};
+    });
+    $('importFile').onchange=async e=>{
+      const file=e.target.files?.[0];e.target.value='';if(!file)return;
+      try{if(file.size>signalData.maxBytes)throw Error('Choose a backup smaller than 12 MB.');showImportPreview(await file.text(),Number($('importSlot').value));}
+      catch(error){importPreview=null;$('importPreview').innerHTML='';$('slotsMessage').textContent=error.message;}
+    };
+    $('importSlot').onchange=()=>{importPreview=null;importToken=null;$('importPreview').innerHTML='';};
+    $('chooseImport').onclick=()=>$('importFile').click();
+  }
+
   function audioFrame(){
     const audio=window.AbyssAudio;if(!audio)return;
     if(document.hidden){if(audio.status().state==='running')audio.suspend();return;}
@@ -3366,6 +3718,16 @@
     window.AbyssDiagnostics.setFear=value=>{for(const s of scene.schools||[])s.fear=value;render();};
     window.AbyssDiagnostics.pulseWild=dt=>{clock+=dt;updateWildWaters(dt);updateUI();render();};
 
+    window.AbyssDiagnostics.signals=()=>JSON.parse(JSON.stringify({state:signals,objects:scene.signals||[],records:signalData.records.map(r=>({...r,unlocked:bankedRecord(r)}))}));
+    window.AbyssDiagnostics.openContracts=()=>showDock('contracts');
+    window.AbyssDiagnostics.openJournal=openJournal;
+    window.AbyssDiagnostics.acceptContract=acceptContract;
+    window.AbyssDiagnostics.signalPreview=showImportPreview;
+    window.AbyssDiagnostics.confirmImport=confirmImport;
+    window.AbyssDiagnostics.exportCampaign=exportCampaign;
+    window.AbyssDiagnostics.wardenFixture=()=>{signals.warden.activated=true;signals.warden.defeated=false;signals.warden.health=1200;buildWarden();};
+    window.AbyssDiagnostics.signalPlacementProbe=()=>{if(LEVEL_ID==='midnight-cathedral'){signals.warden.site=null;buildWarden();}signals.boards[LEVEL_ID]={serial:1,offers:[]};const b=ensureContracts();return {offers:b.offers.map(c=>({...c,points:c.points.map(p=>({...p,blocked:projectileSolid(p.x,p.y,24),depth:depthOf(p.y)}))})),warden:signals.warden.site?{...signals.warden.site,blocked:projectileSolid(signals.warden.site.x,signals.warden.site.y,24)}:null};};
+    window.AbyssDiagnostics.retryContract=retryContract;
     window.AbyssDiagnostics.economy=()=>({regen:{...SALVAGE_REGEN},creditFactor:CREDIT_PRICE_FACTOR,prices:{mine:AMMO_PRICE,...WEAPON_AMMO_PRICES},salvage:JSON.parse(JSON.stringify(field.salvage))});
     window.AbyssDiagnostics.buyOrdnance=buyOrdnance;
     window.AbyssDiagnostics.autoPickup=()=>{const before=paused;paused=false;autoCollectSalvage(.25);paused=before;updateUI();return player.cargo.scrap;};

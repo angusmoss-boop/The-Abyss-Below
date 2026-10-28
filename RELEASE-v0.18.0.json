@@ -1,0 +1,37 @@
+{
+  "version": "0.18.0",
+  "name": "Lost Signals",
+  "buildId": "0.18.0-lost-signals-1",
+  "updateFrom": "0.17.4",
+  "newRuntime": [
+    "lost-signals.js"
+  ],
+  "suiteCount": 17,
+  "suiteStatus": "PASS",
+  "tested_utc": "2026-10-28T02:25:11.032787+00:00",
+  "runtimeHashes": {
+    "service-worker.js": "5b8985be262dac5081c94e680a53a6cb05370dd796a7579c4d632da30f0e5f86",
+    "index.html": "3a669f48301d262f75f96bd1a0d0e4c1bf8e6ea0ece799da03ede894004a829e",
+    "styles.css": "2e6f7f66a9447a21966996d877b9641395fb24b625730e069a9a759d7839c242",
+    "campaign-slots.js": "5aa90a463b6cb535d8551c99fcfed9ba1600ba79350bfdd943e72ca8b9c42c53",
+    "audio.js": "e03ed8653fd01b39dcfd9ec82cb40bc6aa8db5c8b1eda20acfba1b702460e670",
+    "lost-signals.js": "8b79e9b861d4f3aaf720a7e84cb765103abdae50361a4091b07441d765f4c0cd",
+    "game.js": "f696f9f56d64fec12b4c8423e26a18c98edddfa484e076ba4b14933bdc7241b1",
+    "version-sync.js": "8b6b566075c6d508a7f289b1c5205c09e3e66f9995144fda988fadc3e3b470e1",
+    "manifest.webmanifest": "a6c97f24a3871b5a98e4b1bc758255eabf2b582bdd85877db616e82d0f7ce2cd",
+    "launch.js": "7defe0a1a15e243ae312a6483613d316af1b4d492d84634d2ba6a9a317f05444",
+    "icon-192.png": "767c0d175f694f0acd47faac80fccea427e4437884a5583fe787e2d57293a4c0",
+    "icon-512.png": "8a88e9cc041b8dcdd5a69821793e8ce48e208234c1142e61141e72bb3426febe",
+    "icon-maskable-512.png": "8a88e9cc041b8dcdd5a69821793e8ce48e208234c1142e61141e72bb3426febe",
+    "apple-touch-icon.png": "3fb5123e1b7e4ed3d3907b4a45087a647b922772437cada61a6cfe06470cb8b0",
+    "favicon-32.png": "8472bb51a9d7fa34b4fd85670b0ecf80415664d1191f812f7c4c7de8a50941ca",
+    "favicon.ico": "49a27c92f8ed93ed60932ba84cbeb462e2955bf7e863d9728d3344dc73ffa2b2",
+    "launch-art.webp": "b15f58b3841c9c77b59f85a55b3810a26492d444de0bc64eb38fcb06928326ac"
+  },
+  "unverified": [
+    "physical phones",
+    "live hosted/offline/PWA updating",
+    "human audio listening",
+    "full campaign and boss balance playthrough"
+  ]
+}

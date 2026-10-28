@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const root = document.documentElement;
-  const buildId = '0.17.4-crystal-descent-1';
+  const buildId = '0.18.0-lost-signals-1';
   let finished = false, reason = 'loading', ready = false, imageTimer, finishTimer;
   root.classList.add('abyss-launching');
   // A missing/corrupt game or an unavailable image must never trap the menu.
