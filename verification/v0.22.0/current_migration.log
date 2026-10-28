@@ -1,0 +1,2 @@
+PASS actual v0.18.2 migration: every old player field, all resource coordinates and depletion, old wreck cargo, enemy positions/wounds, projectile, crystal prices, 25% credit uplift, missions and paused time retained; inactive slots untouched
+PASS new discovery ownership and active side-chamber expedition stay isolated across actual slot UI transitions

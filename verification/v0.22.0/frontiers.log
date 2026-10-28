@@ -1,0 +1,6 @@
+PASS all three tiers route around a blocking rock; swept positions remain outside solids, without teleporting or speed increases
+PASS high-speed swept collision and safe migration of an enemy already embedded by an old build
+PASS original Mk I plus 70/110/150 degree upgrade fans, finite range, unchanged power costs and no rear illumination
+PASS automatic scrap/manual crystals, recorder and supply-cache notices; actual quantities at vessel, expiry, no collection tether
+PASS circular PC weapon/action bank, exact ammo, firing/sonar timers and Z/X/F keyboard attacks; mouse helm is not intercepted
+PASS six desktop sizes: circular orbs, no overlaps/offscreen readouts; no JavaScript errors

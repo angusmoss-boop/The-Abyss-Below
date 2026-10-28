@@ -1,0 +1,339 @@
+{
+  "build": "0.22.0-deepwater-rescue-1",
+  "completed_utc": "2026-10-28T17:48:10.253194+00:00",
+  "results": [
+    {
+      "suite": "rescue_mechanics",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 11.27
+    },
+    {
+      "suite": "air_stations",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 11.98
+    },
+    {
+      "suite": "rescue_navigation",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 55.49
+    },
+    {
+      "suite": "encounters",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 15.61
+    },
+    {
+      "suite": "deepwater_migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 14.28
+    },
+    {
+      "suite": "rescue_ui",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 56.44
+    },
+    {
+      "suite": "rescue_audio",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 6.32
+    },
+    {
+      "suite": "rescue_visibility",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 10.09
+    },
+    {
+      "suite": "lifeline",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 11.53
+    },
+    {
+      "suite": "cells",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 45.15
+    },
+    {
+      "suite": "lifeline_migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 13.12
+    },
+    {
+      "suite": "command_ui",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 89.88
+    },
+    {
+      "suite": "baseline_beam",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 6.98
+    },
+    {
+      "suite": "frontiers",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 32.62
+    },
+    {
+      "suite": "shoals",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 8.63
+    },
+    {
+      "suite": "frontiers_migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 11.72
+    },
+    {
+      "suite": "achievements_extra",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 27.44
+    },
+    {
+      "suite": "regression",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 26.56
+    },
+    {
+      "suite": "world_achievements",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 40.46
+    },
+    {
+      "suite": "giants",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 11.92
+    },
+    {
+      "suite": "navigation",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 54.8
+    },
+    {
+      "suite": "behaviours",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 7.07
+    },
+    {
+      "suite": "targeting",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 5.59
+    },
+    {
+      "suite": "current_migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 12.18
+    },
+    {
+      "suite": "discovery_safety",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 47.04
+    },
+    {
+      "suite": "recovery",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 40.51
+    },
+    {
+      "suite": "rescue_ammo",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 28.36
+    },
+    {
+      "suite": "recovery_migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 25.06
+    },
+    {
+      "suite": "recovery_levels",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 69.22
+    },
+    {
+      "suite": "guidance",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 28.19
+    },
+    {
+      "suite": "seeking_mines",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 9.02
+    },
+    {
+      "suite": "guidance_save",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 10.81
+    },
+    {
+      "suite": "weapons",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 27.23
+    },
+    {
+      "suite": "economy",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 36.16
+    },
+    {
+      "suite": "placement",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 78.58
+    },
+    {
+      "suite": "contracts",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 23.36
+    },
+    {
+      "suite": "backups",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 9.27
+    },
+    {
+      "suite": "warden",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 41.6
+    },
+    {
+      "suite": "journal",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 14.86
+    },
+    {
+      "suite": "signals_layout",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 65.11
+    },
+    {
+      "suite": "migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 8.3
+    },
+    {
+      "suite": "resume",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 29.8
+    },
+    {
+      "suite": "slots",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 22.84
+    },
+    {
+      "suite": "combat_touch",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 11.61
+    },
+    {
+      "suite": "stealth",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 34.85
+    },
+    {
+      "suite": "audio_transitions",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 20.72
+    },
+    {
+      "suite": "music",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 14.47
+    },
+    {
+      "suite": "branding_ui",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 34.33
+    },
+    {
+      "suite": "launch",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 19.93
+    },
+    {
+      "suite": "sync",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.55
+    },
+    {
+      "suite": "worker",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.2
+    }
+  ],
+  "runtime_hashes": {
+    "service-worker.js": "347f8e928a9ccead5e918a865cc607c2d69ec60a5a58dd83508a3b0688417a36",
+    "index.html": "d04d499652f67775b0f55fd4a957d0b4b0deff090a9530c08f0f2d0a79668403",
+    "styles.css": "a925198dab5ba78e05e15ea997063acadba591ebf47a66dc91ec77d0f6f7fa8b",
+    "campaign-slots.js": "e8f9b1076c901da40e2aab4d6bbd19dc9e8de4e08feece0963a92f249e8eb32d",
+    "audio.js": "d5460d8935b5ec28913f488ceb7ff07dfb2b7c7e6e49e21f8e10269f77828947",
+    "lost-signals.js": "877d3ade9531d5421cd86ebcfab13cd8b7949d5903eb20c7d905f30479b91bdc",
+    "forgotten-giants.js": "11263c3071e69d6101fa4d0b6427d266d47147ef70b9cc58b6cb1f276dfa3405",
+    "deepwater-rescue.js": "5f61bc0cc70f9410ef3191147565dea1a4089c7c4b7ca01f58212faa8f10c079",
+    "game.js": "2f4bdadb10637173b75fa5a8d7f9d2febf54ab261dd33f4802cd3f64be103d23",
+    "version-sync.js": "f34414bf4f8544e032adfe2b4620ae626fc389a8422629d52362ad212d217150",
+    "manifest.webmanifest": "c9a2112db7c9281c496ad71e172c649d37257839e52329419eb73a86a5f418bb",
+    "launch.js": "d83f09a1829a877726e3c23cb6eddd40377ea869bc1e46f403c7037e45778ae0",
+    "icon-192.png": "767c0d175f694f0acd47faac80fccea427e4437884a5583fe787e2d57293a4c0",
+    "icon-512.png": "8a88e9cc041b8dcdd5a69821793e8ce48e208234c1142e61141e72bb3426febe",
+    "icon-maskable-512.png": "8a88e9cc041b8dcdd5a69821793e8ce48e208234c1142e61141e72bb3426febe",
+    "apple-touch-icon.png": "3fb5123e1b7e4ed3d3907b4a45087a647b922772437cada61a6cfe06470cb8b0",
+    "favicon-32.png": "8472bb51a9d7fa34b4fd85670b0ecf80415664d1191f812f7c4c7de8a50941ca",
+    "favicon.ico": "49a27c92f8ed93ed60932ba84cbeb462e2955bf7e863d9728d3344dc73ffa2b2",
+    "launch-art.webp": "b15f58b3841c9c77b59f85a55b3810a26492d444de0bc64eb38fcb06928326ac"
+  },
+  "test_maintenance": "An inherited depletion fixture now uses the same rounded depth as production. That suite was rerun after its fixture correction; runtime source was not changed after the full run.",
+  "live_pwa": {
+    "status": "BLOCKED",
+    "error": "Page.goto: net::ERR_BLOCKED_BY_ADMINISTRATOR at http://127.0.0.1:44455/\nCall log:\n  - navigating to \"http://127.0.0.1:44455/\", waiting until \"load\"\n",
+    "conclusion": "Live HTTP, real worker installation and offline launch not verified."
+  }
+}

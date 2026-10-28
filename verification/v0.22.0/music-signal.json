@@ -1,0 +1,22 @@
+{
+  "menu_peak": 0.03564354032278061,
+  "loops": [
+    {
+      "duration": 24,
+      "channels": 2,
+      "loop": true,
+      "peak": 0.13431304693222046,
+      "rms": 0.028913433799177296,
+      "seam": 0.0015802981797605753
+    },
+    {
+      "duration": 21.818185941043083,
+      "channels": 2,
+      "loop": true,
+      "peak": 0.1404167264699936,
+      "rms": 0.03112572191814025,
+      "seam": 5.254056304693222e-06
+    }
+  ],
+  "notes": "Actual Web Audio signals and loop buffers. No human listening, device-speaker or musical-balance verdict."
+}

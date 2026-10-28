@@ -1,0 +1,3 @@
+PASS real v0.21 migration: exact saved dive, all depleted resources, currencies, paid/emergency ammo, fish positions, wounded enemies, projectiles, missions and discovery state; inactive slots unchanged
+PASS all credit and crystal prices unchanged; no retroactive charge
+PASS real slot UI transitions preserve independent campaigns after migration

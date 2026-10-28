@@ -1,0 +1,5 @@
+PASS actual fixed loot + recorder + bought-stock fixture; hull/air/power/shield, cargo, ammo, mines, enemy wounds/positions, sonar, clock and population restore exactly; starts paused and no recovery duplicate
+PASS docking and reloading do not duplicate delivered scrap, crystals or recorders; owned ammo remains spent
+PASS explicit abandon/defeat retains one persistent recovery pod, retains recorders at loss site; defeat resets stock, quit preserves spent ammunition
+PASS corrupt snapshot falls back to journalled recovery; airborne save restores actual flight with gravity and safe splashdown
+PASS background/blur path freezes simulation, clears steering, writes a resumable snapshot
