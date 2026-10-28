@@ -1,0 +1,3 @@
+PASS rare battery pickups: full/tiny-deficit protection, +25 maximum, capacity clamp, actual pickup notice, no cargo or crystal contamination
+PASS zero-power rescue, no dock/pause/offline bypass, 8-minute cooldown + staggering, no on-screen respawn, reload persistence, portable-backup validation and finite crystal stocks
+PASS 25 seeded levels: 3/4/5/6/7 rare stable cells, first reachable above 120 m, clear of original resources/harbour/wreck walls, no replenishment on relaunch

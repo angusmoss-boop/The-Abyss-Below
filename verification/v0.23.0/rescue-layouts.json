@@ -1,0 +1,119 @@
+[
+  {
+    "size": [
+      320,
+      568
+    ],
+    "new_dialog": "PASS",
+    "report": "PASS",
+    "reachable_controls": "PASS"
+  },
+  {
+    "size": [
+      360,
+      640
+    ],
+    "new_dialog": "PASS",
+    "report": "PASS",
+    "reachable_controls": "PASS"
+  },
+  {
+    "size": [
+      390,
+      844
+    ],
+    "new_dialog": "PASS",
+    "report": "PASS",
+    "reachable_controls": "PASS"
+  },
+  {
+    "size": [
+      430,
+      932
+    ],
+    "new_dialog": "PASS",
+    "report": "PASS",
+    "reachable_controls": "PASS"
+  },
+  {
+    "size": [
+      568,
+      320
+    ],
+    "new_dialog": "PASS",
+    "report": "PASS",
+    "reachable_controls": "PASS"
+  },
+  {
+    "size": [
+      640,
+      360
+    ],
+    "new_dialog": "PASS",
+    "report": "PASS",
+    "reachable_controls": "PASS"
+  },
+  {
+    "size": [
+      844,
+      390
+    ],
+    "new_dialog": "PASS",
+    "report": "PASS",
+    "reachable_controls": "PASS"
+  },
+  {
+    "size": [
+      915,
+      412
+    ],
+    "new_dialog": "PASS",
+    "report": "PASS",
+    "reachable_controls": "PASS"
+  },
+  {
+    "size": [
+      768,
+      1024
+    ],
+    "new_dialog": "PASS",
+    "report": "PASS",
+    "reachable_controls": "PASS"
+  },
+  {
+    "size": [
+      1024,
+      768
+    ],
+    "new_dialog": "PASS",
+    "report": "PASS",
+    "reachable_controls": "PASS"
+  },
+  {
+    "size": [
+      1280,
+      720
+    ],
+    "new_dialog": "PASS",
+    "report": "PASS",
+    "reachable_controls": "PASS"
+  },
+  {
+    "size": [
+      1440,
+      900
+    ],
+    "new_dialog": "PASS",
+    "report": "PASS",
+    "reachable_controls": "PASS"
+  },
+  {
+    "size": [
+      1920,
+      1080
+    ],
+    "new_dialog": "PASS",
+    "report": "PASS",
+    "reachable_controls": "PASS"
+  }
+]

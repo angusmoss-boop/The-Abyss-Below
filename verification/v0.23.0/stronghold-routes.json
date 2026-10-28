@@ -1,0 +1,632 @@
+[
+  {
+    "level": 1,
+    "seed": 17,
+    "closed": {
+      "id": "wayfarer",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 2514,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2029.3838133765137,
+        -689.3838133765137
+      ],
+      "bottom": 2390
+    },
+    "opened": {
+      "id": "wayfarer",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 2732,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2029.3838133765137,
+        -689.3838133765137
+      ],
+      "bottom": 2390
+    }
+  },
+  {
+    "level": 1,
+    "seed": 9911,
+    "closed": {
+      "id": "wayfarer",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 2507,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2029.3838133765137,
+        -689.3838133765137
+      ],
+      "bottom": 2390
+    },
+    "opened": {
+      "id": "wayfarer",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 2725,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2029.3838133765137,
+        -689.3838133765137
+      ],
+      "bottom": 2390
+    }
+  },
+  {
+    "level": 1,
+    "seed": 1234567,
+    "closed": {
+      "id": "wayfarer",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 2511,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2029.3838133765137,
+        -689.3838133765137
+      ],
+      "bottom": 2390
+    },
+    "opened": {
+      "id": "wayfarer",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 2729,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2029.3838133765137,
+        -689.3838133765137
+      ],
+      "bottom": 2390
+    }
+  },
+  {
+    "level": 2,
+    "seed": 17,
+    "closed": {
+      "id": "prospector-nine",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 2945,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        1861.1649707365327,
+        3341.1649707365327
+      ],
+      "bottom": 4830
+    },
+    "opened": {
+      "id": "prospector-nine",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 3197,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        1861.1649707365327,
+        3341.1649707365327
+      ],
+      "bottom": 4830
+    }
+  },
+  {
+    "level": 2,
+    "seed": 9911,
+    "closed": {
+      "id": "prospector-nine",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 2945,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        1861.1649707365327,
+        3341.1649707365327
+      ],
+      "bottom": 4830
+    },
+    "opened": {
+      "id": "prospector-nine",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 3197,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        1861.1649707365327,
+        3341.1649707365327
+      ],
+      "bottom": 4830
+    }
+  },
+  {
+    "level": 2,
+    "seed": 1234567,
+    "closed": {
+      "id": "prospector-nine",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 2935,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        1861.1649707365327,
+        3341.1649707365327
+      ],
+      "bottom": 4830
+    },
+    "opened": {
+      "id": "prospector-nine",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 3187,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        1861.1649707365327,
+        3341.1649707365327
+      ],
+      "bottom": 4830
+    }
+  },
+  {
+    "level": 3,
+    "seed": 17,
+    "closed": {
+      "id": "verdant",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 3653,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2222.834152836822,
+        -562.8341528368219
+      ],
+      "bottom": 8180
+    },
+    "opened": {
+      "id": "verdant",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 3993,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2222.834152836822,
+        -562.8341528368219
+      ],
+      "bottom": 8180
+    }
+  },
+  {
+    "level": 3,
+    "seed": 9911,
+    "closed": {
+      "id": "verdant",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 3653,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2222.834152836822,
+        -562.8341528368219
+      ],
+      "bottom": 8180
+    },
+    "opened": {
+      "id": "verdant",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 3993,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2222.834152836822,
+        -562.8341528368219
+      ],
+      "bottom": 8180
+    }
+  },
+  {
+    "level": 3,
+    "seed": 1234567,
+    "closed": {
+      "id": "verdant",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 3641,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2222.834152836822,
+        -562.8341528368219
+      ],
+      "bottom": 8180
+    },
+    "opened": {
+      "id": "verdant",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 3981,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2222.834152836822,
+        -562.8341528368219
+      ],
+      "bottom": 8180
+    }
+  },
+  {
+    "level": 4,
+    "seed": 17,
+    "closed": {
+      "id": "halcyon",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 4314,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        1733.5920730187418,
+        3573.5920730187418
+      ],
+      "bottom": 11730
+    },
+    "opened": {
+      "id": "halcyon",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 4704,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        1733.5920730187418,
+        3573.5920730187418
+      ],
+      "bottom": 11730
+    }
+  },
+  {
+    "level": 4,
+    "seed": 9911,
+    "closed": {
+      "id": "halcyon",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 4310,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        1733.5920730187418,
+        3573.5920730187418
+      ],
+      "bottom": 11730
+    },
+    "opened": {
+      "id": "halcyon",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 4700,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        1733.5920730187418,
+        3573.5920730187418
+      ],
+      "bottom": 11730
+    }
+  },
+  {
+    "level": 4,
+    "seed": 1234567,
+    "closed": {
+      "id": "halcyon",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 4319,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        1733.5920730187418,
+        3573.5920730187418
+      ],
+      "bottom": 11730
+    },
+    "opened": {
+      "id": "halcyon",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 4709,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        1733.5920730187418,
+        3573.5920730187418
+      ],
+      "bottom": 11730
+    }
+  },
+  {
+    "level": 5,
+    "seed": 17,
+    "closed": {
+      "id": "atlas",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 5236,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2622.1855250749013,
+        -622.1855250749013
+      ],
+      "bottom": 16680
+    },
+    "opened": {
+      "id": "atlas",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 5723,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2622.1855250749013,
+        -622.1855250749013
+      ],
+      "bottom": 16680
+    }
+  },
+  {
+    "level": 5,
+    "seed": 9911,
+    "closed": {
+      "id": "atlas",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 5236,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2622.1855250749013,
+        -622.1855250749013
+      ],
+      "bottom": 16680
+    },
+    "opened": {
+      "id": "atlas",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 5723,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2622.1855250749013,
+        -622.1855250749013
+      ],
+      "bottom": 16680
+    }
+  },
+  {
+    "level": 5,
+    "seed": 1234567,
+    "closed": {
+      "id": "atlas",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": false,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 5236,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2622.1855250749013,
+        -622.1855250749013
+      ],
+      "bottom": 16680
+    },
+    "opened": {
+      "id": "atlas",
+      "relays": [
+        true,
+        true
+      ],
+      "panel": true,
+      "plate": true,
+      "exit": true,
+      "vaultClear": true,
+      "nodes": 5723,
+      "rockOverlap": false,
+      "guards": true,
+      "bounds": [
+        -2622.1855250749013,
+        -622.1855250749013
+      ],
+      "bottom": 16680
+    }
+  }
+]

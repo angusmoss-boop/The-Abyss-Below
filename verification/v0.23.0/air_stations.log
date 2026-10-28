@@ -1,0 +1,3 @@
+PASS six-second 25% transfer without power, no auto-use or free refill when held or paused
+PASS depleted reserve persists across reload/log; physical return restocks, upgraded tank gets 55 units at Mk IV
+PASS full-tank protection and corrupt backup rejected
