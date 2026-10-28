@@ -1,3 +1,13 @@
+# v0.18.1 / Guided Ordnance
+
+- Railgun: limited forward acquisition and predictive course correction; torpedoes: wider acquisition and stronger bounded steering.
+- Stable target locks with line-of-sight/range/cone checks, live-target revalidation and safe reacquisition. No automatic fire or new controls.
+- Armed player mines slowly seek local predators, remain tethered to a finite patrol radius around their drop position, and stop at terrain or target loss.
+- Relative swept mine collisions handle both moving actors and partial-frame arming; solid rock blocks proximity triggering and mine blast damage.
+- Preserve all weapon damage, magazines, cooldowns, ranges, prices, paid-ammo rules and campaign resources. Environmental contact mines and harmless fish are not homing targets.
+- Persist target IDs, shot heading/velocity and mine anchors; legacy in-flight ordnance remains compatible. Validate new optional fields in campaign imports.
+- Updated dock information/help, current release markers and immutable cache manifests. Existing music/audio logic and compact controls unchanged.
+
 # v0.18.0 / Lost Signals
 
 - Persistent contract board: three offers, one active assignment, four mission types, accessible targets, bank-only credit rewards and free retries.

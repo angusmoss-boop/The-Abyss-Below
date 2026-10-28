@@ -1,16 +1,22 @@
 # The Abyss Below
 
-## v0.18.0: Lost Signals
+## v0.18.1: Guided Ordnance
 
-A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. This update adds persistent optional contracts, twenty banked recorder transcripts, the optional Cathedral Warden encounter and portable campaign backups. Existing campaign resources, prices, paid ammunition, approved artwork, seven-button controls and audio fixes are preserved.
+A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. This combat-assistance patch adds gentle predictive railgun correction, strong forward-cone torpedo homing and slow-seeking planted mines. Existing campaign resources, prices, paid ammunition, contracts, artwork, seven-button controls and audio fixes are preserved.
 
-Read [LOST-SIGNALS-v0.18.0.md](LOST-SIGNALS-v0.18.0.md) for the new features and [VERIFICATION-v0.18.0.md](VERIFICATION-v0.18.0.md) for the evidence and limits.
+Read [GUIDED-ORDNANCE-v0.18.1.md](GUIDED-ORDNANCE-v0.18.1.md) for mechanics and [VERIFICATION-v0.18.1.md](VERIFICATION-v0.18.1.md) for current evidence and limits. The previous content update is documented in [LOST-SIGNALS-v0.18.0.md](LOST-SIGNALS-v0.18.0.md).
 
 ## Install or update
 
-Apply the update ZIP over v0.17.4 at the repository root. Save first; banking and quitting an active dive is safest. Upload the extracted contents together, including the new `lost-signals.js`, all changed runtime files, worker and `version.json`. Use the complete ZIP for a fresh checkout. These files do not deploy themselves.
+Apply the update ZIP over v0.18.0 at the repository root. Save and export a campaign backup first; banking cargo is a sensible precaution. Upload the extracted contents together, including all changed runtime files, the worker and `version.json`. Use the complete ZIP for a fresh checkout. These files do not deploy themselves.
 
-Reopen the same site online and check for **v0.18.0 / Lost Signals**. Keep the same origin and browser profile. Do not clear site data, uninstall or create a new campaign to update. Local/offline/unverified menu status is not proof of a hosted update. Export a campaign backup from SAVE / LOAD CAMPAIGNS after updating.
+Reopen the same site online and check for **v0.18.1 / Guided Ordnance**. Keep the same origin and browser profile. Do not clear site data, uninstall or create a new campaign to update. Local/offline/unverified menu status is not proof of a hosted update.
+
+## Automatic guidance
+
+Rail rounds gently steer and lead predators within 32 degrees either side of their firing direction; torpedoes use a wider 65-degree cone and much stronger curvature. Targets must have a clear path through terrain. Shots never turn back, keep their existing speed/range/damage and consume ammunition only once. With no valid target they continue on their current course.
+
+Armed player mines slowly seek predators within 20 m at up to 3.2 m/s, staying within 24 m of their original drop point. Rocks block targeting, movement and mine explosions. Mine arming and own-ship safety are retained; abandoned contact mines remain stationary tethered hazards. Guidance works at every fitted mark without an additional purchase or control.
 
 ## Lost Signals
 
@@ -37,7 +43,7 @@ The standard recovery radius is 6 m. Magnet Mk I-IV extends it to 10 / 14 / 18 /
 | III | 70 / 24 | 200 / 6 |
 | IV | 95 / 32 | 280 / 8 |
 
-Hold **Z / RAIL** for rapid direct shots; tap **X / TORP** for a forward explosive round. Both start unfitted and are purchased in the dock. Buy rail rounds for 6 CR or torpedoes for 24 CR in the dock Ammunition tab. No free refill on docking, upgrades, death or reload. Rocks block shots. Friendly torpedo blasts spare your ship, but detonated abandoned mines remain dangerous. Weapons lock inside the protected harbour and above water.
+Hold **Z / RAIL** for lightly guided rapid shots; tap **X / TORP** for a strongly homing explosive round. Both start unfitted and are purchased in the dock. Buy rail rounds for 6 CR or torpedoes for 24 CR in the dock Ammunition tab. No free refill on docking, upgrades, death or reload. Rocks block shots. Friendly torpedo blasts spare your ship, but detonated abandoned mines remain dangerous. Weapons lock inside the protected harbour and above water.
 
 Mines: use **F / MINE**, capacity 2 / 4 / 6 / 8, ammunition purchased separately at 18 credits per round. No automatic mine refills.
 

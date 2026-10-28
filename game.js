@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const BUILD = Object.freeze({version:'0.18.0',name:'Lost Signals',id:'0.18.0-lost-signals-1'});
+  const BUILD = Object.freeze({version:'0.18.1',name:'Guided Ordnance',id:'0.18.1-guided-ordnance-1'});
   window.AbyssBuild=BUILD;
   const $ = id => document.getElementById(id);
   const canvas = $('gameCanvas');
@@ -54,6 +54,13 @@
   const WEAPONS=Object.freeze({
     railgun:{name:'PULSE RAILGUN',damage:[0,35,50,70,95],capacity:[0,12,18,24,32],speed:760,range:620,cooldown:.42,radius:4,blast:0,color:'#9beafa'},
     torpedo:{name:'SHOCK TORPEDOES',damage:[0,95,140,200,280],capacity:[0,3,4,6,8],speed:300,range:1000,cooldown:1.4,radius:7,blast:105,color:'#ffc48e'}
+  });
+  // Guidance is automatic at every fitted mark. Damage, magazines and prices do
+  // not change. Angles are radians; all distances below are world units (10/m).
+  const GUIDANCE = Object.freeze({
+    railgun:Object.freeze({cone:32*Math.PI/180,trackingCone:70*Math.PI/180,turnRate:120*Math.PI/180,maxTurn:55*Math.PI/180,maxLead:.65}),
+    torpedo:Object.freeze({cone:65*Math.PI/180,trackingCone:100*Math.PI/180,turnRate:180*Math.PI/180,maxTurn:85*Math.PI/180,maxLead:1}),
+    mine:Object.freeze({range:200,speed:32,leash:240,turnRate:100*Math.PI/180})
   });
   const MAGNET = Object.freeze({range:[60,100,140,180,220],power:[0,1.2,1,.8,.6]});
   const SHIELD = Object.freeze({capacity:[0,20,35,50,70],recharge:[0,2,3,4,5],delay:8,powerPerPoint:.35});
@@ -700,18 +707,21 @@
     }
     if(!drop){announce('STERN OBSTRUCTED · MOVE TO CLEAR WATER',1.5);return false;}
     scene.mines.push({...drop,id:idCounter++,mark:saved.upgrades.minePower,damage:mineDamage(),
-      birth:clock,armedAt:clock+MINES.armDelay,detonated:false,revealUntil:0});
+      birth:clock,armedAt:clock+MINES.armDelay,detonated:false,revealUntil:0,
+      originX:drop.x,originY:drop.y,vx:0,vy:0,heading:player.facing+Math.PI,targetId:null});
     window.AbyssAudio?.event('mine');
     player.mineAmmo--;saved.mineAmmo=player.mineAmmo;player.mineCooldown=MINES.deployCooldown;persist();
     addEvent('Mk '+roman(saved.upgrades.minePower)+' mine deployed · '+player.mineAmmo+' remaining');
     updateUI();return true;
   }
   function mineContactTime(mine,enemy,dt){
-    // Sweep the armed part of this frame so a fast hunter cannot skip a mine.
-    const armedFraction=clamp((mine.armedAt-(clock-dt))/dt,0,1);
-    const x0=enemy.previousX??enemy.x,y0=enemy.previousY??enemy.y;
-    const ax=lerp(x0,enemy.x,armedFraction)-mine.x,ay=lerp(y0,enemy.y,armedFraction)-mine.y;
-    const dx=enemy.x-(ax+mine.x),dy=enemy.y-(ay+mine.y);
+    // Relative swept collision: both the predator and the newly mobile mine can
+    // move during a frame. The mine stays still for the unarmed part of it.
+    const armedFraction=dt>0?clamp((mine.armedAt-(clock-dt))/dt,0,1):0;
+    const mx0=mine.previousX??mine.x,my0=mine.previousY??mine.y;
+    const ex0=lerp(enemy.previousX??enemy.x,enemy.x,armedFraction);
+    const ey0=lerp(enemy.previousY??enemy.y,enemy.y,armedFraction);
+    const ax=ex0-mx0,ay=ey0-my0,dx=(enemy.x-mine.x)-ax,dy=(enemy.y-mine.y)-ay;
     const c=ax*ax+ay*ay-MINES.triggerRadius**2;
     if(c<=0)return armedFraction;
     const a=dx*dx+dy*dy;if(a<1e-12)return null;
@@ -745,19 +755,32 @@
   }
   function updateMines(dt){
     for(const mine of scene.mines){
-      if(mine.detonated||clock<mine.armedAt)continue;
+      if(mine.detonated)continue;
+      mine.previousX=mine.x;mine.previousY=mine.y;
+      if(clock<mine.armedAt)continue;
+      // Legacy stationary mines acquire an anchor at their saved position.
+      if(!Number.isFinite(mine.originX))mine.originX=mine.x;
+      if(!Number.isFinite(mine.originY))mine.originY=mine.y;
+      const armedFraction=dt>0?clamp((mine.armedAt-(clock-dt))/dt,0,1):0;
+      guideMine(mine,Math.max(0,dt*(1-armedFraction)));
       let contact=null;
       for(const enemy of scene.predators)if(predatorAlive(enemy)){
         const t=mineContactTime(mine,enemy,dt);
-        if(t!==null&&(contact===null||t<contact))contact=t;
+        if(t===null)continue;
+        const mt=(t-armedFraction)/Math.max(1e-9,1-armedFraction);
+        const centre={x:lerp(mine.previousX,mine.x,mt),y:lerp(mine.previousY,mine.y,mt)};
+        const target={x:lerp(enemy.previousX??enemy.x,enemy.x,t),y:lerp(enemy.previousY??enemy.y,enemy.y,t)};
+        if(guidanceLineClear(centre,target,0)&&(contact===null||t<contact))contact=t;
       }
       if(contact===null)continue;
+      const mt=(contact-armedFraction)/Math.max(1e-9,1-armedFraction);
+      mine.x=lerp(mine.previousX,mine.x,mt);mine.y=lerp(mine.previousY,mine.y,mt);
       mine.detonated=true;window.AbyssAudio?.event('explosion',clamp((mine.x-player.x)/300,-1,1));
       scene.blasts.push({x:mine.x,y:mine.y,birth:clock,radius:MINES.blastRadius});
       let hits=0;
       for(const enemy of scene.predators)if(predatorAlive(enemy)){
-        const x=lerp(enemy.previousX??enemy.x,enemy.x,contact),y=lerp(enemy.previousY??enemy.y,enemy.y,contact);
-        if(Math.hypot(x-mine.x,y-mine.y)<=MINES.blastRadius){damagePredator(enemy,mine.damage,true,mine);hits++;}
+        const target={x:lerp(enemy.previousX??enemy.x,enemy.x,contact),y:lerp(enemy.previousY??enemy.y,enemy.y,contact)};
+        if(distance(target,mine)<=MINES.blastRadius&&guidanceLineClear(mine,target,0)){damagePredator(enemy,mine.damage,true,mine);hits++;}
       }
       player.noise=Math.min(100,player.noise+24);
       if(hits)announce('MINE HIT · '+mine.damage+' DAMAGE · '+hits+' CONTACT'+(hits===1?'':'S'),1.8);
@@ -935,18 +958,18 @@
     flashlight:['OPTICS','exploration','At 1,000 m ambient light disappears. A wider, longer beam lets you plan routes and locate resources.'],
     sonar:['SENSORS','exploration','Scans cover the current screen. Very large screens can extend the cooldown until the wave finishes.'],
     quiet:['SIGNATURE CONTROL','support','Always-on acoustic insulation reduces speed-based movement noise. Small joystick drags or a nearby mouse cursor keep you quiet. Boost and weapons remain loud; no silent toggle is needed.'],
-    minePower:['ORDNANCE','defence','The launcher unlocks at Mk I. Warheads strengthen every mine; ammunition is bought separately.'],
+    minePower:['ORDNANCE','defence','Armed mines slowly seek predators within 20 m, staying within 24 m of their drop point. Rocks block movement and blasts. They remain safe for your sub. Warhead marks increase damage; buy ammunition separately.'],
     mineCapacity:['ORDNANCE STORAGE','defence','A larger rack adds empty slots only. Buy rounds in the Ammunition tab for 18 credits each.'],
     magnet:['RESOURCE RECOVERY','exploration','Scrap collects automatically. Remote pickups require power, visibility and a clear path. Crystals still need USE or E, and recorders and supply caches need a close approach.'],
     shield:['ACTIVE DEFENCE','defence','Absorbs bites and rock impacts only, never pressure or oxygen loss. Recharge costs 0.35 power per shield point and pauses while boosting.'],
-    railgun:['DIRECT-FIRE WEAPON','tactical','Fast straight-line bolts follow the bow. Hold Z or RAIL for repeated fire. Rocks stop shots. Buy rail rounds for 6 credits each in Ammunition. Docking, upgrades, menus, death and loading never grant rounds.'],
-    torpedo:['EXPLOSIVE WEAPON','defence','Tap X or TORP for one forward torpedo. The blast can hit several predators; your own blast is ship-safe. Detonating abandoned mines can still hurt you. Buy torpedoes for 24 credits each at the dock. Upgrading adds empty capacity, not ammunition.'],
+    railgun:['DIRECT-FIRE WEAPON','tactical','Hold Z or RAIL to fire. Bolts gently correct toward a predator within 32 degrees of the bow and lead its movement. They cannot turn backwards or see through rocks. Buy rounds for 6 credits each; no free refills.'],
+    torpedo:['EXPLOSIVE WEAPON','defence','Tap X or TORP to launch. Strong homing tracks predators within 65 degrees of the bow, with faster turns than rail bolts. Rocks block targeting and shots. The blast is ship-safe, but detonated abandoned mines are not. Buy rounds for 24 credits each.'],
     disruptor:['ACOUSTIC COUNTERMEASURES','tactical','Stun begins on wave arrival, only inside the disruption radius. Stalkers receive 80% duration, Reapers 60%. Low battery falls back to an ordinary scan.']
   };
   function upgradeStats(id,mark){
     const n=v=>Number(v.toFixed(2)).toLocaleString('en-GB');
     switch(id){
-      case 'railgun':case 'torpedo':return [['Damage',WEAPONS[id].damage[mark]+' HP'],['Magazine capacity',WEAPONS[id].capacity[mark]+' rounds'],['Firing interval',WEAPONS[id].cooldown+' sec'],['Range',WEAPONS[id].range/10+' m'],['Price per round',WEAPON_AMMO_PRICES[id]+' CR']];
+      case 'railgun':case 'torpedo':return [['Damage',WEAPONS[id].damage[mark]+' HP'],['Magazine capacity',WEAPONS[id].capacity[mark]+' rounds'],['Firing interval',WEAPONS[id].cooldown+' sec'],['Range',WEAPONS[id].range/10+' m'],['Price per round',WEAPON_AMMO_PRICES[id]+' CR'],['Guidance',id==='railgun'?'Gentle / 32° each side':'Strong / 65° each side']];
       case 'hull':return [['Safe depth',HULL_DEPTHS[mark].toLocaleString('en-GB')+' m'],['Hull integrity',(100+mark*28)+' HP']];
       case 'oxygen':return [['Oxygen capacity',(100+mark*30)+' units'],['Consumption',n(.22/(1+mark*.2)*60)+'/min']];
       case 'battery':return [['Battery capacity',(100+mark*30)+' power'],['Boost power use',n(BOOST.powerPerSecond/(1+mark*.12))+'/sec'],['Boost recharge',n(BOOST.recharge*(1+mark*.1))+'/sec']];
@@ -954,7 +977,7 @@
       case 'flashlight':return [['Maximum reach',FLASHLIGHT[mark].length/10+' m'],['Beam angle',Math.round(FLASHLIGHT[mark].halfAngle*360/Math.PI)+'°'],['Base power draw',n(FLASHLIGHT[mark].power*60)+'/min']];
       case 'sonar':return [['Base cooldown',n(SONAR.cooldown-mark*.35)+' sec'],['Scan power',Math.max(4,12-mark*2)+' power'],['Echo duration',n(SONAR.echoSeconds+mark*.45)+' sec']];
       case 'quiet':return [['Normal noise reduction',Math.round((1-1/(1+mark*.32))*100)+'%'],['Base idle noise','0%']];
-      case 'minePower':return [['Mine damage',MINES.damage[mark]+' HP'],['Blast radius',MINES.blastRadius/10+' m'],['Launcher',mark?'Online':'Not fitted']];
+      case 'minePower':return [['Mine damage',MINES.damage[mark]+' HP'],['Blast radius',MINES.blastRadius/10+' m'],['Launcher',mark?'Online':'Not fitted'],['Seeker reach',GUIDANCE.mine.range/10+' m'],['Seeking speed',GUIDANCE.mine.speed/10+' m/s']];
       case 'mineCapacity':return [['Ammunition slots',MINES.capacity[mark]+' rounds'],['New rounds included','None']];
       case 'magnet':return [['Resource reach',MAGNET.range[mark]/10+' m'],['Remote pickup cost',mark?MAGNET.power[mark]+' power':'Not fitted'],['Close pickup cost','Free'],['Scrap collection','Automatic'],['Crystals / recorders','USE required']];
       case 'shield':return [['Shield capacity',SHIELD.capacity[mark]+' HP'],['Recharge rate',SHIELD.recharge[mark]+' HP/sec'],['Recharge delay',mark?SHIELD.delay+' sec':'Not fitted']];
@@ -1644,6 +1667,10 @@
   }
   function drawMine(mine){
     ctx.save();ctx.translate(mine.x,mine.y);
+    if(Math.hypot(mine.vx||0,mine.vy||0)>1){
+      const heading=Math.atan2(mine.vy,mine.vx);ctx.save();ctx.rotate(heading);
+      ctx.strokeStyle='#9edce080';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-17,-3);ctx.lineTo(-24,-3);ctx.moveTo(-17,3);ctx.lineTo(-21,3);ctx.stroke();ctx.restore();
+    }
     mineOutline();ctx.fillStyle='#243740';ctx.strokeStyle=clock>=mine.armedAt?'#f3c489':'#82bac9';ctx.lineWidth=1.6;ctx.fill();ctx.stroke();
     ctx.fillStyle=clock>=mine.armedAt?(Math.sin(clock*7)>0?'#ffc76d':'#a66b35'):'#6ebbd5';
     ctx.beginPath();ctx.arc(0,0,3,0,TAU);ctx.fill();
@@ -1972,6 +1999,112 @@
     const button=$('mobileRail');button?.classList.remove('held');
     if(id!==null&&button?.hasPointerCapture(id))button.releasePointerCapture(id);
   }
+  // A cheap broad phase plus polygon-edge distance makes long seeker rays much
+  // less expensive than sampling every rock at every point along the ray.
+  function guidanceLineClear(a,b,radius=0){
+    if(!a||!b||![a.x,a.y,b.x,b.y].every(Number.isFinite))return false;
+    const n=Math.max(1,Math.ceil(distance(a,b)/8));
+    for(let i=0;i<=n;i++){
+      const t=i/n,x=lerp(a.x,b.x,t),y=lerp(a.y,b.y,t);
+      if(y<SURFACE.y+radius||y>MAX_WORLD_Y-radius||x<leftAt(y)+radius||x>rightAt(y)-radius)return false;
+    }
+    const cross=(a,b,c)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
+    const near=(p,c,d)=>{const q=segmentClosest(p.x,p.y,c,d);return Math.hypot(p.x-q.x,p.y-q.y);};
+    for(const rock of scene.rocks){
+      if(rock.x+rock.radius+radius<Math.min(a.x,b.x)||rock.x-rock.radius-radius>Math.max(a.x,b.x)||
+         rock.y+rock.radius+radius<Math.min(a.y,b.y)||rock.y-rock.radius-radius>Math.max(a.y,b.y))continue;
+      if(near(rock,a,b)>rock.radius+radius)continue;
+      const vertices=rock.vertices;
+      if(insidePolygon(a.x,a.y,vertices)||insidePolygon(b.x,b.y,vertices))return false;
+      for(let i=0;i<vertices.length;i++){
+        const c=vertices[i],d=vertices[(i+1)%vertices.length];
+        const abC=cross(a,b,c),abD=cross(a,b,d),cdA=cross(c,d,a),cdB=cross(c,d,b);
+        if(((abC>0&&abD<0)||(abC<0&&abD>0))&&((cdA>0&&cdB<0)||(cdA<0&&cdB>0)))return false;
+        if(Math.min(near(a,c,d),near(b,c,d),near(c,a,b),near(d,a,b))<=radius+1e-6)return false;
+      }
+    }
+    return true;
+  }
+  const angleDelta=(to,from)=>Math.atan2(Math.sin(to-from),Math.cos(to-from));
+  const turnToward=(from,to,maximum)=>from+clamp(angleDelta(to,from),-maximum,maximum);
+  const targetKey=enemy=>typeof enemy.id==='string'||Number.isInteger(enemy.id)?enemy.id:null;
+  function eligibleGuidanceTarget(enemy){
+    // Harmless schools, wrecks and abandoned mines never enter this collection.
+    // The Warden only exists here after the player explicitly wakes it.
+    return predatorAlive(enemy)&&!inHarbour(enemy)&&enemy.y>=SURFACE.y&&enemy.y<=MAX_WORLD_Y;
+  }
+  function findGuidanceTarget(ordnance,heading,kind){
+    const rules=GUIDANCE[kind],mine=kind==='mine';
+    const range=mine?rules.range:Math.min(WEAPONS[kind].range,ordnance.remaining+35);
+    const origin=mine?{x:ordnance.originX,y:ordnance.originY}:null;
+    const valid=(enemy,locked=false)=>{
+      if(!eligibleGuidanceTarget(enemy)||distance(ordnance,enemy)>range)return false;
+      if(mine){if(distance(origin,enemy)>rules.leash+MINES.triggerRadius)return false;}
+      else{
+        const bearing=Math.atan2(enemy.y-ordnance.y,enemy.x-ordnance.x);
+        if(Math.abs(angleDelta(bearing,heading))>(locked?rules.trackingCone:rules.cone))return false;
+        // Never turn a shot back toward the submarine, even after target loss.
+        if(Math.abs(angleDelta(bearing,ordnance.launchHeading))>rules.maxTurn)return false;
+      }
+      return true;
+    };
+    const locked=ordnance.targetId!=null?scene.predators.find(e=>targetKey(e)===ordnance.targetId):null;
+    const clearance=mine?MINES.radius:WEAPONS[kind].radius;
+    if(locked&&valid(locked,true)&&guidanceLineClear(ordnance,locked,clearance))return locked;
+    ordnance.targetId=null;
+    const candidates=scene.predators.filter(e=>valid(e)).map(e=>({enemy:e,score:mine?distance(ordnance,e):
+      Math.abs(angleDelta(Math.atan2(e.y-ordnance.y,e.x-ordnance.x),heading))/rules.cone*.8+distance(ordnance,e)/range*.2}));
+    candidates.sort((a,b)=>a.score-b.score);
+    for(const {enemy} of candidates)if(guidanceLineClear(ordnance,enemy,clearance)){ordnance.targetId=targetKey(enemy);return enemy;}
+    return null;
+  }
+  function interceptPoint(ordnance,enemy,speed,maxLead){
+    const vx=Number.isFinite(enemy.vx)?enemy.vx:0,vy=Number.isFinite(enemy.vy)?enemy.vy:0;
+    const x=enemy.x-ordnance.x,y=enemy.y-ordnance.y;
+    const a=vx*vx+vy*vy-speed*speed,b=2*(x*vx+y*vy),c=x*x+y*y;
+    let time=0;
+    if(Math.abs(a)<1e-8){if(Math.abs(b)>1e-8&&-c/b>0)time=-c/b;}
+    else{
+      const discriminant=b*b-4*a*c;
+      if(discriminant>=0){const root=Math.sqrt(discriminant),ts=[(-b-root)/(2*a),(-b+root)/(2*a)].filter(t=>t>=0);if(ts.length)time=Math.min(...ts);}
+    }
+    time=clamp(time,0,maxLead);
+    return {x:enemy.x+vx*time,y:enemy.y+vy*time};
+  }
+  function guideProjectile(p,dt){
+    const rules=GUIDANCE[p.kind],spec=WEAPONS[p.kind];
+    const speed=Math.hypot(p.vx,p.vy);if(!rules||!Number.isFinite(speed)||speed<1e-8)return;
+    const heading=Math.atan2(p.vy,p.vx);
+    if(!Number.isFinite(p.launchHeading))p.launchHeading=heading; // v0.18.0 in-flight shot.
+    const target=findGuidanceTarget(p,heading,p.kind);if(!target)return;
+    const lead=interceptPoint(p,target,speed,rules.maxLead);
+    let desired=Math.atan2(lead.y-p.y,lead.x-p.x);
+    if(Math.abs(angleDelta(desired,p.launchHeading))>rules.maxTurn||!guidanceLineClear(p,lead,spec.radius))
+      desired=Math.atan2(target.y-p.y,target.x-p.x);
+    const turned=turnToward(heading,desired,rules.turnRate*dt);
+    const bounded=p.launchHeading+clamp(angleDelta(turned,p.launchHeading),-rules.maxTurn,rules.maxTurn);
+    p.vx=Math.cos(bounded)*speed;p.vy=Math.sin(bounded)*speed;
+  }
+  function guideMine(mine,dt){
+    const rules=GUIDANCE.mine,heading=Number.isFinite(mine.heading)?mine.heading:0;
+    const target=findGuidanceTarget(mine,heading,'mine');
+    if(!target||dt<=0){mine.vx=0;mine.vy=0;return;}
+    const desired=Math.atan2(target.y-mine.y,target.x-mine.x);
+    const moving=Math.hypot(mine.vx||0,mine.vy||0)>.01;
+    mine.heading=moving?turnToward(heading,desired,rules.turnRate*dt):desired;
+    const travel=Math.min(rules.speed*dt,Math.max(0,distance(mine,target)-MINES.triggerRadius*.6));
+    const next={x:mine.x+Math.cos(mine.heading)*travel,y:mine.y+Math.sin(mine.heading)*travel};
+    const anchor={x:mine.originX,y:mine.originY},leashDistance=distance(anchor,next);
+    if(leashDistance>rules.leash){next.x=anchor.x+(next.x-anchor.x)*rules.leash/leashDistance;next.y=anchor.y+(next.y-anchor.y)*rules.leash/leashDistance;}
+    if(distance(next,HARBOUR)<HARBOUR.safeRadius+MINES.radius||!guidanceLineClear(mine,next,MINES.radius)){
+      mine.vx=0;mine.vy=0;mine.targetId=null;return;
+    }
+    mine.vx=(next.x-mine.x)/dt;mine.vy=(next.y-mine.y)/dt;mine.x=next.x;mine.y=next.y;
+  }
+  function validGuidanceState(o){
+    if(o.targetId!=null&&!(typeof o.targetId==='string'&&o.targetId.length<=100)&&!(Number.isInteger(o.targetId)&&o.targetId>=0&&o.targetId<=1e9))return false;
+    return ['launchHeading','originX','originY','heading','vx','vy'].every(k=>o[k]===undefined||(Number.isFinite(o[k])&&Math.abs(o[k])<=100000));
+  }
   function fireWeapon(kind,quiet=false){
     const spec=WEAPONS[kind];if(!spec||!running||paused||slotTransition)return false;
     const say=text=>{if(!quiet)announce(text,1.5);return false;};
@@ -1983,7 +2116,7 @@
     const dx=Math.cos(player.facing),dy=Math.sin(player.facing),muzzle={x:player.x+dx*35,y:player.y+dy*35};
     if(projectileTerrainHit(player,muzzle,3)!==null)return say('BOW OBSTRUCTED · MOVE TO CLEAR WATER');
     scene.projectiles.push({id:idCounter++,kind,x:muzzle.x,y:muzzle.y,vx:dx*spec.speed,vy:dy*spec.speed,radius:spec.radius,
-      damage:spec.damage[saved.upgrades[kind]],remaining:spec.range,birth:clock});
+      damage:spec.damage[saved.upgrades[kind]],remaining:spec.range,birth:clock,launchHeading:player.facing,targetId:null});
     player.weaponAmmo[kind]--;saved.weaponAmmo[kind]=player.weaponAmmo[kind];player.weaponCooldown[kind]=spec.cooldown;
     player.noise=Math.min(100,player.noise+(kind==='torpedo'?32:18));
     for(const enemy of scene.predators)if(predatorAlive(enemy)&&distance(player,enemy)<(kind==='torpedo'?420:290)){enemy.alertUntil=clock+3;enemy.forgetUntil=0;}
@@ -2022,6 +2155,9 @@
   function updateProjectiles(dt){
     const kept=[];
     for(const p of scene.projectiles||[]){
+      if(!Number.isFinite(p.remaining)||p.remaining<=0)continue;
+      guideProjectile(p,dt);
+      const speed=Math.hypot(p.vx,p.vy);if(!Number.isFinite(speed)||speed<1e-8)continue;
       const distanceThisFrame=Math.min(p.remaining,Math.hypot(p.vx,p.vy)*dt),time=distanceThisFrame/Math.hypot(p.vx,p.vy);
       const a={x:p.x,y:p.y},b={x:p.x+p.vx*time,y:p.y+p.vy*time};
       let first=projectileTerrainHit(a,b,p.radius),target=first===null?null:'terrain';
@@ -2276,7 +2412,7 @@
       <li><strong>Abandoned contact mines:</strong> rusty horned spheres sway on chains. Touching one detonates it, harming nearby predators and the submarine. Your own deployed mines remain safe to the ship. Sonar reveals the tether and the chart remembers the hazard. Cleared contact mines never return, even after docking. The harbour, central route, fixed deposits, recorder approaches and recovery pods are kept clear.</li>
       <li><strong>Wildlife:</strong> Silver Darts, Sunstripe Reeflets, Ribbonfins and Violet Glassfish form harmless schools. Gentle piloting parts the school; boost, nearby predators and passing sonar scatter it before it regroups. Fish cannot be collected and do not clutter the chart. Anemones, fan corals, crabs and tube colonies react to lights, movement and currents.</li>
       <li><strong>Vent fields:</strong> rising bubbles and a rumble warn for three seconds before a three-second plume. Active vents push the ship and predators upward. Sunbreak Shelf bubble seeps are harmless; hotter vents in later levels damage the ship while inside. Wait for a quiet phase or take a different route. The chart records discovered vents, not their live phase. New scenery never defeats darkness.</li>
-      <li><strong>Direct-fire weapons:</strong> hold <kbd>Z</kbd> / the top weapon icon for railgun bolts; tap <kbd>X</kbd> / the middle weapon icon for one explosive torpedo. The left-edge weapon column is railgun, torpedo, then mine. Inner rings show ammunition; outer rings show firing cooldowns. Exact stocks are in telemetry (the sliders icon). Both fire along the bow, stop at rock and need Mk I fitted at the dock. Each upgrade increases damage and magazine capacity. All rounds are bought in the dock Ammunition tab: rail 6 CR, torpedo 24 CR, mine 18 CR each. Docking, upgrades, waiting, loading and respawning never grant ammunition.</li>
+      <li><strong>Guided weapons:</strong> hold <kbd>Z</kbd> / the top weapon icon for railgun bolts; tap <kbd>X</kbd> / the lower-left weapon icon for one explosive torpedo. Railgun is at the top of the weapon triangle, torpedo below-left and mine below-right. Inner rings show ammunition; outer rings show firing cooldowns. Exact stocks are in telemetry (the sliders icon). Rail bolts gently correct toward predators within 32° of the bow; torpedoes turn more strongly within 65°. Both lead moving targets, stop at rock and need Mk I fitted at the dock. Armed player mines slowly seek predators within 20 m, staying within 24 m of their drop point. No extra aiming button is needed. Each upgrade increases damage and magazine capacity. All rounds are bought in the dock Ammunition tab: rail 6 CR, torpedo 24 CR, mine 18 CR each. Docking, upgrades, waiting, loading and respawning never grant ammunition.</li>
       <li><strong>Environmental sound:</strong> nearby chains, vents, kelp, school movement, wreck groans and harbour machinery use the ambience slider. Explosions, docking clamps and interaction sounds use effects. Mute and both volume controls remain in SOUND SETTINGS; visible hazard warnings work without audio.</li>
       <li><kbd>Esc</kbd> / <strong>PAUSE</strong> freezes the dive. MENU saves it across sessions; QUIT abandons the dive and leaves a recovery pod. CAMPAIGN SLOTS keeps up to three independent games. New Game selects an empty slot; only confirmed deletion removes an occupied slot. Reloading preserves the last successful active-dive snapshot. Continue restores paused; the ocean does not advance while you are away. Clearing browser data still removes local saves.</li>
     </ul></div>`;
@@ -2472,9 +2608,9 @@
     const point=o=>o&&Number.isFinite(o.x)&&Number.isFinite(o.y)&&Math.abs(o.x)<5000&&Math.abs(o.y)<20000;
     if(!value.items.every(o=>point(o)&&['scrap','crystal','recorder','recovery','air'].includes(o.type)))return null;
     if(!value.predators.every(o=>point(o)&&Number.isFinite(o.health)&&PREDATOR_TIERS[o.tier]))return null;
-    if(!value.mines.every(o=>point(o)&&Number.isFinite(o.armedAt)&&Number.isFinite(o.damage)&&o.damage>=0))return null;
+    if(!value.mines.every(o=>point(o)&&Number.isFinite(o.armedAt)&&Number.isFinite(o.damage)&&o.damage>=0&&validGuidanceState(o)))return null;
     if(!value.waves.every(o=>point(o)&&Number.isFinite(o.birth)&&Number.isFinite(o.radius)&&Array.isArray(o.contacts)))return null;
-    if(value.projectiles!==undefined&&(!Array.isArray(value.projectiles)||value.projectiles.length>200||!value.projectiles.every(o=>point(o)&&WEAPONS[o.kind]&&['vx','vy','damage','remaining','radius'].every(k=>Number.isFinite(o[k]))&&o.damage>0&&o.remaining>=0)))return null;
+    if(value.projectiles!==undefined&&(!Array.isArray(value.projectiles)||value.projectiles.length>200||!value.projectiles.every(o=>point(o)&&WEAPONS[o.kind]&&['vx','vy','damage','remaining','radius'].every(k=>Number.isFinite(o[k]))&&o.damage>0&&o.remaining>=0&&validGuidanceState(o))))return null;
     if(p.weaponAmmo&&Object.keys(WEAPONS).some(id=>p.weaponAmmo[id]!==saved.weaponAmmo[id]))return null;
     return value;
   }
@@ -3657,7 +3793,7 @@
       saved.mineAmmo=player.mineAmmo;
       scene={items:items.map((i,n)=>makeItem(x+i.dx,y+i.dy,i.type||'scrap',{id:n,index:i.index??0,...i})),
         rocks:rocks.map(r=>{const k={x:x+r.dx,y:y+r.dy,radius:30,rot:0,seed:.4,spikes:8,...r};return {...k,vertices:rockPolygon(k)};}),
-        predators:predators.map(e=>createPredator({tier:'common',vx:0,vy:0,phase:0,aggression:0,lastHit:-10,alertUntil:0,forgetUntil:0,revealUntil:0,...e,x:x+e.dx,y:y+e.dy,homeX:x+e.dx,homeY:y+e.dy})),
+        predators:predators.map((e,n)=>createPredator({id:'fixture-enemy-'+n,tier:'common',vx:0,vy:0,phase:0,aggression:0,lastHit:-10,alertUntil:0,forgetUntil:0,revealUntil:0,...e,x:x+e.dx,y:y+e.dy,homeX:x+e.dx,homeY:y+e.dy})),
         wrecks:wrecks.map(w=>({...w,x:x+w.dx,y:y+w.dy})),vents:vents.map(v=>({phase:0,...v,x:x+v.dx,y:y+v.dy})),dust:[],blasts:[],projectiles:[],
         mines:mines.map(m=>({id:idCounter++,mark:1,damage:60,birth:0,armedAt:0,detonated:false,revealUntil:0,...m,x:x+m.dx,y:y+m.dy}))};
       running=true;paused=true;clock=0;surfaceEffects=[];sonarWaves=[];sonarTerrainEchoes=[];toastUntil=0;$('notification').classList.add('hidden');
@@ -3728,6 +3864,19 @@
     window.AbyssDiagnostics.wardenFixture=()=>{signals.warden.activated=true;signals.warden.defeated=false;signals.warden.health=1200;buildWarden();};
     window.AbyssDiagnostics.signalPlacementProbe=()=>{if(LEVEL_ID==='midnight-cathedral'){signals.warden.site=null;buildWarden();}signals.boards[LEVEL_ID]={serial:1,offers:[]};const b=ensureContracts();return {offers:b.offers.map(c=>({...c,points:c.points.map(p=>({...p,blocked:projectileSolid(p.x,p.y,24),depth:depthOf(p.y)}))})),warden:signals.warden.site?{...signals.warden.site,blocked:projectileSolid(signals.warden.site.x,signals.warden.site.y,24)}:null};};
     window.AbyssDiagnostics.retryContract=retryContract;
+    window.AbyssDiagnostics.guidance=()=>JSON.parse(JSON.stringify(GUIDANCE));
+    window.AbyssDiagnostics.guidanceLine=(a,b,r=0)=>guidanceLineClear(a,b,r);
+    window.AbyssDiagnostics.seekTarget=(kind,index=0)=>{
+      const o=kind==='mine'?scene.mines[index]:scene.projectiles[index];if(!o)return null;
+      if(kind==='mine'){o.originX??=o.x;o.originY??=o.y;}
+      const e=findGuidanceTarget(o,kind==='mine'?(o.heading||0):Math.atan2(o.vy,o.vx),kind);
+      return e?{id:e.id,x:e.x,y:e.y}:null;
+    };
+    window.AbyssDiagnostics.ordnancePulse=(dt,{moveEnemies=false}={})=>{
+      clock+=dt;for(const e of scene.predators){e.previousX=e.x;e.previousY=e.y;if(moveEnemies){e.x+=(e.vx||0)*dt;e.y+=(e.vy||0)*dt;}}
+      updateMines(dt);updateProjectiles(dt);render();
+    };
+    window.AbyssDiagnostics.mutateEnemy=(id,values)=>{const e=scene.predators.find(e=>e.id===id);if(e)Object.assign(e,values);};
     window.AbyssDiagnostics.economy=()=>({regen:{...SALVAGE_REGEN},creditFactor:CREDIT_PRICE_FACTOR,prices:{mine:AMMO_PRICE,...WEAPON_AMMO_PRICES},salvage:JSON.parse(JSON.stringify(field.salvage))});
     window.AbyssDiagnostics.buyOrdnance=buyOrdnance;
     window.AbyssDiagnostics.autoPickup=()=>{const before=paused;paused=false;autoCollectSalvage(.25);paused=before;updateUI();return player.cargo.scrap;};
