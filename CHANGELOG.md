@@ -1,3 +1,14 @@
+# v0.21.0: Lifeline
+
+- Increase oxygen consumption from 0.22 to 0.30 units/second before recycler efficiency, with actual remaining/full-tank time estimates.
+- Reduce baseline and ordinary-thrust power costs; preserve boost, sonar, flashlight, shield and magnet costs.
+- Replace zero-power immobilisation with half-speed reserve thrust scaled by fitted thrusters; boost remains unavailable on empty power.
+- Add rare deterministic battery-cell sites, immediate capped recharge, automatic close pickup, persistent eight-minute active-dive recovery and offscreen staggered replenishment.
+- Preserve finite crystals, existing resource placement and original-site achievement denominators; support cell state in checkpoints and portable backups.
+- Redesign main/pause/dock with consistent command typography, campaign progress, live readiness, clear balances, icon navigation and responsive scroll/departure layout.
+- Prefer a closer interaction buoy/package over a nearby resource, preventing crystals from swallowing the first USE at the Warden observation site.
+- Preserve all prices, purchased equipment, three slots, compact controls, audio transitions, combat, mission and recovery systems.
+
 # v0.20.0: Fluid Frontiers
 
 - Keep Mk I lighting unchanged; upgraded forward fans now span 70 / 110 / 150 degrees, with existing length/drain and dark rear.

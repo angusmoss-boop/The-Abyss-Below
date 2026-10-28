@@ -1,7 +1,7 @@
 /* One verified, self-contained shell per release. No campaign data lives here. */
-const BUILD={version:'0.20.0',id:'0.20.0-fluid-frontiers-1'};
+const BUILD={version:'0.21.0',id:'0.21.0-lifeline-1'};
 const CACHE='abyss-below-shell-'+BUILD.id;
-const SHELL=["./","./index.html","./styles.css?v=0.20.0","./campaign-slots.js?v=0.20.0","./audio.js?v=0.20.0","./lost-signals.js?v=0.20.0","./forgotten-giants.js?v=0.20.0","./game.js?v=0.20.0","./version-sync.js?v=0.20.0","./manifest.webmanifest?v=0.20.0","./launch.js?v=0.20.0","./icon-192.png?v=0.20.0","./icon-512.png?v=0.20.0","./icon-maskable-512.png?v=0.20.0","./apple-touch-icon.png?v=0.20.0","./favicon-32.png?v=0.20.0","./favicon.ico?v=0.20.0","./launch-art.webp?v=0.20.0"];
+const SHELL=["./","./index.html","./styles.css?v=0.21.0","./campaign-slots.js?v=0.21.0","./audio.js?v=0.21.0","./lost-signals.js?v=0.21.0","./forgotten-giants.js?v=0.21.0","./game.js?v=0.21.0","./version-sync.js?v=0.21.0","./manifest.webmanifest?v=0.21.0","./launch.js?v=0.21.0","./icon-192.png?v=0.21.0","./icon-512.png?v=0.21.0","./icon-maskable-512.png?v=0.21.0","./apple-touch-icon.png?v=0.21.0","./favicon-32.png?v=0.21.0","./favicon.ico?v=0.21.0","./launch-art.webp?v=0.21.0"];
 const digest=async data=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',data)),b=>b.toString(16).padStart(2,'0')).join('');
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{

@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const root = document.documentElement;
-  const buildId = '0.20.0-fluid-frontiers-1';
+  const buildId = '0.21.0-lifeline-1';
   let finished = false, reason = 'loading', ready = false, imageTimer, finishTimer;
   root.classList.add('abyss-launching');
   // A missing/corrupt game or an unavailable image must never trap the menu.

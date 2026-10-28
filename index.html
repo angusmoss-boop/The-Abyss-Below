@@ -1,22 +1,22 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta name="abyss-build" content="0.20.0-fluid-frontiers-1">
+  <meta name="abyss-build" content="0.21.0-lifeline-1">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#06121d" />
   <meta name="description" content="The Abyss Below: a submarine exploration and survival game." />
   <title>The Abyss Below | Deepwater Expedition</title>
-  <link rel="manifest" href="manifest.webmanifest?v=0.20.0" />
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.20.0" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=0.20.0" />
-  <link rel="shortcut icon" href="favicon.ico?v=0.20.0" />
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=0.20.0" />
-  <link rel="preload" as="image" href="launch-art.webp?v=0.20.0" fetchpriority="high" />
-  <script src="launch.js?v=0.20.0"></script>
+  <link rel="manifest" href="manifest.webmanifest?v=0.21.0" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.21.0" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=0.21.0" />
+  <link rel="shortcut icon" href="favicon.ico?v=0.21.0" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=0.21.0" />
+  <link rel="preload" as="image" href="launch-art.webp?v=0.21.0" fetchpriority="high" />
+  <script src="launch.js?v=0.21.0"></script>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="stylesheet" href="styles.css?v=0.20.0" />
+  <link rel="stylesheet" href="styles.css?v=0.21.0" />
   <style>
     /* Paint a branded start before the main stylesheet or game is ready. */
     #launchScreen{display:none;position:fixed;inset:0;z-index:1000;background:#061019;color:#e5f7ff;align-items:center;justify-content:center;text-align:center;font-family:system-ui,sans-serif;padding:24px;transition:opacity .24s ease;}
@@ -39,18 +39,18 @@
 <body>
   <div id="launchScreen" role="status" aria-live="polite" aria-label="Loading The Abyss Below" tabindex="-1">
     <div class="launch-content">
-      <img id="launchArt" class="launch-art" src="launch-art.webp?v=0.20.0" width="1024" height="1024" alt="NEREID descending into a blue cavern lined with violet crystals" fetchpriority="high" />
+      <img id="launchArt" class="launch-art" src="launch-art.webp?v=0.21.0" width="1024" height="1024" alt="NEREID descending into a blue cavern lined with violet crystals" fetchpriority="high" />
       <p class="launch-eyebrow">NEREID EXPLORATION PROGRAM</p>
       <h2 class="launch-title">THE ABYSS<br><span>BELOW</span></h2>
       <p class="launch-status">PREPARING YOUR EXPEDITION</p>
       <div class="launch-line" aria-hidden="true"></div>
-      <p class="launch-build">v0.20.0 · FLUID FRONTIERS</p>
+      <p class="launch-build">v0.21.0 · FLUID FRONTIERS</p>
     </div>
   </div>
   <noscript><div style="padding:20px;color:#bce9ee;background:#061019">Enable JavaScript to play The Abyss Below. Your saved campaigns have not been changed.</div></noscript>
   <div class="app">
     <header class="masthead">
-      <div class="brand"><img class="brand-app-icon" src="icon-192.png?v=0.20.0" width="44" height="44" alt="" /><div><div class="brand-eyebrow">NEREID EXPEDITION DIVISION</div><div class="brand-title">THE ABYSS <span>BELOW</span></div></div></div>
+      <div class="brand"><img class="brand-app-icon" src="icon-192.png?v=0.21.0" width="44" height="44" alt="" /><div><div class="brand-eyebrow">NEREID EXPEDITION DIVISION</div><div class="brand-title">THE ABYSS <span>BELOW</span></div></div></div>
       <div class="header-right"><span class="signal-dot"></span><span id="signalText">VESSEL ONLINE</span><button id="helpBtn" class="small-btn">? CONTROLS</button><button id="pauseBtn" class="small-btn">Ⅱ PAUSE</button></div>
     </header>
     <main class="layout">
@@ -122,30 +122,26 @@
         <button id="dockBtn" class="dock-btn" disabled>◈ RETURN TO STATION TO UPGRADE</button>
       </aside>
     </main>
-    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.20.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
+    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.21.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
   </div>
-  <div class="overlay" id="menuOverlay"><div class="menu-card crystal-menu">
+  <div class="overlay" id="menuOverlay" role="dialog" aria-modal="true" aria-label="Main menu"><div class="menu-card crystal-menu command-menu">
     <div class="menu-art-panel">
-      <img class="menu-launch-art" src="launch-art.webp?v=0.20.0" width="1024" height="1024" alt="The NEREID explores an underwater crystal cavern" fetchpriority="high" />
+      <img class="menu-launch-art" src="launch-art.webp?v=0.21.0" width="1024" height="1024" alt="The NEREID explores an underwater crystal cavern" fetchpriority="high" />
       <div class="menu-art-shade" aria-hidden="true"></div>
-      <div class="menu-title-block"><div class="menu-kicker">NEREID EXPLORATION PROGRAM</div><h1>THE ABYSS<br><span>BELOW</span></h1><p class="menu-art-caption">A LIGHT IN THE UNKNOWN.</p></div>
+      <div class="menu-title-block"><div class="menu-kicker">NEREID EXPLORATION PROGRAM</div><h1>THE ABYSS<br><span>BELOW</span></h1><p class="menu-art-caption">A LIGHT IN THE UNKNOWN.</p><div class="menu-depth-lines" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
     </div>
     <div class="menu-command-panel">
-      <p class="menu-welcome">YOUR NEXT DESCENT AWAITS</p>
-      <p class="menu-description">Five depths. Twenty lost transmissions.<br>One light against the abyss.</p>
+      <div class="command-eyebrow"><span class="live-pin"></span><span id="menuSlotTag">COMMAND DECK / SLOT 01</span></div>
+      <h2 class="command-heading" id="menuCampaignName">Your next descent.</h2>
+      <p class="menu-description" id="menuDestination">Five depths. Twenty lost transmissions.</p>
+      <div id="menuCampaignSummary" class="campaign-overview"></div>
       <button id="startBtn" class="primary-btn">BEGIN EXPEDITION <span>→</span></button>
       <p id="menuProgress" class="menu-progress" aria-live="polite"></p><p id="saveStatus" class="save-status"></p>
       <div class="menu-navigation">
-        <button id="menuHubBtn" class="menu-secondary-btn">⌁ EXPEDITION HUB</button>
-        <button id="menuSlotsBtn" class="menu-secondary-btn">▦ CAMPAIGN SLOTS</button>
-        <button id="menuAchievementsBtn" class="menu-secondary-btn achievement-menu-btn">◇ ACHIEVEMENTS <span id="menuAchievementCount">0 / 30</span></button>
-        <button id="newGameBtn" class="menu-secondary-btn">✦ NEW GAME</button>
-        <button id="menuAudioBtn" class="menu-secondary-btn">♫ SOUND SETTINGS</button>
-        <button id="menuJournalBtn" class="menu-secondary-btn">⌁ FIELD JOURNAL</button>
-        <button id="instructionsBtn" class="menu-secondary-btn">? PILOT BRIEFING</button>
+<button id="menuHubBtn" class="menu-secondary-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-7h6v7M12 2v3"/></svg><span class="nav-label">Expedition hub</span></button><button id="menuSlotsBtn" class="menu-secondary-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 9v11M13 13h4M13 16h4"/></svg><span class="nav-label">Campaigns</span></button><button id="menuAchievementsBtn" class="menu-secondary-btn achievement-menu-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="5"/><path d="m9 14-2 8 5-3 5 3-2-8M10 9l1.5 1.5L14 7"/></svg><span class="nav-label">Achievements</span><span id="menuAchievementCount" class="nav-count">0 / 30</span></button><button id="menuJournalBtn" class="menu-secondary-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h13a2 2 0 0 1 2 2v16H6a2 2 0 0 1-2-2ZM4 17h15M8 7h7M8 11h5"/></svg><span class="nav-label">Field journal</span></button><button id="newGameBtn" class="menu-secondary-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg><span class="nav-label">New campaign</span></button><button id="menuAudioBtn" class="menu-secondary-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 10H2v4h3l4 4V6ZM13 8a6 6 0 0 1 0 8M16 5a10 10 0 0 1 0 14"/></svg><span class="nav-label">Sound settings</span></button><button id="instructionsBtn" class="menu-secondary-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 8a3 3 0 0 1 6 1c0 2-3 2-3 4M12 17v.1"/></svg><span class="nav-label">Pilot briefing</span></button>
       </div>
       <section class="version-card" aria-label="Game build and update status">
-  <div class="version-heading"><strong id="menuVersion">v0.20.0</strong><span id="menuVersionName">Fluid Frontiers</span></div>
+  <div class="version-heading"><strong id="menuVersion">v0.21.0</strong><span id="menuVersionName">Lifeline</span></div>
   <div class="sync-indicator" id="syncIndicator" data-state="checking"><span class="sync-dot" aria-hidden="true"></span><strong id="syncStatus" role="status">CHECKING DEPLOYMENT</strong></div>
   <p id="syncDetail">Checking the latest published build. Your campaign stays on this device.</p>
   <div class="version-actions"><button id="checkVersionBtn" class="version-btn">CHECK AGAIN</button><button id="updateVersionBtn" class="version-btn hidden">LOAD UPDATE</button></div>
@@ -155,17 +151,19 @@
     </div>
   </div></div>
   <div class="overlay pause-overlay hidden" id="pauseOverlay" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
-    <div class="pause-card">
-      <div class="pause-emblem" aria-hidden="true">Ⅱ</div>
-      <div class="menu-kicker">NEREID // PILOT CONTROL</div>
-      <h2 id="pauseTitle">EXPEDITION PAUSED</h2>
-      <p id="pauseStats">Systems holding. The abyss can wait.</p>
-      <div class="pause-actions">
-        <button id="resumeBtn" class="primary-btn">▶ RESUME <span>→</span></button>
-        <button id="pauseMapBtn" class="menu-secondary-btn">⌖ EXPEDITION MAP</button><button id="pauseAudioBtn" class="menu-secondary-btn">♫ SOUND SETTINGS</button><button id="pauseAchievementsBtn" class="menu-secondary-btn achievement-menu-btn">◇ ACHIEVEMENTS <span id="pauseAchievementCount">0 / 30</span></button><button id="pauseSlotsBtn" class="menu-secondary-btn">▦ SAVE / LOAD CAMPAIGNS</button><button id="pauseJournalBtn" class="menu-secondary-btn">⌁ FIELD JOURNAL</button><button id="pauseMenuBtn" class="menu-secondary-btn">⌂ MENU</button>
-        <button id="quitBtn" class="menu-danger-btn">⏻ QUIT</button>
+    <div class="pause-card command-pause">
+      <header class="pause-heading"><div><div class="command-eyebrow"><span class="live-pin"></span>SYSTEMS HOLDING</div><h2 id="pauseTitle">EXPEDITION PAUSED</h2><p id="pauseStats"></p></div><div class="pause-insignia" aria-hidden="true">Ⅱ</div></header>
+      <div class="pause-layout">
+        <section class="pause-overview" aria-label="Current dive status"><div id="pauseTelemetry"></div><div id="pauseCargo" class="pause-cargo"></div><div id="pauseObjective" class="pause-objective"></div><p id="pauseSaveStatus" class="checkpoint-status" role="status"></p></section>
+        <div class="pause-actions">
+          <button id="resumeBtn" class="primary-btn">RESUME EXPEDITION <span>→</span></button>
+          <div class="pause-nav-grid">
+<button id="pauseMapBtn" class="menu-secondary-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2ZM9 3v16M15 5v16"/></svg><span class="nav-label">Survey map</span></button><button id="pauseJournalBtn" class="menu-secondary-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h13a2 2 0 0 1 2 2v16H6a2 2 0 0 1-2-2ZM4 17h15M8 7h7M8 11h5"/></svg><span class="nav-label">Field journal</span></button><button id="pauseAchievementsBtn" class="menu-secondary-btn achievement-menu-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="5"/><path d="m9 14-2 8 5-3 5 3-2-8M10 9l1.5 1.5L14 7"/></svg><span class="nav-label">Achievements</span><span id="pauseAchievementCount" class="nav-count">0 / 30</span></button><button id="pauseSlotsBtn" class="menu-secondary-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 9v11M13 13h4M13 16h4"/></svg><span class="nav-label">Save / load</span></button><button id="pauseAudioBtn" class="menu-secondary-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 10H2v4h3l4 4V6ZM13 8a6 6 0 0 1 0 8M16 5a10 10 0 0 1 0 14"/></svg><span class="nav-label">Sound settings</span></button><button id="pauseMenuBtn" class="menu-secondary-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 9-8 9 8M5 10v11h5v-7h4v7h5V10"/></svg><span class="nav-label">Main menu</span></button>
+          </div>
+          <div class="pause-abandon"><button id="quitBtn" class="menu-danger-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3H3v18h6M8 12h13m-5-5 5 5-5 5"/></svg><span class="nav-label">Abandon dive</span></button><small>Cargo stays in a recovery pod.</small></div>
+        </div>
       </div>
-      <div class="pause-note">MENU saves this dive · CONTINUE restores paused · QUIT leaves a recovery pod</div>
+      <div class="pause-note">Nothing advances while paused. Returning to the main menu saves your dive.</div>
     </div>
   </div>
   <div class="overlay hidden" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="dialog-card"><div class="dialog-top"><div id="modalKicker" class="menu-kicker">FIELD BRIEFING</div><button id="modalClose" class="close-btn">✕</button></div><h2 id="modalTitle">PILOT BRIEFING</h2><div id="modalBody"></div><div id="modalFooter"></div></div></div>
@@ -223,11 +221,11 @@
     <div id="telemetryBody" class="telemetry-body"></div>
     <div class="telemetry-tools"><button id="telemetryLightsBtn" class="alt-btn telemetry-lights" aria-pressed="true">FLASHLIGHT ON</button><button id="focusToggleBtn" class="alt-btn" aria-label="Expand play view">EXPAND VIEW</button><button id="focusHelpBtn" class="alt-btn">PILOT MANUAL</button><button id="telemetryAudioBtn" class="alt-btn">SOUND</button></div>
   </dialog>
-  <script src="campaign-slots.js?v=0.20.0" defer></script>
-  <script src="audio.js?v=0.20.0" defer></script>
-  <script src="lost-signals.js?v=0.20.0" defer></script>
-  <script src="forgotten-giants.js?v=0.20.0" defer></script>
-  <script src="game.js?v=0.20.0" defer></script>
-  <script src="version-sync.js?v=0.20.0" defer></script>
+  <script src="campaign-slots.js?v=0.21.0" defer></script>
+  <script src="audio.js?v=0.21.0" defer></script>
+  <script src="lost-signals.js?v=0.21.0" defer></script>
+  <script src="forgotten-giants.js?v=0.21.0" defer></script>
+  <script src="game.js?v=0.21.0" defer></script>
+  <script src="version-sync.js?v=0.21.0" defer></script>
 </body>
 </html>

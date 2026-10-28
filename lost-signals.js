@@ -2,7 +2,7 @@
    Backups are portable JSON, not encrypted, cloud-synchronised or cheat-proof. */
 (() => {
   'use strict';
-  const buildId='0.20.0-fluid-frontiers-1';
+  const buildId='0.21.0-lifeline-1';
   const levels=['sunbreak-shelf','glassbone-rift','drowned-gardens','midnight-cathedral','calypso-abyss'];
   const lengths=[2,3,4,5,6];
   const chapters=['The wrong timestamp','Something in the walls','An ocean that remembers','The listening chamber','The other end of the call'];
@@ -84,6 +84,12 @@
     let fieldCount=0;for(const [id,f]of Object.entries(data.levels)){
       const i=levels.indexOf(id);if(i<0||f?.schema!==3||!Number.isInteger(f.seed)||f.seed<0||f.seed>0xffffffff||!Number.isInteger(f.cycle)||f.cycle<0)fail('Invalid level record.');
       if(!Array.isArray(f.loot)||!f.loot.length||f.loot.length>3000||!Array.isArray(f.looted)||!Array.isArray(f.secured)||!f.secured.every(v=>Number.isInteger(v)&&v>=0&&v<lengths[i])||new Set(f.secured).size!==f.secured.length)fail('Invalid level resources or recorders.');
+      if(f.batteryCells!=null){
+        const b=f.batteryCells;
+        if(b.version!==1||!Array.isArray(b.nodes)||b.nodes.length>7||!Number.isFinite(b.elapsed)||b.elapsed<0||!Number.isFinite(b.nextSpawnAt)||b.nextSpawnAt<0||!b.due||typeof b.due!=='object')fail('Invalid battery cell state.');
+        if(!b.nodes.every(n=>typeof n.id==='string'&&/^battery-[0-6]$/.test(n.id)&&Number.isFinite(n.x)&&n.x>=-2440&&n.x<=3640&&Number.isFinite(n.y)&&n.y>=500&&n.y<=17900)||new Set(b.nodes.map(n=>n.id)).size!==b.nodes.length)fail('Invalid battery cell layout.');
+        if(Object.entries(b.due).some(([id,t])=>!b.nodes.some(n=>n.id===id)||!Number.isFinite(t)||t<0||t>b.elapsed+480.01))fail('Invalid battery cell recharge timer.');
+      }
       if(!f.loot.every(n=>typeof n.id==='string'&&/^loot-\d+$/.test(n.id)&&['scrap','crystal','air'].includes(n.type)&&Number.isFinite(n.x)&&Math.abs(n.x)<3000&&Number.isFinite(n.y)&&n.y>=58&&n.y<=18120&&Number.isInteger(n.quantity)&&n.quantity>=1&&n.quantity<=100)||new Set(f.loot.map(n=>n.id)).size!==f.loot.length)fail('Invalid resource layout.');
       for(const key of ['drops','recoveries'])if(!Array.isArray(f[key])||f[key].length>6000)fail('Invalid recovery data.');
       const ids=new Set(),heldRecorders=new Set(f.secured);
@@ -109,7 +115,7 @@
       if(q.mineAmmo!==p.mineAmmo||!['railgun','torpedo'].every(k=>q.weaponAmmo?.[k]===p.weaponAmmo[k]))fail('Dive ammunition is inconsistent.');
       for(const k of ['items','predators','mines','blasts','waves','echoes','terrain'])if(!Array.isArray(a[k])||a[k].length>6000)fail('Incomplete active dive.');
       if(!q.cargo||!['scrap','crystal'].every(k=>Number.isInteger(q.cargo[k])&&q.cargo[k]>=0)||!Array.isArray(q.cargo.recorders)||!q.cargo.recorders.every(i=>Number.isInteger(i)&&i>=0&&i<lengths[levels.indexOf(a.levelId)]))fail('Invalid dive cargo.');
-      if(!a.items.every(n=>Number.isFinite(n.x)&&Number.isFinite(n.y)&&['scrap','crystal','air','recorder','recovery'].includes(n.type)))fail('Invalid dive items.');
+      if(!a.items.every(n=>Number.isFinite(n.x)&&Number.isFinite(n.y)&&['scrap','crystal','air','recorder','recovery','battery'].includes(n.type)))fail('Invalid dive items.');
       if(!a.predators.every(n=>['common','apex','reaper','warden'].includes(n.tier)&&Number.isFinite(n.x)&&Number.isFinite(n.y)&&Number.isFinite(n.health)))fail('Invalid dive contacts.');
       if(!Number.isFinite(a.clock)||a.clock<0||q.x<-2440||q.x>3640||q.y<-2000||q.y>120+[300,600,1000,1400,1800][levels.indexOf(a.levelId)]*10+10)fail('Dive position or clock is invalid.');
       const guidanceValid=o=>(o.targetId==null||typeof o.targetId==='string'&&o.targetId.length<=100||Number.isInteger(o.targetId)&&o.targetId>=0&&o.targetId<=1e9)&&['launchHeading','originX','originY','heading','vx','vy'].every(k=>o[k]===undefined||Number.isFinite(o[k])&&Math.abs(o[k])<=100000);
@@ -130,7 +136,7 @@
     window.AbyssGiants?.validateBackup(data);
     return true;
   }
-  function pack(payload,version='0.20.0'){
+  function pack(payload,version='0.21.0'){
     validateCampaign(payload);const text=JSON.stringify(payload);
     return JSON.stringify({format:'the-abyss-below/campaign',formatVersion:1,gameVersion:version,exportedAt:new Date().toISOString(),integrity:{algorithm:'fnv1a32',value:checksum(text)},payload},null,2);
   }

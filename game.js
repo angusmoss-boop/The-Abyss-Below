@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const BUILD = Object.freeze({version:'0.20.0',name:'Fluid Frontiers',id:'0.20.0-fluid-frontiers-1'});
+  const BUILD = Object.freeze({version:'0.21.0',name:'Lifeline',id:'0.21.0-lifeline-1'});
   window.AbyssBuild=BUILD;
   const GIANTS=window.AbyssGiants;
   let giantSite=null,giantWallCache=[];
@@ -16,7 +16,7 @@
     if(!value||value.version!==1)return freshSurvey();
     const point=p=>p&&Number.isFinite(p.x)&&p.x>=SURVEY.minX&&p.x<=SURVEY.maxX&&Number.isFinite(p.y)&&p.y>=70&&p.y<=18120;
     return {version:1,cells:Array.isArray(value.cells)?[...new Set(value.cells.filter(x=>typeof x==='string'&&/^-?\d{1,3}:\d{1,3}$/.test(x)).slice(0,12000))]:[],
-      contacts:Object.fromEntries(Object.entries(value.contacts||{}).filter(([k,c])=>k.length<100&&point(c)&&['scrap','crystal','air','recorder','recovery','wreck','landmark','station','derelict','thermal','giant','plate','panel'].includes(c.type)).slice(0,4000).map(([k,c])=>[k,{x:c.x,y:c.y,type:c.type,label:String(c.label||'').slice(0,80),collected:c.collected===true}])),
+      contacts:Object.fromEntries(Object.entries(value.contacts||{}).filter(([k,c])=>k.length<100&&point(c)&&['scrap','crystal','air','recorder','recovery','wreck','landmark','station','derelict','thermal','giant','plate','panel','battery'].includes(c.type)).slice(0,4000).map(([k,c])=>[k,{x:c.x,y:c.y,type:c.type,label:String(c.label||'').slice(0,80),collected:c.collected===true}])),
       waypoint:point(value.waypoint)?{x:value.waypoint.x,y:value.waypoint.y}:null};
   }
   // Surface and harbour rules are shared by rendering, physics and AI.
@@ -24,6 +24,18 @@
   const HARBOUR = Object.freeze({x:600,y:160,safeRadius:260,exclusionRadius:330,dockRadius:128});
   const inHarbour = object => Boolean(object && Math.hypot(object.x-HARBOUR.x,object.y-HARBOUR.y)<=HARBOUR.safeRadius);
   let surfaceEffects=[];
+  // Lifeline: oxygen limits trip duration; propulsion has an unpowered reserve.
+  const LIFE_SUPPORT = Object.freeze({oxygenPerSecond:.30,oxygenEfficiency:.20});
+  const ENERGY = Object.freeze({idlePerSecond:.006,thrustPerSecond:.018,reserveThreshold:.5,reserveMultiplier:.5});
+  const BATTERY_CELLS = Object.freeze({power:25,range:60,recharge:480,interval:90,counts:[3,4,5,6,7]});
+  function normaliseBatteryCells(value){
+    if(value?.version!==1||!Array.isArray(value.nodes)||value.nodes.length>7)return null;
+    const valid=n=>n&&typeof n.id==='string'&&/^battery-[0-6]$/.test(n.id)&&Number.isFinite(n.x)&&n.x>=-2440&&n.x<=3640&&Number.isFinite(n.y)&&n.y>=500&&n.y<=17900;
+    if(!value.nodes.every(valid)||new Set(value.nodes.map(n=>n.id)).size!==value.nodes.length)return null;
+    const elapsed=Number.isFinite(value.elapsed)?Math.max(0,Math.min(1e9,value.elapsed)):0,due={};
+    for(const n of value.nodes)if(Number.isFinite(value.due?.[n.id]))due[n.id]=Math.max(0,Math.min(elapsed+BATTERY_CELLS.recharge,value.due[n.id]));
+    return {version:1,nodes:value.nodes.map(n=>({id:n.id,x:n.x,y:n.y})),elapsed,due,nextSpawnAt:Number.isFinite(value.nextSpawnAt)?Math.max(0,Math.min(elapsed+BATTERY_CELLS.interval,value.nextSpawnAt)):0};
+  }
   const THRUST = Object.freeze({normal:146,perMark:.17,maxMark:4});
   const normalSpeedAt = mark => THRUST.normal*(1+mark*THRUST.perMark);
   function movementNoiseAt(speed,insulationMark=0,boosting=false){
@@ -102,7 +114,7 @@
   const cleanRecorders=value=>Array.isArray(value)?[...new Set(value.filter(i=>Number.isInteger(i)&&i>=0&&i<6))]:[];
   const hasRecoveryCargo=cargo=>Boolean(cargo&&(cargo.scrap||cargo.crystal||cargo.recorders?.length||cargo.plates?.length));
   const freshField = () => ({schema:3,seed:(Math.random()*0xffffffff)>>>0,cycle:0,
-    looted:[],health:{},loot:null,drops:[],secured:[],recoveries:[],recoverySerial:0,pendingCargo:null,floorReached:false,awaitingDock:false,survey:freshSurvey(),wild:null,salvage:freshSalvage()});
+    looted:[],health:{},loot:null,drops:[],secured:[],recoveries:[],recoverySerial:0,pendingCargo:null,floorReached:false,awaitingDock:false,survey:freshSurvey(),wild:null,salvage:freshSalvage(),batteryCells:null});
   let field=freshField(),campaignId='campaign-'+Date.now().toString(36)+'-'+field.seed.toString(36);
   let campaignLevels={},storageHealthy=true,storageRecovery=false,migratedLegacy=false;
   const readJSON=key=>{try{return JSON.parse(localStorage.getItem(key)||'null');}catch(_){return null;}};
@@ -116,7 +128,7 @@
     const recoveries=Array.isArray(data.recoveries)?data.recoveries.filter(n=>cargo(n)&&typeof n.id==='string'&&/^recovery-/.test(n.id)).map(n=>({...cargo(n),id:n.id})).filter(hasRecoveryCargo):[];
     const looted=Array.isArray(data.looted)?[...new Set(data.looted.filter(x=>typeof x==='string'&&/^loot-\d+$/.test(x)))]:[];
     return {schema:3,seed:data.seed,cycle:cleanCount(data.cycle),looted,
-      salvage:normaliseSalvage(data.salvage,loot,looted),
+      salvage:normaliseSalvage(data.salvage,loot,looted),batteryCells:normaliseBatteryCells(data.batteryCells),
       health:Object.fromEntries(Object.entries(data.health||{}).filter(([k,v])=>/^enemy-\d+$/.test(k)&&Number.isFinite(v)&&v>=0)),loot,
       drops:Array.isArray(data.drops)?data.drops.filter(n=>validNode(n)&&n.type==='scrap'&&/^drop-/.test(n.id)).map(normalise):[],
       secured:Array.isArray(data.secured)?[...new Set(data.secured.filter(n=>Number.isInteger(n)&&n>=0&&n<6))]:[],
@@ -215,8 +227,8 @@
   };
   const UPGRADES = [
     {id:'hull', name:'REINFORCED HULL', desc:'Adds 28 max hull HP per mark. Pressure ratings: 330 / 630 / 830 / 1,030 / 1,330 / 1,530 / 1,830 m. The last mark reaches the final seabed safely.', prices:[80,150,297,420,570,760,1000], limit:7},
-    {id:'oxygen', name:'AIR RECYCLER', desc:'Expand oxygen capacity and slow oxygen consumption.', base:70, limit:5},
-    {id:'battery', name:'DEEP-CELL BATTERY', desc:'More energy, cheaper boost bursts and 10% faster boost recharge per level.', base:65, limit:5},
+    {id:'oxygen', name:'AIR RECYCLER', desc:'Extend your dive with more oxygen and a more efficient recycler. Standard endurance is 5 min 33 sec without supply caches.', base:70, limit:5},
+    {id:'battery', name:'DEEP-CELL BATTERY', desc:'More stored energy, cheaper boost and 10% faster boost recharge per mark. Sonar and boost are your main power demands; reserve thrust works at half speed when empty.', base:65, limit:5},
     {id:'engine', name:'MAGNETIC THRUSTERS', desc:'Mk I unlocks boost. Every mark improves normal speed, boost speed and boost endurance: 3 / 4 / 5 / 6 seconds.', base:75, limit:4},
     {id:'flashlight', name:'EXPLORATION FLASHLIGHT', desc:'Mk I keeps the original beam. Mk II / III / IV widen forward coverage to 70 / 110 / 150 degrees with longer reach. The rear stays dark. Uses power slowly while switched on.', prices:[0,75,150,300], limit:4},
     {id:'sonar', name:'WIDEBAND SONAR', desc:'Wider scans, longer-lived echoes, lower power cost and shorter cooldowns.', base:90, limit:4},
@@ -355,6 +367,11 @@
   const maxHull = () => 100 + saved.upgrades.hull*28;
   const maxOxygen = () => 100 + saved.upgrades.oxygen*30;
   const maxBattery = () => 100 + saved.upgrades.battery*30;
+  const oxygenRateAt = mark => LIFE_SUPPORT.oxygenPerSecond/(1+mark*LIFE_SUPPORT.oxygenEfficiency);
+  const oxygenRate = () => oxygenRateAt(saved.upgrades.oxygen);
+  const reserveDrive = () => player.battery<=ENERGY.reserveThreshold;
+  const propulsionMultiplier = () => reserveDrive()?ENERGY.reserveMultiplier:1;
+  const enduranceText = seconds => {const t=Math.max(0,Math.floor(seconds));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');};
   const safeDepth = () => HULL_DEPTHS[saved.upgrades.hull];
   const sonarRange = () => 230 + saved.upgrades.sonar*55;
   const sonarCost = () => Math.max(4,12-saved.upgrades.sonar*2);
@@ -568,14 +585,14 @@
       const y=r()*MAX_WORLD_Y;
       scene.dust.push({x:lerp(leftAt(y)-120,rightAt(y)+120,r()),y,phase:r()*TAU,size:.5+r()*1.7});
     }
-    populateWorld();buildEnvironment();hydrateSurvey();buildWildWaters();buildWarden();buildGiants();initialisePredatorBehaviours(true);persistField();
+    populateWorld();buildEnvironment();hydrateSurvey();buildWildWaters();buildWarden();buildGiants();initialiseBatteryCells();initialisePredatorBehaviours(true);persistField();
   }
   function refreshDockPopulation(){
     field.cycle++;field.health={};
     const supplies=new Set(field.loot.filter(n=>n.type==='air').map(n=>n.id));
     field.looted=field.looted.filter(id=>!supplies.has(id));field.awaitingDock=false;
     const rememberedSite=giantSite;giantSite=null;populateWorld();giantSite=rememberedSite;
-    buildGiants();initialisePredatorBehaviours(true);persistField();
+    buildGiants();initialiseBatteryCells();initialisePredatorBehaviours(true);persistField();
     addEvent('Dock cycle complete · predators and caches refreshed; salvage timers and crystals unchanged');
   }
   function updateSalvageRegeneration(dt){
@@ -608,6 +625,66 @@
     if(!state.harvested.includes(item.id))state.harvested.push(item.id);
     state.due[item.id]=state.elapsed+SALVAGE_REGEN.delay;
   }
+
+  // Battery cells have a separate deterministic stream and canonical state. They
+  // cannot affect finite resources, first-survey achievements or predator loot.
+  function initialiseBatteryCells(){
+    if(!field.batteryCells){
+      const index=LEVELS.findIndex(l=>l.id===LEVEL_ID),r=randGen((field.seed^0x61ab4e29)>>>0),nodes=[];
+      for(let i=0;i<BATTERY_CELLS.counts[index];i++){
+        let point=null;
+        for(let attempt=0;attempt<900;attempt++){
+          const y=i===0?800+r()*400:lerp(700,MAX_WORLD_Y-220,clamp((i+.25+r()*.65)/BATTERY_CELLS.counts[index],.05,.96));
+          const x=lerp(baseLeftAt(y)+95,baseRightAt(y)-95,r()),p={x,y};
+          if(projectileSolid(x,y,42)||distance(p,HARBOUR)<450||scene.items.some(n=>distance(n,p)<80)||nodes.some(n=>distance(n,p)<280))continue;
+          if((scene.derelictMines||[]).some(n=>distance(n,p)<180)||(scene.ventFields||[]).some(v=>Math.abs(v.x-x)<v.rx+90&&y>v.y-v.height-80&&y<v.y+90))continue;
+          if(LEVEL_ID==='midnight-cathedral'&&signals.warden.site&&distance(p,signals.warden.site)<WARDEN.radius+100)continue;
+          point=p;break;
+        }
+        if(point)nodes.push({id:'battery-'+i,...point});
+      }
+      field.batteryCells={version:1,nodes,elapsed:0,nextSpawnAt:0,due:{}};
+    }
+    syncBatteryCellItems();
+  }
+  function syncBatteryCellItems(){
+    for(const node of field.batteryCells?.nodes||[]){
+      let item=scene.items.find(n=>n.id===node.id&&n.type==='battery');
+      const collected=Number.isFinite(field.batteryCells.due[node.id]);
+      if(item)Object.assign(item,{x:node.x,y:node.y,collected});
+      else scene.items.push(makeItem(node.x,node.y,'battery',{id:node.id,quantity:BATTERY_CELLS.power,collected}));
+    }
+  }
+  function collectBatteryCell(item){
+    if(!running||paused||player.airborne||item.collected||distance(player,item)>=BATTERY_CELLS.range||!clearSalvageLine(item)||player.battery>=maxBattery()-.01)return false;
+    const state=field.batteryCells,node=state?.nodes.find(n=>n.id===item.id);
+    if(!node||Number.isFinite(state.due[node.id]))return false;
+    const amount=Math.min(BATTERY_CELLS.power,maxBattery()-player.battery);
+    player.battery+=amount;item.collected=true;state.due[item.id]=state.elapsed+BATTERY_CELLS.recharge;
+    rememberSurveyObject('items',item);pickupNotice('power',amount);window.AbyssAudio?.event('pickup');
+    addEvent('Battery cell recovered · +'+amount.toFixed(amount%1?1:0)+' power');persist();updateUI();return true;
+  }
+  function autoCollectBatteryCells(){
+    if(!running||paused||player.airborne||player.battery>maxBattery()-5)return;
+    // Avoid wasting an entire cell on negligible idle draw; USE can top up smaller deficits.
+    for(const item of scene.items)if(item.type==='battery'&&!item.collected&&distance(player,item)<BATTERY_CELLS.range)collectBatteryCell(item);
+  }
+  function updateBatteryCells(dt){
+    if(!running||paused||player.airborne||inHarbour(player)||!Number.isFinite(dt)||dt<=0)return;
+    let changed=false;
+    for(const [id,f] of Object.entries(campaignLevels)){
+      const state=f.batteryCells;if(!state)continue;
+      state.elapsed+=dt;
+      if(state.elapsed<state.nextSpawnAt)continue;
+      const ready=state.nodes.filter(n=>Number.isFinite(state.due[n.id])&&state.due[n.id]<=state.elapsed).sort((a,b)=>state.due[a.id]-state.due[b.id]||a.id.localeCompare(b.id));
+      const node=ready.find(n=>id!==LEVEL_ID||!onscreen(n.x,n.y,100)&&distance(player,n)>180);
+      if(!node)continue;
+      delete state.due[node.id];state.nextSpawnAt=state.elapsed+BATTERY_CELLS.interval;changed=true;
+      if(id===LEVEL_ID){const item=scene.items.find(n=>n.type==='battery'&&n.id===node.id);if(item){item.collected=false;item.revealUntil=0;item.echoDuration=0;}}
+    }
+    if(changed)persist();
+  }
+
   function autoCollectSalvage(dt){
     if(!running||paused||player.airborne||player.y<SURFACE.y)return;
     player.autoSalvageCooldown=Math.max(0,(player.autoSalvageCooldown||0)-dt);
@@ -687,11 +764,15 @@
     const station = HARBOUR;
     if(!player.airborne&&player.y>=SURFACE.y&&distance(player,station)<HARBOUR.dockRadius && depthOf(player.y)<30)return {type:'station',x:station.x,y:station.y};
     let candidate=null,range=magnetRange(); // Responsive salvage pick-up while gliding past an item.
-    for (const item of scene.items) if(!item.collected&&item.type!=='scrap') {
+    for (const item of scene.items) if(!item.collected&&item.type!=='scrap'&&(item.type!=='battery'||player.battery<maxBattery()-.01)) {
       const d=distance(player,item);
       if(d<range&&((d<60&&clearSalvageLine(item))||remoteSalvageAvailable(item))) {range=d;candidate=item;}
     }
-    return candidate||nearestSignal()||nearestGiantObject();
+    // An explicit nearby buoy/package must not be hidden by a more distant pickup.
+    // This also prevents newly added resource types from monopolising USE.
+    const signal=nearestSignal();
+    if(signal&&(!candidate||distance(player,signal)<distance(player,candidate)))return signal;
+    return candidate||nearestGiantObject();
   }
   function interact(silentMiss=false) {
     if(!running||paused)return;
@@ -704,6 +785,7 @@
   }
   function collectItem(item,automatic=false){
     if(!running||paused||item.collected||player.airborne)return false;
+    if(item.type==='battery')return collectBatteryCell(item);
     if(item.type==='recorder'&&(saved.secured.includes(item.index)||player.cargo.recorders.includes(item.index)||recorderInRecovery(item.index)))return false;
     const recovery=item.type==='recovery'?field.recoveries.find(r=>r.id===item.id):null;
     if(item.type==='recovery'&&!recovery)return false;
@@ -1092,8 +1174,8 @@
   let dockTab='upgrades',selectedUpgrade=null;
   const SYSTEM_META={
     hull:['STRUCTURAL INTEGRITY','defence','Pressure tolerance is independent of the kinetic shield. Never exceed the fitted hull rating.'],
-    oxygen:['LIFE SUPPORT','support','More air means longer expeditions. Oxygen still drains while travelling or waiting underwater.'],
-    battery:['ENERGY STORAGE','support','More stored power and better efficiency help your thrusters, flashlight and other powered systems.'],
+    oxygen:['LIFE SUPPORT','support','Oxygen is your expedition clock: 18 units/min at base, reduced by recycler marks. The endurance estimate assumes no caches. Pause and dock menus freeze consumption.'],
+    battery:['ENERGY STORAGE','support','Boost and sonar spend the most power. Cruising and the lamp draw slowly. At empty power, emergency thrust delivers 50% of your fitted thruster speed, without boost. Rare battery cells restore 25 power.'],
     engine:['PROPULSION','support','Mk I unlocks boost. Boost uses both the charge meter and battery; a Crimson Reaper matches Mk IV normal speed.'],
     flashlight:['OPTICS','exploration','At 1,000 m ambient light disappears. A wider, longer beam lets you plan routes and locate resources.'],
     sonar:['SENSORS','exploration','Scans cover the current screen. Very large screens can extend the cooldown until the wave finishes.'],
@@ -1111,7 +1193,7 @@
     switch(id){
       case 'railgun':case 'torpedo':return [['Damage',WEAPONS[id].damage[mark]+' HP'],['Magazine capacity',WEAPONS[id].capacity[mark]+' rounds'],['Firing interval',WEAPONS[id].cooldown+' sec'],['Range',WEAPONS[id].range/10+' m'],['Price per round',WEAPON_AMMO_PRICES[id]+' CR'],['Guidance',id==='railgun'?'Gentle / 32° each side':'Strong / 65° each side']];
       case 'hull':return [['Safe depth',HULL_DEPTHS[mark].toLocaleString('en-GB')+' m'],['Hull integrity',(100+mark*28)+' HP']];
-      case 'oxygen':return [['Oxygen capacity',(100+mark*30)+' units'],['Consumption',n(.22/(1+mark*.2)*60)+'/min']];
+      case 'oxygen':return [['Oxygen capacity',(100+mark*30)+' units'],['Consumption',n(oxygenRateAt(mark)*60)+'/min'],['Full-tank endurance',enduranceText((100+mark*30)/oxygenRateAt(mark))+' min:sec']];
       case 'battery':return [['Battery capacity',(100+mark*30)+' power'],['Boost power use',n(BOOST.powerPerSecond/(1+mark*.12))+'/sec'],['Boost recharge',n(BOOST.recharge*(1+mark*.1))+'/sec']];
       case 'engine':return [['Normal speed',n(normalSpeedAt(mark)/10)+' m/s'],['Boost speed',mark?n(normalSpeedAt(mark)*BOOST.multipliers[mark]/10)+' m/s':'Locked'],['Boost endurance',mark?BOOST.capacities[mark]/BOOST.drain+' sec':'None']];
       case 'flashlight':return [['Maximum reach',FLASHLIGHT[mark].length/10+' m'],['Beam angle',Math.round(FLASHLIGHT[mark].halfAngle*360/Math.PI)+'°'],['Base power draw',n(FLASHLIGHT[mark].power*60)+'/min']];
@@ -1128,15 +1210,15 @@
   const DOCK_TABS=[['upgradesTab','upgrades'],['ammunitionTab','ammunition'],['expeditionsTab','expeditions'],['contractsTab','contracts'],['archiveTab','archive']];
   function showDock(tab='upgrades') {
     showingDock=true;dockTab=tab;syncWeaponStock();persist();
-    openDialog('SURFACE OPERATIONS / CAMPAIGN HUB','NEREID EXPEDITION HUB',
-      '<div class="dock-intro"><div><span class="dock-online"><i></i> VESSEL SECURED</span><p>Refit. Revisit. Go deeper.</p></div><div class="dock-wallet"><div class="dock-credit"><span>CREDITS</span><strong id="dockCredits">0</strong></div><div class="dock-credit crystal-wallet"><span>CRYSTALS</span><strong id="dockCrystals">0</strong></div></div></div><div id="dockBalance" class="dock-balance"></div><div class="dock-tabs" role="tablist" aria-label="Dock services"><button id="upgradesTab" role="tab" aria-controls="dockPanel">SHIP UPGRADES</button><button id="ammunitionTab" role="tab" aria-controls="dockPanel">AMMUNITION</button><button id="expeditionsTab" role="tab" aria-controls="dockPanel">EXPEDITIONS</button><button id="contractsTab" role="tab" aria-controls="dockPanel">CONTRACTS</button><button id="archiveTab" role="tab" aria-controls="dockPanel">ARCHIVE</button></div><div id="dockPanel" role="tabpanel"></div>',
+    openDialog('NEREID / SURFACE OPERATIONS','THE EXPEDITION HUB',
+      '<div class="dock-intro"><div class="dock-vessel-identity"><img class="dock-vessel-art" src="icon-192.png?v=0.21.0" alt="" width="54" height="54"><div><span class="dock-online"><i></i> VESSEL SECURED</span><p>Hull, oxygen and power serviced.<br><span>Weapon ammunition is purchased separately.</span></p></div></div><div class="dock-wallet"><div class="dock-credit"><span>CREDITS</span><strong id="dockCredits">0</strong></div><div class="dock-credit crystal-wallet"><span>CRYSTALS</span><strong id="dockCrystals">0</strong></div></div></div><div id="dockBalance" class="dock-balance"></div><div class="dock-tabs" role="tablist" aria-label="Dock services"><button id="upgradesTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6ZM8 11l3 3 5-6"/></svg><span>Upgrades</span></button><button id="ammunitionTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 4 8v12h6V8ZM17 4l-3 4v12h6V8ZM4 15h6M14 15h6"/></svg><span>Ammunition</span></button><button id="expeditionsTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2ZM9 3v16M15 5v16"/></svg><span>Expeditions</span></button><button id="contractsTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 2h6v4H9ZM8 11h8M8 15h8M8 18h5"/></svg><span>Contracts</span></button><button id="archiveTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h13a2 2 0 0 1 2 2v16H6a2 2 0 0 1-2-2ZM4 17h15M8 7h7M8 11h5"/></svg><span>Archive</span></button></div><div id="dockPanel" role="tabpanel"></div>',
       '<div class="dock-departure"><span id="departureLevel">'+currentLevel().name+'<br>Seabed '+currentLevel().depth.toLocaleString('en-GB')+' m · bank all recorders to unlock the next level.</span><button class="primary-btn" id="launchAgain">UNDOCK <span aria-hidden="true">↗</span></button></div>');
     dialogReturnPause=false;
     for(const [id,tabName] of DOCK_TABS){
       $(id).addEventListener('click',()=>{dockTab=tabName;drawDockPanel();});
       $(id).addEventListener('keydown',e=>{
         if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();
-        let i=DOCK_TABS.findIndex(t=>t[1]===dockTab);i=e.key==='Home'?0:e.key==='End'?DOCK_TABS.length-1:(i+(e.key==='ArrowRight'?1:DOCK_TABS.length-1))%DOCK_TABS.length;dockTab=DOCK_TABS[i][1];drawDockPanel();$(DOCK_TABS[i][0]).focus();
+        let i=DOCK_TABS.findIndex(t=>t[1]===dockTab);i=e.key==='Home'?0:e.key==='End'?DOCK_TABS.length-1:(i+(e.key==='ArrowRight'?1:DOCK_TABS.length-1))%DOCK_TABS.length;dockTab=DOCK_TABS[i][1];drawDockPanel();$(DOCK_TABS[i][0]).focus();$(DOCK_TABS[i][0]).scrollIntoView({block:'nearest',inline:'nearest'});
       });
     }
     window.AbyssAudio?.unlock();window.AbyssAudio?.setScene('dock');
@@ -1146,17 +1228,20 @@
   function drawDockPanel(){
     if(!showingDock||!$('dockPanel'))return;
     $('dockCredits').textContent=saved.credits.toLocaleString('en-GB');$('dockCrystals').textContent=saved.crystals.toLocaleString('en-GB');
-    $('dockBalance').innerHTML='<span><b>'+safeDepth().toLocaleString('en-GB')+' m</b> HULL</span><span><b>'+player.mineAmmo+'/'+mineCapacity()+'</b> MINES</span><span><b>'+saved.secured.length+'/'+RECORDERS_TOTAL+'</b> LEVEL RECORDERS</span>';
+    $('dockBalance').innerHTML='<span><small>PRESSURE RATING</small><b>'+safeDepth().toLocaleString('en-GB')+' m</b></span><span><small>FULL-TANK AIR</small><b>'+enduranceText(maxOxygen()/oxygenRate())+' <em>min:sec</em></b></span><span><small>POWER CAPACITY</small><b>'+maxBattery()+' <em>units</em></b></span><span><small>LEVEL RECORDERS</small><b>'+saved.secured.length+' / '+RECORDERS_TOTAL+'</b></span>';
+    const moduleCount=UPGRADES.filter(u=>saved.upgrades[u.id]>=u.limit).length;
+    $('upgradesTab').title=moduleCount+' / '+UPGRADES.length+' fully upgraded systems';
+    $('departureLevel').innerHTML='<small>SELECTED DESTINATION</small><strong>'+currentLevel().name+'</strong><span>'+currentLevel().depth.toLocaleString('en-GB')+' m seabed · '+saved.secured.length+'/'+RECORDERS_TOTAL+' recorders secured</span>';
     for(const [id,tab] of DOCK_TABS){$(id).setAttribute('aria-selected',String(dockTab===tab));$(id).tabIndex=dockTab===tab?0:-1;}
     $('dockPanel').setAttribute('aria-labelledby',DOCK_TABS.find(t=>t[1]===dockTab)[0]);
-    if(dockTab==='upgrades'){$('dockPanel').innerHTML='<div class="dock-grid-caption"><span>SELECT A SYSTEM</span><span>CREDITS + CRYSTALS</span></div><div class="upgrade-grid" id="upgradeList"></div>';drawUpgrades();}
+    if(dockTab==='upgrades'){$('dockPanel').innerHTML='<div class="dock-grid-caption"><span>SHIP SYSTEMS <small> / TAP TO INSPECT</small></span><span>CREDITS + CRYSTALS</span></div><div class="upgrade-grid" id="upgradeList"></div>';drawUpgrades();}
     else if(dockTab==='ammunition')drawAmmunition();else if(dockTab==='contracts')drawContracts();else if(dockTab==='archive')drawArchiveDock();else drawExpeditions();
   }
   function drawExpeditions(){
     $('dockPanel').innerHTML='<div class="expedition-intro"><span>'+totalRecorders()+' / 20 RECORDERS BANKED</span><p>Crystals are finite. Scrap sites recover gradually during active diving. Stocks show units available now; survey completion counts each original site once.</p></div><div class="expedition-list">'+LEVELS.map((l,i)=>{
       const unlocked=levelUnlocked(i),active=l.id===LEVEL_ID,complete=levelComplete(l.id),r=resourceProgress(l.id),f=campaignLevels[l.id];
-      return '<article class="expedition-card '+(active?'selected ':'')+(!unlocked?'locked':'')+'" style="--level-accent:'+l.color+'"><div class="expedition-heading"><span>'+l.tag+'</span><b>'+(active?'CURRENT COURSE':complete?'CLEARED':unlocked?'UNLOCKED':'LOCKED')+'</b></div><h3>'+l.name+'</h3><p>'+l.description+'</p><div class="expedition-metrics"><span><strong>'+l.depth.toLocaleString('en-GB')+' m</strong> SEABED</span><span><strong>'+(f?.secured.length||0)+' / '+l.recorders.length+'</strong> RECORDERS</span><span><strong>'+r.scrapRemaining+' / '+r.scrapTotal+'</strong> SCRAP AVAILABLE</span><span><strong>'+r.crystalRemaining+' / '+r.crystalTotal+'</strong> CRYSTALS LEFT</span></div>'+(f?.recoveries.length?'<div class="recovery-hint">'+f.recoveries.length+' RECOVERY POD'+(f.recoveries.length===1?'':'S')+' WAITING</div>':'')+'<button class="expedition-select" data-travel="'+l.id+'" '+(!unlocked||active?'disabled':'')+'>'+(active?'COURSE SELECTED':unlocked?'SET COURSE →':'BANK ALL RECORDERS IN LEVEL '+i)+'</button></article>';
-    }).join('')+'</div><p class="expedition-note">Scrap recovers after 5 active dive minutes, at most one deposit per 45 seconds per visited level, out of view. Pauses, harbour waiting and offline time do not advance recovery. Crystals never respawn. Dock ammo refills cost credits; defeat grants the fixed 10 / 3 / 3 rescue loadout.</p>';
+      return '<article class="expedition-card '+(active?'selected ':'')+(!unlocked?'locked':'')+'" style="--level-accent:'+l.color+'"><div class="expedition-heading"><span>'+l.tag+'</span><b>'+(active?'CURRENT COURSE':complete?'CLEARED':unlocked?'UNLOCKED':'LOCKED')+'</b></div><h3>'+l.name+'</h3><p>'+l.description+'</p><div class="expedition-metrics"><span><strong>'+l.depth.toLocaleString('en-GB')+' m</strong> SEABED</span><span><strong>'+(f?.secured.length||0)+' / '+l.recorders.length+'</strong> RECORDERS</span><span><strong>'+r.scrapRemaining+' / '+r.scrapTotal+'</strong> SCRAP AVAILABLE</span><span><strong>'+r.crystalRemaining+' / '+r.crystalTotal+'</strong> CRYSTALS LEFT</span><span><strong>'+(f?.batteryCells?f.batteryCells.nodes.filter(n=>!Number.isFinite(f.batteryCells.due[n.id])).length+' / '+f.batteryCells.nodes.length:BATTERY_CELLS.counts[i]+' sites')+'</strong> BATTERY CELLS</span></div>'+(f?.recoveries.length?'<div class="recovery-hint">'+f.recoveries.length+' RECOVERY POD'+(f.recoveries.length===1?'':'S')+' WAITING</div>':'')+'<button class="expedition-select" data-travel="'+l.id+'" '+(!unlocked||active?'disabled':'')+'>'+(active?'COURSE SELECTED':unlocked?'SET COURSE →':'BANK ALL RECORDERS IN LEVEL '+i)+'</button></article>';
+    }).join('')+'</div><p class="expedition-note">Scrap recovers after 5 active dive minutes, at most one deposit per 45 seconds per visited level, out of view. Pauses, harbour waiting and offline time do not advance recovery. Battery cells restore up to 25 power and recover after 8 active minutes, at most one per 90 seconds. Crystals never respawn. Dock ammo refills cost credits; defeat grants the fixed 10 / 3 / 3 rescue loadout.</p>';
     document.querySelectorAll('[data-travel]').forEach(b=>b.addEventListener('click',()=>selectLevel(b.dataset.travel)));
   }
   function selectLevel(id){
@@ -1410,8 +1495,8 @@
     const magnitude=Math.hypot(x,y),hasInput=magnitude>.04;
     const boostFraction=updateBoost(dt,hasInput&&!player.airborne);
     // Stealth follows actual speed, not a latched silent mode or a modifier key.
-    const maxSpeed=normalSpeedAt(saved.upgrades.engine)*lerp(1,boostMultiplier(),boostFraction);
-    const thrustPower=hasInput&&player.battery>.5?1:0;
+    const maxSpeed=normalSpeedAt(saved.upgrades.engine)*propulsionMultiplier()*lerp(1,boostMultiplier(),boostFraction);
+    const thrustPower=hasInput?1:0;
     const divisor=Math.max(1,magnitude);
     const water=currentAt(player.x,player.y);
     const desiredX=x/divisor*maxSpeed*thrustPower+water.x,desiredY=y/divisor*maxSpeed*thrustPower+ventFlowAt(player.x,player.y);
@@ -1443,11 +1528,11 @@
     // Hold USE with a second finger while steering: collect immediately on entering range.
     if(useHeld||keys.has('e')){useHoldTimer-=dt;if(useHoldTimer<=0){interact(true);useHoldTimer=.12;}}
     if(!running||paused)return;
-    updateSalvageRegeneration(dt);autoCollectSalvage(dt);
+    updateSalvageRegeneration(dt);updateBatteryCells(dt);autoCollectBatteryCells();autoCollectSalvage(dt);
     if(distance(player,HARBOUR)>=145&&!field.awaitingDock){dockVisitActive=false;field.awaitingDock=true;persist();}
-    const energyDrain=dt*((.018+(hasInput&&!player.airborne?(.075*Math.min(1,magnitude)):0))/(1+saved.upgrades.battery*.12)+(headlightsActive()?flashlightPowerRate():0));
+    const energyDrain=dt*((ENERGY.idlePerSecond+(hasInput&&!player.airborne?(ENERGY.thrustPerSecond*Math.min(1,magnitude)):0))/(1+saved.upgrades.battery*.12)+(headlightsActive()?flashlightPowerRate():0));
     player.battery=clamp(player.battery-energyDrain,0,maxBattery());
-    player.oxygen=clamp(player.oxygen-dt*(.22/(1+saved.upgrades.oxygen*.2)),0,maxOxygen());
+    player.oxygen=clamp(player.oxygen-dt*oxygenRate(),0,maxOxygen());
     if(player.oxygen<=0){flashHullDamage();if(player.trip)player.trip.hullDamage+=dt*7;player.hull-=dt*7;if(player.hull<=0){defeat('The oxygen supply ran dry.');return;}}
     const depth=depthOf(player.y),over=Math.max(0,depth-safeDepth());
     if(over>0) {
@@ -1788,7 +1873,7 @@
   function drawItem(item,sonared){
     const {x,y,type}=item,phase=clock*1.8+(item.animationSeed||0);
     ctx.save();ctx.translate(x,y);
-    const color=type==='recovery'?'#ffcb8c':type==='recorder'?'#efbd77':type==='crystal'?'#ab96f5':type==='air'?'#60d5f6':'#8ce4c9';
+    const color=type==='recovery'?'#ffcb8c':type==='recorder'?'#efbd77':type==='crystal'?'#ab96f5':type==='air'?'#60d5f6':type==='battery'?'#f2d48b':'#8ce4c9';
     const glow=ctx.createRadialGradient(0,0,0,0,0,type==='recorder'?44:27);glow.addColorStop(0,color+'66');glow.addColorStop(1,color+'00');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,0,type==='recorder'?44:27,0,TAU);ctx.fill();
     ctx.rotate(Math.sin(phase)*.15);
     if(type==='recovery'){
@@ -1804,6 +1889,11 @@
       ctx.save();ctx.rotate(clock*.4);ctx.strokeStyle='#ffd28d77';ctx.strokeRect(-20,-20,40,40);ctx.restore();
     } else if(type==='crystal'){
       ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(0,-14);ctx.lineTo(10,-4);ctx.lineTo(5,10);ctx.lineTo(-7,13);ctx.lineTo(-11,-4);ctx.closePath();ctx.fill();
+    } else if(type==='battery'){
+      ctx.fillStyle='#304134';ctx.strokeStyle=color;ctx.lineWidth=1.8;
+      ctx.beginPath();ctx.roundRect(-10,-13,20,26,4);ctx.fill();ctx.stroke();ctx.fillStyle=color;ctx.fillRect(-4,-17,8,3);
+      ctx.beginPath();ctx.moveTo(2,-8);ctx.lineTo(-4,1);ctx.lineTo(1,1);ctx.lineTo(-1,8);ctx.lineTo(5,-2);ctx.lineTo(0,-2);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#f9e3a0';ctx.globalAlpha=.45+.25*Math.sin(phase);ctx.fillRect(-6,10,12,1.5);ctx.globalAlpha=1;
     } else if(type==='air'){
       ctx.strokeStyle=color;ctx.fillStyle='#14516d';ctx.lineWidth=2;ctx.fillRect(-10,-11,20,22);ctx.strokeRect(-10,-11,20,22);ctx.fillStyle='#8addf6';ctx.fillRect(-2,-6,4,12);ctx.fillRect(-6,-2,12,4);
     } else {
@@ -1997,9 +2087,10 @@
       ctx.strokeStyle='#7debd9';ctx.lineWidth=1.35;
       if(kind==='items'){
         const type=object.type;
-        ctx.strokeStyle=type==='recorder'?'#ffd28d':type==='crystal'?'#bea5ff':type==='air'?'#7ee5ff':'#8debd3';
+        ctx.strokeStyle=type==='recorder'?'#ffd28d':type==='crystal'?'#bea5ff':type==='air'?'#7ee5ff':type==='battery'?'#f2d48b':'#8debd3';
         if(type==='recorder'){ctx.strokeRect(-12,-9,24,18);ctx.strokeRect(-5,-2,10,4);}
         else if(type==='crystal'){ctx.beginPath();ctx.moveTo(0,-13);ctx.lineTo(10,0);ctx.lineTo(0,13);ctx.lineTo(-10,0);ctx.closePath();ctx.stroke();}
+        else if(type==='battery'){ctx.strokeRect(-9,-11,18,22);ctx.beginPath();ctx.moveTo(2,-7);ctx.lineTo(-3,0);ctx.lineTo(2,0);ctx.lineTo(-2,7);ctx.stroke();}
         else if(type==='air'){ctx.strokeRect(-9,-11,18,22);ctx.beginPath();ctx.moveTo(-5,0);ctx.lineTo(5,0);ctx.moveTo(0,-5);ctx.lineTo(0,5);ctx.stroke();}
         else{ctx.strokeRect(-8,-8,16,16);ctx.beginPath();ctx.moveTo(-8,4);ctx.lineTo(8,-4);ctx.stroke();}
         ctx.beginPath();ctx.arc(0,0,21,0,TAU);ctx.stroke();
@@ -2435,7 +2526,7 @@
     const enemyClose=scene.predators.some(e=>e.aggression>.15&&distance(player,e)<240);
     const apexClose=scene.predators.some(e=>e.tier==='apex'&&e.aggression>.15&&distance(player,e)<300);
     const reaperClose=scene.predators.some(e=>e.tier==='reaper'&&e.aggression>.15&&distance(player,e)<360);
-    const st=depth>rating?'PRESSURE ALERT':player.hull/maxHull()<.35?'LOW HULL':player.oxygen<20?'LOW OXYGEN':player.battery<15?'LOW POWER':player.airborne?'SURFACE BREACH':inHarbour(player)?'DOCK SAFE ZONE':reaperClose?'REAPER CONTACT':apexClose?'APEX CONTACT':enemyClose?'PREDATOR ALERT':'NOMINAL';
+    const st=depth>rating?'PRESSURE ALERT':player.hull/maxHull()<.35?'LOW HULL':player.oxygen/oxygenRate()<75?'LOW OXYGEN':reserveDrive()?'RESERVE DRIVE · 50%':player.battery<15?'LOW POWER':player.airborne?'SURFACE BREACH':inHarbour(player)?'DOCK SAFE ZONE':reaperClose?'REAPER CONTACT':apexClose?'APEX CONTACT':enemyClose?'PREDATOR ALERT':'NOMINAL';
     $('statusStat').textContent=st;$('statusStat').className=(['NOMINAL','DOCK SAFE ZONE','SURFACE BREACH'].includes(st)?'status-safe':st==='PREDATOR ALERT'||st==='APEX CONTACT'||st==='REAPER CONTACT'||st==='PRESSURE ALERT'||st==='LOW HULL'?'status-danger':'status-warning');
     $('signalText').textContent=st==='NOMINAL'?'VESSEL ONLINE':'VESSEL WARNING';
     const setGauge=(kind,value,max)=>{const pct=clamp(value/max*100,0,100);$(kind+'Value').textContent=Math.round(pct)+'%';$(kind+'Bar').style.width=pct+'%';
@@ -2503,7 +2594,7 @@
     $('dockBtn').disabled=!station;$('dockBtn').textContent=station?'◈ DOCK · BANK SALVAGE · UPGRADE':'◈ RETURN TO STATION TO UPGRADE';
     const close=nearestInteractable();const prompt=$('interactionPrompt');
     if(running&&!paused&&close){
-      prompt.textContent=(touchControls?'HOLD USE · ':'[ E ] ')+(close.type==='station'?'DOCK & UPGRADE':close.type==='signal'?(close.kind==='warden-site'?'OBSERVATION BUOY · OPTIONAL':'RECOVER ASSIGNMENT CARGO'):close.type==='giant'?(close.kind==='plate'?'RECOVER IDENTIFICATION PLATE':giantSiteState().opened?'SERVICE SHORTCUT OPEN':giantSiteState().scanned?'RELEASE SERVICE BULKHEAD':'SONAR REQUIRED · SERVICE PANEL'):close.type==='recorder'?'RECOVER BLACK BOX':close.type==='air'?'CLAIM SUPPLY CACHE':close.type==='recovery'?'RECOVER LOST CARGO':distance(player,close)>=60?'MAGNET '+close.type.toUpperCase()+' · '+magnetPower()+' POWER':'SALVAGE '+close.type.toUpperCase());prompt.classList.remove('hidden');
+      prompt.textContent=(touchControls?'HOLD USE · ':'[ E ] ')+(close.type==='station'?'DOCK & UPGRADE':close.type==='signal'?(close.kind==='warden-site'?'OBSERVATION BUOY · OPTIONAL':'RECOVER ASSIGNMENT CARGO'):close.type==='giant'?(close.kind==='plate'?'RECOVER IDENTIFICATION PLATE':giantSiteState().opened?'SERVICE SHORTCUT OPEN':giantSiteState().scanned?'RELEASE SERVICE BULKHEAD':'SONAR REQUIRED · SERVICE PANEL'):close.type==='recorder'?'RECOVER BLACK BOX':close.type==='air'?'CLAIM SUPPLY CACHE':close.type==='battery'?'BATTERY CELL · +25 POWER':close.type==='recovery'?'RECOVER LOST CARGO':distance(player,close)>=60?'MAGNET '+close.type.toUpperCase()+' · '+magnetPower()+' POWER':'SALVAGE '+close.type.toUpperCase());prompt.classList.remove('hidden');
     } else prompt.classList.add('hidden');
     $('mobileInteract').classList.toggle('available',Boolean(running&&!paused&&close));
     $('mobileRepair').setAttribute('aria-disabled',String(paused||!running||player.cargo.scrap<2||player.hull>=maxHull()));
@@ -2538,7 +2629,28 @@
     $('pauseOverlay').classList.add('hidden');$('menuOverlay').classList.add('hidden');
     $('notification').classList.add('hidden');syncPauseButtons();updateUI();audioFrame();
   }
+  function updateCommandOverview(){
+    const dive=loadedActive?.player||(running?player:null),level=currentLevel();
+    $('menuSlotTag').textContent='COMMAND DECK / SLOT '+String(window.AbyssSlots.active).padStart(2,'0');
+    $('menuCampaignName').textContent=campaignTitle;
+    $('menuDestination').textContent=level.name+' · '+level.depth.toLocaleString('en-GB')+' m seabed';
+    const chapters=LEVELS.map((l,i)=>'<span class="'+(l.id===LEVEL_ID?'is-current ':'')+(levelComplete(l.id)?'is-complete':levelUnlocked(i)?'is-open':'is-locked')+'" title="'+l.name+' · '+(levelComplete(l.id)?'complete':levelUnlocked(i)?'unlocked':'locked')+'"><b>'+String(i+1).padStart(2,'0')+'</b><i></i></span>').join('');
+    $('menuCampaignSummary').innerHTML='<div class="campaign-figures"><div><strong>'+totalRecorders()+'<small>/20</small></strong><span>TRANSMISSIONS</span></div><div><strong>'+ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length+'<small>/30</small></strong><span>ACHIEVEMENTS</span></div><div><strong>'+giants.banked.length+'<small>/5</small></strong><span>WRECK IDENTITIES</span></div></div><div class="chapter-track" aria-label="Campaign level progress">'+chapters+'</div>';
+    if(dive)$('menuDestination').textContent+=' · DIVE AT '+depthOf(dive.y)+' m';
+  }
+  function updatePauseOverview(){
+    if(!player)return;
+    const gauges=[['HULL',Math.max(0,player.hull),maxHull(),'#95ddcb'],['OXYGEN',player.oxygen,maxOxygen(),'#8acfe4'],['POWER',player.battery,maxBattery(),'#efce90'],['SHIELD',player.shield,shieldCapacity(),'#b7b3ec']];
+    $('pauseTelemetry').innerHTML='<div class="pause-gauges">'+gauges.map(([label,value,max,color])=>'<div class="pause-gauge '+(max&&value/max<.2?'is-low':'')+'" style="--meter-color:'+color+'"><span>'+label+'</span><strong>'+(max?Math.round(value/max*100)+'<small>%</small>':'<small>UNFITTED</small>')+'</strong><i><b style="width:'+(max?clamp(value/max*100,0,100):0)+'%"></b></i></div>').join('')+'</div><div class="endurance-line"><div><span>AIR REMAINING</span><strong>'+enduranceText(player.oxygen/oxygenRate())+'<small> min:sec</small></strong></div><div><span>PROPULSION</span><strong>'+(reserveDrive()?'RESERVE · 50%':(normalSpeedAt(saved.upgrades.engine)/10).toFixed(1)+' m/s')+'</strong></div></div>';
+    const c=player.cargo;
+    $('pauseCargo').innerHTML='<span class="section-overline">UNBANKED CARGO</span><div><b>'+c.scrap+'<small>SCRAP</small></b><b>'+c.crystal+'<small>CRYSTALS</small></b><b>'+c.recorders.length+'<small>RECORDERS</small></b><b>'+(c.plates?.length||0)+'<small>ID PLATES</small></b></div>';
+    const active=signals.active;
+    $('pauseObjective').innerHTML='<span class="section-overline">'+(active?'ACTIVE ASSIGNMENT':'CURRENT OBJECTIVE')+'</span><strong>'+escapeHTML(active?missionName(active):currentLevel().name)+'</strong><p>'+escapeHTML(active?missionProgress(active):saved.secured.length+' / '+RECORDERS_TOTAL+' recorders banked. '+(player.cargo.recorders.length?'Return safely to secure the recorders aboard.':'Recover every recorder to unlock the next depth.'))+'</p>';
+    $('pauseSaveStatus').textContent=storageHealthy?'CHECKPOINT SAVED ON THIS DEVICE':'SAVE FAILED · KEEP THIS SESSION OPEN';
+    $('pauseSaveStatus').classList.toggle('save-warning',!storageHealthy);
+  }
   function updateMainMenu(){
+    updateCommandOverview();
     $('saveStatus').textContent=storageHealthy?(storageRecovery?'RECOVERED CAMPAIGN BACKUP':'SLOT '+window.AbyssSlots.active+' · '+campaignTitle.toUpperCase()+' · SAVED ON THIS DEVICE'):'STORAGE UNAVAILABLE · PROGRESS WILL NOT BE SAVED';
     $('saveStatus').classList.toggle('save-warning',!storageHealthy||storageRecovery);
     window.dispatchEvent(new Event('abyss-menu'));
@@ -2562,7 +2674,8 @@
     if(!running||!$('menuOverlay').classList.contains('hidden'))return;
     $('pauseTitle').textContent='EXPEDITION PAUSED';
     paused=true;resetPilotInput();persist();window.AbyssAudio?.setScene('pause');
-    $('pauseStats').textContent='DEPTH '+depthOf(player.y)+'m  ·  HULL '+Math.round(player.hull/maxHull()*100)+'%  ·  RECORDERS '+player.cargo.recorders.length+' ABOARD';
+    $('pauseStats').textContent=currentLevel().name+' · '+depthOf(player.y)+' m / '+safeDepth().toLocaleString('en-GB')+' m LIMIT';
+    updatePauseOverview();
     $('pauseOverlay').classList.remove('hidden');
     $('notification').classList.add('hidden');syncPauseButtons();updateUI();
   }
@@ -2602,6 +2715,7 @@
       <li><strong>Dock ordnance:</strong> buy Mk I warheads to unlock mines, then upgrade damage separately from the ammo rack. Warheads deal 60 / 110 / 180 / 240 damage; racks hold <strong>2 / 4 / 6 / 8 mines</strong>. The two-slot Mk I rack comes fitted. Buy mine rounds for 18 credits each in the dock AMMUNITION tab. Docking, launch, upgrades and reload do not grant ammunition. Defeat instead replaces your stock with exactly 10 rail rounds, 3 torpedoes and 3 mines; unfitted weapons stay locked.</li>
       <li><strong>Three threat tiers:</strong> common blue drifters; rarer purple stalkers below 400 m; rare crimson reapers below 800 m. Base health is 100 / 200 / 400 HP; later campaign levels scale health and damage upward. Reaper chase speed matches Mk IV magnetic thrusters exactly: normal thrust cannot pull away in open water. Boost to create distance, or leave mines in its path. All tiers retain finite pursuit ranges. Health bars respect darkness and sonar visibility.</li>
       <li><strong>Exploration:</strong> mobile sees 43% farther in each direction; PC zoom is unchanged. The trench is three times wider, with more obstacles and hunters but fewer salvage pieces and much rarer crystals. The three clear navigation lanes keep descent routes open.</li>
+      <li><strong>Life support and reserve propulsion:</strong> base oxygen lasts 5:33, with recycler upgrades increasing capacity and efficiency. Boost and sonar are the main battery demands. Below 0.5 power, normal thrust falls to half your fitted thruster speed; boost and sonar need power. Rare yellow battery cells automatically restore up to 25 power within 6 m, with a clear path. Full batteries leave them untouched. Spent cells recover after 8 active dive minutes, out of view, at most one per 90 seconds per visited level. Harbour waiting, pause and offline time do not count. Crystals never respawn.</li>
       <li><strong>Flashlight Mk I–IV:</strong> the standard Mk I lamp reaches 26 m. Dock upgrades extend this to 36 / 48 / 62 m and widen the beam. The lamp draws power slowly only while on; battery upgrades improve efficiency. Switch it off with <kbd>L</kbd> / LIGHTS to conserve energy.</li>
       <li><strong>Adaptive ship systems:</strong> the Salvage Magnet automatically collects visible scrap and predator drops at range, at a small power cost. Crystals still require USE / hold E. It cannot recover through rocks or fetch distant recorders/caches. The Kinetic Shield absorbs bites, rock impacts, contact-mine blasts and hot vent damage, but not pressure or oxygen loss; recharge starts after 8 seconds without impacts, uses battery power and pauses during boost. The Sonic Disruptor adds a short stun to nearby predators on sonar-wave arrival, with shorter stuns for stronger tiers. Low battery falls back to a normal scan.</li>
       <li><strong>Persistent campaign resources:</strong> crystals are placed once and never respawn. Scrap regenerates at its original sites: after a five-minute recovery, at most one deposit per 45 active dive seconds per visited level. Recovery pauses in menus, at the harbour and offline, and never creates a deposit in the current view. Each campaign slot has independent timers. Scrap and crystal deposits each yield 2 units. Across five fresh levels, the initial stock provides 15,192 credits worth of scrap and 496 finite crystals. Renewable scrap supports future purchases. Upgrade credit prices are 50% higher; crystal prices are unchanged. Scrap banks at 18 credits per unit; crystals stay a separate currency. All paid ship upgrades cost both. If an optional purchase would consume the last crystals needed for the current recorder gate, the shop reserves them for the hull instead. Predators drop 2 / 4 / 8 scrap when destroyed; collect and dock to bank it. Predators and supply caches refresh on a genuine return to dock after departure. Drops persist until collected. Secured recorders never respawn. Lost or deliberately quit dives leave persistent recovery sites containing all unbanked scrap, crystals and recorders. Recover with E / USE and dock to bank the cargo. Old recovery sites are never erased by a later death. Defeat replaces ammunition with exactly 10 rail rounds, 3 torpedoes and 3 mines; unfitted weapons stay locked. The basic two-slot mine rack may temporarily carry the third emergency mine. Quitting and normal dock visits do not grant this loadout. Active dives now autosave every five simulation seconds and after important actions. Continue restores the ship, cargo, enemies, mines and timers paused. Explicit QUIT or defeat still creates a recovery pod. Twenty achievements are available from the main and pause menus. Each of the three campaign slots has independent levels, achievements and progress.</li>
@@ -2805,7 +2919,7 @@
     if(!p.cargo||!['scrap','crystal'].every(k=>Number.isInteger(p.cargo[k])&&p.cargo[k]>=0)||!Array.isArray(p.cargo.recorders)||!p.cargo.recorders.every(i=>Number.isInteger(i)&&i>=0&&i<l.recorders.length))return null;
     for(const key of ['items','predators','mines','blasts','waves','echoes','terrain'])if(!Array.isArray(value[key])||value[key].length>6000)return null;
     const point=o=>o&&Number.isFinite(o.x)&&Number.isFinite(o.y)&&Math.abs(o.x)<5000&&Math.abs(o.y)<20000;
-    if(!value.items.every(o=>point(o)&&['scrap','crystal','recorder','recovery','air'].includes(o.type)))return null;
+    if(!value.items.every(o=>point(o)&&['scrap','crystal','recorder','recovery','air','battery'].includes(o.type)))return null;
     if(!value.predators.every(o=>point(o)&&Number.isFinite(o.health)&&PREDATOR_TIERS[o.tier]))return null;
     if(!value.mines.every(o=>point(o)&&Number.isFinite(o.armedAt)&&Number.isFinite(o.damage)&&o.damage>=0&&validGuidanceState(o)))return null;
     if(!value.waves.every(o=>point(o)&&Number.isFinite(o.birth)&&Number.isFinite(o.radius)&&Array.isArray(o.contacts)))return null;
@@ -2830,7 +2944,7 @@
     LEVEL_ID=snapshot.levelId;field=campaignLevels[LEVEL_ID];applyLevelGeometry();createWorld();
     clock=snapshot.clock;idCounter=Math.max(cleanCount(snapshot.idCounter),scene.items.length+1);
     player=JSON.parse(JSON.stringify(snapshot.player));player.cargo.plates=GIANTS.plates(player.cargo.plates);player.trip=player.trip||{deepest:depthOf(player.y),hullDamage:0};
-    scene.items=JSON.parse(JSON.stringify(snapshot.items));scene.predators=JSON.parse(JSON.stringify(snapshot.predators));
+    scene.items=JSON.parse(JSON.stringify(snapshot.items));syncBatteryCellItems();scene.predators=JSON.parse(JSON.stringify(snapshot.predators));
     if(Array.isArray(snapshot.signals)&&snapshot.signals.length<=5)scene.signals=JSON.parse(JSON.stringify(snapshot.signals));
     scene.mines=JSON.parse(JSON.stringify(snapshot.mines)).filter(m=>!m.detonated);scene.blasts=JSON.parse(JSON.stringify(snapshot.blasts));
     player.weaponAmmo={...saved.weaponAmmo};player.weaponCooldown={railgun:0,torpedo:0,...player.weaponCooldown};
@@ -3850,7 +3964,7 @@
     if(!['items','wrecks','landmarks','derelictMines','ventFields'].includes(kind))return;
     const type=kind==='items'?object.type:kind==='wrecks'?'wreck':kind==='derelictMines'?'derelict':kind==='ventFields'?'thermal':'landmark';
     const id=kind+':'+(object.id??object.index);
-    field.survey.contacts[id]={x:object.x,y:object.y,type,label:kind==='derelictMines'?'CONTACT MINE':kind==='ventFields'?'THERMAL VENT':kind==='landmarks'?object.name:type==='recorder'?'RECORDER '+(object.index+1):type==='recovery'?(object.kind==='wreck'?'LOST VESSEL':'RECOVERY POD'):type.toUpperCase(),collected:Boolean(object.collected||object.detonated)};
+    field.survey.contacts[id]={x:object.x,y:object.y,type,label:kind==='derelictMines'?'CONTACT MINE':kind==='ventFields'?'THERMAL VENT':kind==='landmarks'?object.name:type==='recorder'?'RECORDER '+(object.index+1):type==='recovery'?(object.kind==='wreck'?'LOST VESSEL':'RECOVERY POD'):type==='battery'?'BATTERY CELL · +25 POWER':type.toUpperCase(),collected:Boolean(object.collected||object.detonated)};
   }
   function surveyVisibleWater(){
     if(!player||!field.survey)return;
@@ -3956,6 +4070,7 @@
       if(id.startsWith('items:')){const object=scene.items.find(o=>'items:'+o.id===id);if(object)collected=object.collected;else if(contact.type==='recorder')collected=saved.secured.includes(Number(id.split('-').at(-1)))||player.cargo.recorders.includes(Number(id.split('-').at(-1)))||recorderInRecovery(Number(id.split('-').at(-1)));}
       g.save();g.translate(p.x,p.y);g.lineWidth=1.4;
       if(collected){g.strokeStyle='#6f9b9477';g.beginPath();g.moveTo(-3,0);g.lineTo(0,3);g.lineTo(5,-4);g.stroke();}
+      else if(contact.type==='battery'){g.strokeStyle='#f2d48b';g.strokeRect(-4,-6,8,12);g.beginPath();g.moveTo(1,-3);g.lineTo(-1,0);g.lineTo(1,0);g.lineTo(-1,3);g.stroke();}
       else if(contact.type==='derelict'){g.strokeStyle='#e6a477';g.beginPath();g.arc(0,0,4,0,TAU);for(let i=0;i<4;i++){const a=i*TAU/4;g.moveTo(Math.cos(a)*4,Math.sin(a)*4);g.lineTo(Math.cos(a)*7,Math.sin(a)*7);}g.stroke();}
       else if(contact.type==='thermal'){g.strokeStyle='#b9cba6';g.beginPath();g.moveTo(-5,4);g.lineTo(0,-5);g.lineTo(5,4);g.stroke();}
       else if(contact.type==='giant'){g.strokeStyle='#a8ddd4';g.strokeRect(-9,-5,18,10);g.beginPath();g.moveTo(-4,-5);g.lineTo(-4,5);g.moveTo(4,-5);g.lineTo(4,5);g.stroke();}
@@ -4023,7 +4138,7 @@
   function openTelemetry(){
     if(!running||!openExplorerDialog('telemetryDialog'))return;
     const rows=[['PRESSURE LIMIT',safeDepth().toLocaleString('en-GB')+' m'],['CURRENT DEPTH',depthOf(player.y).toLocaleString('en-GB')+' m'],
-      ['HULL',Math.ceil(player.hull)+' / '+maxHull()+' HP'],['OXYGEN',Math.ceil(player.oxygen)+' / '+maxOxygen()],['POWER',Math.ceil(player.battery)+' / '+maxBattery()],
+      ['HULL',Math.ceil(player.hull)+' / '+maxHull()+' HP'],['OXYGEN',Math.ceil(player.oxygen)+' / '+maxOxygen()],['AIR REMAINING',enduranceText(player.oxygen/oxygenRate())+' min:sec'],['PROPULSION',reserveDrive()?'RESERVE · 50% SPEED':(normalSpeedAt(saved.upgrades.engine)/10).toFixed(1)+' m/s CRUISE'],['POWER',Math.ceil(player.battery)+' / '+maxBattery()],
       ['NOISE',Math.round(player.noise)+'%'],['SHIELD',shieldCapacity()?Math.ceil(player.shield)+' / '+shieldCapacity()+' HP':'NOT FITTED'],
       ['BOOST',boostUnlocked()?Math.round(player.boost/boostCapacity()*100)+'% · '+(boostCapacity()/BOOST.drain)+'s CAPACITY':'MK I THRUSTERS REQUIRED'],
       ['SONAR',player.scanCooldown>0?Math.ceil(player.scanCooldown)+'s COOLDOWN':'READY · '+scanPowerCost()+' POWER'],
@@ -4043,7 +4158,20 @@
   function openAudio(){
     if(!openExplorerDialog('audioDialog'))return;window.AbyssAudio?.unlock();refreshAudioSettings();$('audioClose').focus({preventScroll:true});
   }
+  function bindCommandFocus(){
+    document.addEventListener('keydown',e=>{
+      if(e.key!=='Tab'||document.querySelector('dialog[open]'))return;
+      const overlay=!$('modalOverlay').classList.contains('hidden')?$('modalOverlay'):!$('pauseOverlay').classList.contains('hidden')?$('pauseOverlay'):!$('menuOverlay').classList.contains('hidden')?$('menuOverlay'):null;
+      if(!overlay)return;
+      const targets=[...overlay.querySelectorAll('button:not(:disabled),a[href],input,select,[tabindex="0"]')].filter(el=>el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden');
+      if(!targets.length)return;
+      const first=targets[0],last=targets.at(-1);
+      if(e.shiftKey&&(document.activeElement===first||!overlay.contains(document.activeElement))){e.preventDefault();last.focus();}
+      else if(!e.shiftKey&&(document.activeElement===last||!overlay.contains(document.activeElement))){e.preventDefault();first.focus();}
+    });
+  }
   function bindLivingUI(){
+    bindCommandFocus();
     bindSurvey();
     $('telemetryBtn').addEventListener('click',openTelemetry);
     $('telemetryLightsBtn').addEventListener('click',()=>toggleLights(true));
@@ -4076,7 +4204,7 @@
     const hint=$('waypointHint');hint.classList.toggle('hidden',!pin);
     if(pin){const d=distance(player,pin)/10;hint.textContent='⌖ '+(d<6?'WAYPOINT REACHED':Math.round(d)+' m TO PIN')+' · '+depthOf(pin.y)+' m DEPTH';}
     const resident=scene.predators.find(e=>e.tier==='warden'&&predatorAlive(e)&&distance(e,player)<600);
-    if(resident&&!['PRESSURE ALERT','LOW HULL','LOW OXYGEN','LOW POWER'].includes($('statusStat').textContent)){$('statusStat').textContent='WARDEN '+resident.wardenPhase.toUpperCase()+' · '+Math.ceil(resident.health/12)+'%';$('statusStat').className=resident.wardenPhase==='recover'?'status-safe':'status-danger';}
+    if(resident&&!['PRESSURE ALERT','LOW HULL','LOW OXYGEN','LOW POWER','RESERVE DRIVE · 50%'].includes($('statusStat').textContent)){$('statusStat').textContent='WARDEN '+resident.wardenPhase.toUpperCase()+' · '+Math.ceil(resident.health/12)+'%';$('statusStat').className=resident.wardenPhase==='recover'?'status-safe':'status-danger';}
     if(!storageHealthy){$('statusStat').textContent='SAVE FAILED · KEEP APP OPEN';$('statusStat').className='status-danger';}
   }
   // === Lost Signals: one assignment, banked transcripts and an optional resident ===
@@ -4455,6 +4583,9 @@
   // Tiny inspection hook for automated smoke tests.
   window.AbyssDiagnostics={state:()=>({slot:window.AbyssSlots.active,campaignTitle,weaponAmmo:{...player.weaponAmmo},weaponCooldown:{...player.weaponCooldown},damageFlashing:player.damageFlashUntil>clock,projectiles:scene.projectiles?.length||0,airborne:Boolean(player.airborne),dockSafe:inHarbour(player),surfaceY:SURFACE.y,splashCount:surfaceEffects.length,version:BUILD.version,versionName:BUILD.name,buildId:BUILD.id,shield:player.shield,shieldCapacity:shieldCapacity(),shieldDelay:player.shieldDelay,magnetRange:magnetRange(),magnetPower:magnetPower(),disruptorMark:saved.upgrades.disruptor,scanPowerCost:scanPowerCost(),upgradeOpen:$('upgradeDialog').open,storageHealthy,campaignId,levelId:LEVEL_ID,levelName:currentLevel().name,crystals:saved.crystals,totalRecorders:totalRecorders(),achievements:ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length,recoveryPods:field.recoveries.length,levelComplete:levelComplete(LEVEL_ID),boostCapacity:boostCapacity(),boostUnlocked:boostUnlocked(),boostMultiplier:boostMultiplier(),boostSeconds:boostCapacity()/BOOST.drain,joystickVisible:$('mobileJoystick').classList.contains('engaged'),zoom:viewport.zoom,flashlightMark:saved.upgrades.flashlight,flashlightLength:flashlightSpec().length,flashlightAngle:flashlightSpec().halfAngle*360/Math.PI,flashlightPowerRate:flashlightPowerRate(),worldWidth:widthAt(player.y)*2,populationCycle:field.cycle,mineAmmo:player.mineAmmo,mineCapacity:mineCapacity(),minePower:saved.upgrades.minePower,mineCapacityMark:saved.upgrades.mineCapacity,mineDamage:mineDamage(),mineCooldown:player.mineCooldown,deployedMines:scene.mines.length,kills:player.kills,normalSpeed:normalSpeedAt(saved.upgrades.engine),maxNormalSpeed:normalSpeedAt(THRUST.maxMark),ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),inputMode:touchControls?'touch':'desktop',vesselLabel:vesselLabel(),boost:player.boost,boosting:player.boosting,boostLocked:player.boostLocked,boostNeedsRelease:player.boostNeedsRelease,boostRechargeDelay:player.boostRechargeDelay,boostPowerRate:boostPowerRate(),boostRechargeRate:boostRechargeRate(),scanCooldown:player.scanCooldown,sonarCost:sonarCost(),mouseHeld:mouseHelm.pointerId!==null,boostHeld,facing:player.facing,hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,hasSavedDive:Boolean(loadedActive),lastSaveWall,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier==='common').length,reaperCount:scene.predators.filter(e=>e.tier==='reaper').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,noise:player.noise})};
   if(location.search.includes('testmode=1')||window.ABYSS_TEST_MODE===true){
+    window.AbyssDiagnostics.lifeline=()=>({oxygenRate:oxygenRate(),maxOxygen:maxOxygen(),maxBattery:maxBattery(),fullEndurance:maxOxygen()/oxygenRate(),reserve:reserveDrive(),effectiveSpeed:normalSpeedAt(saved.upgrades.engine)*propulsionMultiplier(),cells:JSON.parse(JSON.stringify(field.batteryCells)),rules:{...BATTERY_CELLS},energy:{...ENERGY}});
+    window.AbyssDiagnostics.cellPulse=(seconds,active=false)=>{const was=paused;if(active)paused=false;updateBatteryCells(seconds);paused=was;persist();return window.AbyssDiagnostics.lifeline();};
+    window.AbyssDiagnostics.cellPickup=()=>{const was=paused;paused=false;autoCollectBatteryCells();paused=was;updateUI();};
     window.AbyssDiagnostics.pickups=()=>JSON.parse(JSON.stringify(pickupNotices));
     window.AbyssDiagnostics.beamAt=(x,y,r=0)=>beamIntersects(x,y,r);
     window.AbyssDiagnostics.navigationPath=(id,target)=>{const e=scene.predators.find(e=>e.id===id);return e?planPredatorRoute(e,target):[];};
