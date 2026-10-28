@@ -1,0 +1,83 @@
+{
+  "build": "0.17.3-smooth-signals-1",
+  "completed_utc": "2026-10-27T23:51:27.147401+00:00",
+  "results": [
+    {
+      "suite": "audio_comparison",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 4.66
+    },
+    {
+      "suite": "audio_transitions",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 12.39
+    },
+    {
+      "suite": "audio",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 13.21
+    },
+    {
+      "suite": "music",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 6.15
+    },
+    {
+      "suite": "resume",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 12.93
+    },
+    {
+      "suite": "slots",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 11.36
+    },
+    {
+      "suite": "combat_touch",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 5.53
+    },
+    {
+      "suite": "stealth",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 14.07
+    },
+    {
+      "suite": "release",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 1.03
+    },
+    {
+      "suite": "sync",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.14
+    },
+    {
+      "suite": "worker",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.09
+    }
+  ],
+  "runtime_hashes": {
+    "audio.js": "30f01b5f696d352cdfdf8ec59b29fe0184927ae9fb516b6f8517bde0d0b7be37",
+    "game.js": "17258aef1539536725e2429d462f1bccefad0984e9a8f8bbab5a42011a0b3f95",
+    "campaign-slots.js": "2168ebd1468e333ff0b2ef77e5644784b3f691136d8e04427ab6da735052ba3d",
+    "index.html": "6ca1e70e62ad072962fdbdbff059d283d3b481c67e921f0b6700ffc9860d05a9",
+    "styles.css": "ffb6cfb4d40808dadf4c8325812a707898d3892f3bbf295acbb74b8b19521433",
+    "version-sync.js": "2d0894e079a40d3894228ab9f6a86eec721b12bacfe233eee6105b73383f54e9",
+    "service-worker.js": "e0750e4ecb5b1fd334e4bc386a731051e6c87fb073b4aa91e9e11c5b019794c5",
+    "version.json": "a8f96ad5d10282e5c5d98cc0a4dfe1fd08650bc9557cc7711d3cf5dfd0e8aae4"
+  },
+  "baseline_runtime_comparison": "PASS"
+}
