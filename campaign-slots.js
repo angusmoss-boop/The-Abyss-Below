@@ -98,7 +98,7 @@
     }catch(e){error=e.message||'Import failed. Existing campaigns are unchanged.';return false;}
   }
   window.AbyssSlots={active,key,title:()=>cleanName(index.titles[active-1],active),load,save,summaries,activate,remove,exportSlot,importSlot,token,
-    buildId:'0.18.1-guided-ordnance-1',status:()=>({active,key,error,recovered,disabled,corruptActive}),
+    buildId:'0.18.2-recovery-protocol-1',status:()=>({active,key,error,recovered,disabled,corruptActive}),
     // Only pre-v3 profiles may enter the old converter on a first-ever installation.
     allowLegacy:()=>active===1&&isEmpty(expected)&&!oldIndex&&!get(LEGACY)&&!get(LEGACY+'.backup')};
 })();

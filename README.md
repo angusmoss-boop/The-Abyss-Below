@@ -1,16 +1,18 @@
 # The Abyss Below
 
-## v0.18.1: Guided Ordnance
+## v0.18.2: Recovery Protocol
 
-A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. This combat-assistance patch adds gentle predictive railgun correction, strong forward-cone torpedo homing and slow-seeking planted mines. Existing campaign resources, prices, paid ammunition, contracts, artwork, seven-button controls and audio fixes are preserved.
+A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. Death now leaves a persistent wreck carrying **all unbanked scrap, crystals and recorders**. Its beacon is automatically marked and pinned on the level survey. Collect it with E / USE and return to the hub to bank the cargo. Earlier wrecks are never deleted by another death.
 
-Read [GUIDED-ORDNANCE-v0.18.1.md](GUIDED-ORDNANCE-v0.18.1.md) for mechanics and [VERIFICATION-v0.18.1.md](VERIFICATION-v0.18.1.md) for current evidence and limits. The previous content update is documented in [LOST-SIGNALS-v0.18.0.md](LOST-SIGNALS-v0.18.0.md).
+Defeat replaces ammunition with **10 rail rounds, 3 torpedoes and 3 mines**, irrespective of the previous amount. Weapons must still be fitted to fire. Emergency stock persists across saves; the starting two-slot mine rack can temporarily hold the third rescue mine. Ordinary refills still cost credits, and normal paid capacity is unchanged.
+
+Read [RECOVERY-PROTOCOL-v0.18.2.md](RECOVERY-PROTOCOL-v0.18.2.md) for the mechanics and migration details, and [VERIFICATION-v0.18.2.md](VERIFICATION-v0.18.2.md) for current test evidence and limits. Automatic weapon guidance from [v0.18.1](GUIDED-ORDNANCE-v0.18.1.md) and all Lost Signals content remain.
 
 ## Install or update
 
-Apply the update ZIP over v0.18.0 at the repository root. Save and export a campaign backup first; banking cargo is a sensible precaution. Upload the extracted contents together, including all changed runtime files, the worker and `version.json`. Use the complete ZIP for a fresh checkout. These files do not deploy themselves.
+Apply the update ZIP over v0.18.1 at the repository root. Save and export a campaign backup first; banking cargo is a sensible precaution. Upload the extracted contents together, including all changed runtime files, the worker and `version.json`. Use the complete ZIP for a fresh checkout. These files do not deploy themselves.
 
-Reopen the same site online and check for **v0.18.1 / Guided Ordnance**. Keep the same origin and browser profile. Do not clear site data, uninstall or create a new campaign to update. Local/offline/unverified menu status is not proof of a hosted update.
+Reopen the same site online and check for **v0.18.2 / Recovery Protocol**. Keep the same origin and browser profile. Do not clear site data, uninstall or create a new campaign to update. Local/offline/unverified menu status is not proof of a hosted update.
 
 ## Automatic guidance
 
@@ -43,7 +45,7 @@ The standard recovery radius is 6 m. Magnet Mk I-IV extends it to 10 / 14 / 18 /
 | III | 70 / 24 | 200 / 6 |
 | IV | 95 / 32 | 280 / 8 |
 
-Hold **Z / RAIL** for lightly guided rapid shots; tap **X / TORP** for a strongly homing explosive round. Both start unfitted and are purchased in the dock. Buy rail rounds for 6 CR or torpedoes for 24 CR in the dock Ammunition tab. No free refill on docking, upgrades, death or reload. Rocks block shots. Friendly torpedo blasts spare your ship, but detonated abandoned mines remain dangerous. Weapons lock inside the protected harbour and above water.
+Hold **Z / RAIL** for lightly guided rapid shots; tap **X / TORP** for a strongly homing explosive round. Both start unfitted and are purchased in the dock. Buy rail rounds for 6 CR or torpedoes for 24 CR in the dock Ammunition tab. No free refill on docking, upgrades or reload. Defeat replaces stock with the fixed 10 / 3 / 3 rescue loadout. Rocks block shots. Friendly torpedo blasts spare your ship, but detonated abandoned mines remain dangerous. Weapons lock inside the protected harbour and above water.
 
 Mines: use **F / MINE**, capacity 2 / 4 / 6 / 8, ammunition purchased separately at 18 credits per round. No automatic mine refills.
 
@@ -77,7 +79,7 @@ Mobile has an icon-only weapon triangle (railgun above torpedo and mine). A sing
 | Midnight Cathedral | 1,400 m | 5 |
 | Calypso Abyss | 1,800 m | 6 |
 
-Bank all recorders in a level to unlock the next. Switch freely between unlocked levels at the hub. Crystals never respawn. Collected scrap sites become eligible after 5 active dive minutes, then restore at most one deposit per 45 seconds per visited level and only out of view. Pauses, harbour waiting, inactive campaigns and offline time do not advance these timers. Predators and caches refresh after a genuine dive and return to that level's dock. Defeat or explicit Quit leaves recoverable resource cargo. Ordinary closing/reloading restores the saved expedition paused instead.
+Bank all recorders in a level to unlock the next. Switch freely between unlocked levels at the hub. Crystals never respawn. Collected scrap sites become eligible after 5 active dive minutes, then restore at most one deposit per 45 seconds per visited level and only out of view. Pauses, harbour waiting, inactive campaigns and offline time do not advance these timers. Predators and caches refresh after a genuine dive and return to that level's dock. Defeat or explicit Quit leaves all unbanked scrap, crystals and recorders at a persistent recovery site; only defeat grants the exact 10 / 3 / 3 rescue ammunition. Ordinary closing/reloading restores the saved expedition paused instead.
 
 Scrap becomes 18 credits per unit on docking; crystals bank separately. All paid upgrades require both. Initial resources total 15,192 credits and 496 finite crystals per fresh campaign. All 59 paid increments across 14 systems cost 22,765 credits and 464 crystals. Credit upgrade prices are 50% higher, rounded up, and crystal prices are unchanged. Use recovered scrap and predator salvage for additional upgrades and all weapon ammunition. These are arithmetic budgets, not a fully playtested balance guarantee.
 
@@ -100,9 +102,9 @@ The version manifest includes the exact runtime checksums. Inconsistent deployed
 Current targeted test runner:
 
 ```sh
-python tests/run_v0180.py
+python tests/run_v0182.py
 ```
 
-Tests require Python, Pillow, Playwright, Node and Chromium. Current evidence is in `verification/v0.18.0/`. The UI tests render production files in isolated documents with synthetic storage and the actual image bytes. They are not a real Android install or a hosted/offline integration result. Historical test runners remain in the archive for reference and may assert old release markers.
+Tests require Python, Pillow, Playwright, Node and Chromium. Current evidence is in `verification/v0.18.2/`. The UI tests render production files in isolated documents with synthetic storage and the actual image bytes. They are not a real Android install or a hosted/offline integration result. Historical test runners remain in the archive for reference and may assert old release markers.
 
-This remains a web/PWA source package, not a signed Android app bundle or Play Store release. Read **VERIFICATION-v0.18.0.md** for current tested/untested boundaries and **SALVAGE-SUPPLY-v0.17.0.md** for economy details.
+This remains a web/PWA source package, not a signed Android app bundle or Play Store release. Read **VERIFICATION-v0.18.2.md** for current tested/untested boundaries and **SALVAGE-SUPPLY-v0.17.0.md** for economy details.

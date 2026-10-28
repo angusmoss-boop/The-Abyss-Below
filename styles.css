@@ -1,5 +1,5 @@
 /* Shell, dock and menu skin. */
-:root{--abyss-build:"0.18.1-guided-ordnance-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
+:root{--abyss-build:"0.18.2-recovery-protocol-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
 body{background:radial-gradient(ellipse at 40% -20%,#12344a 0%,#061019 65%)}
@@ -713,7 +713,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 }
 @media(prefers-reduced-motion:reduce){body.touch-ui .action-circle,body.touch-ui .ring-value,body.touch-ui .stock-value{transition:none}}
 
-/* v0.18.1 / Lost Signals: approved artwork, unchanged cockpit and controls. */
+/* v0.18.2 / Lost Signals: approved artwork, unchanged cockpit and controls. */
 .brand-app-icon{width:44px;height:44px;object-fit:cover;border-radius:12px;box-shadow:0 0 20px #48bcdf22;border:1px solid #4a8c9b66;flex:none}
 #menuOverlay{background:radial-gradient(ellipse at 25% 30%,#123c4be8,#030c15f5 70%);padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
 #menuOverlay .crystal-menu{display:grid;grid-template-columns:43% minmax(0,1fr);width:min(950px,100%);max-height:calc(100dvh - 36px);padding:0;overflow:auto;border:1px solid #38657399;border-radius:22px;background:#071923;box-shadow:0 30px 110px #000b;text-align:left;scrollbar-width:thin;scrollbar-color:#3c6470 #071923}
@@ -781,7 +781,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 }
 @media(prefers-reduced-motion:reduce){#menuOverlay button{transition:none}}
 
-/* v0.18.1 Lost Signals: the archive and dispatch desk share the existing cockpit palette. */
+/* v0.18.2 Lost Signals: the archive and dispatch desk share the existing cockpit palette. */
 .dock-tabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:thin;flex-shrink:0;padding-bottom:5px;}
 .dock-tabs>[role=tab]{flex:1 0 auto;min-width:82px;padding:11px 10px;font-size:10px;white-space:nowrap;}
 .signals-intro{padding:8px 0 18px;border-bottom:1px solid #24444e;margin-bottom:16px;}
@@ -862,3 +862,11 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
  .signals-dialog .explorer-header{padding:10px 18px;}.signals-dialog .explorer-header h2{font-size:20px;margin:4px 0;}.signals-dialog .explorer-header p{display:none;}
  .journal-tabs{padding-bottom:8px;}.journal-tabs button{min-height:36px;}.archive-layout{display:grid;grid-template-columns:225px 1fr;}.transmission-list{max-height:180px;}.transcript{padding:18px 22px;}.transcript h3{font-size:23px;}.signals-dialog .explorer-footer{padding:8px 18px;}
 }
+
+/* Recovery Protocol: death manifest and one-time emergency stock. */
+.recovery-manifest{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:16px 0}
+.recovery-manifest span{padding:12px 6px;border:1px solid #d8a96c55;border-radius:10px;background:#e8b7730b;text-align:center;font-size:10px;letter-spacing:1px;color:#a9b8bf}
+.recovery-manifest b{display:block;font-size:25px;letter-spacing:0;color:#f4d4a6;margin-bottom:3px}
+.rescue-loadout{border:1px solid #75cfbb42;border-radius:12px;background:#102b2c88;padding:13px 15px;margin-top:15px;display:grid;gap:7px}
+.rescue-loadout span{font-size:9px;letter-spacing:1.5px;color:#8cb5ad}.rescue-loadout strong{font-size:13px;color:#b3f2db}.rescue-loadout small{font-size:11px;line-height:1.5;color:#9bb5b9}
+@media(max-height:500px){.recovery-manifest{margin:9px 0}.recovery-manifest span{padding:6px}.recovery-manifest b{font-size:19px}.rescue-loadout{padding:9px 12px;margin-top:9px}}

@@ -2,7 +2,7 @@
    Backups are portable JSON, not encrypted, cloud-synchronised or cheat-proof. */
 (() => {
   'use strict';
-  const buildId='0.18.1-guided-ordnance-1';
+  const buildId='0.18.2-recovery-protocol-1';
   const levels=['sunbreak-shelf','glassbone-rift','drowned-gardens','midnight-cathedral','calypso-abyss'];
   const lengths=[2,3,4,5,6];
   const chapters=['The wrong timestamp','Something in the walls','An ocean that remembers','The listening chamber','The other end of the call'];
@@ -80,12 +80,27 @@
     const limits={hull:7,oxygen:5,battery:5,engine:4,sonar:4,quiet:4,minePower:4,mineCapacity:4,flashlight:4,magnet:4,shield:4,disruptor:4,railgun:4,torpedo:4};
     for(const [k,max]of Object.entries(limits))if(!Number.isInteger(p.upgrades?.[k])||p.upgrades[k]<(['flashlight','mineCapacity'].includes(k)?1:0)||p.upgrades[k]>max)fail('Invalid upgrade: '+k);
     if(!['railgun','torpedo'].every(k=>Number.isInteger(p.weaponAmmo?.[k])&&p.weaponAmmo[k]>=0&&p.weaponAmmo[k]<100))fail('Invalid weapon ammunition.');
-    if(p.mineAmmo>[0,2,4,6,8][p.upgrades.mineCapacity]||p.weaponAmmo.railgun>[0,12,18,24,32][p.upgrades.railgun]||p.weaponAmmo.torpedo>[0,3,4,6,8][p.upgrades.torpedo])fail('Ammunition exceeds fitted capacity.');
+    if(p.mineAmmo>Math.max(3,[0,2,4,6,8][p.upgrades.mineCapacity])||p.weaponAmmo.railgun>Math.max(10,[0,12,18,24,32][p.upgrades.railgun])||p.weaponAmmo.torpedo>Math.max(3,[0,3,4,6,8][p.upgrades.torpedo]))fail('Ammunition exceeds fitted capacity.');
     let fieldCount=0;for(const [id,f]of Object.entries(data.levels)){
       const i=levels.indexOf(id);if(i<0||f?.schema!==3||!Number.isInteger(f.seed)||f.seed<0||f.seed>0xffffffff||!Number.isInteger(f.cycle)||f.cycle<0)fail('Invalid level record.');
       if(!Array.isArray(f.loot)||!f.loot.length||f.loot.length>3000||!Array.isArray(f.looted)||!Array.isArray(f.secured)||!f.secured.every(v=>Number.isInteger(v)&&v>=0&&v<lengths[i])||new Set(f.secured).size!==f.secured.length)fail('Invalid level resources or recorders.');
       if(!f.loot.every(n=>typeof n.id==='string'&&/^loot-\d+$/.test(n.id)&&['scrap','crystal','air'].includes(n.type)&&Number.isFinite(n.x)&&Math.abs(n.x)<3000&&Number.isFinite(n.y)&&n.y>=58&&n.y<=18120&&Number.isInteger(n.quantity)&&n.quantity>=1&&n.quantity<=100)||new Set(f.loot.map(n=>n.id)).size!==f.loot.length)fail('Invalid resource layout.');
       for(const key of ['drops','recoveries'])if(!Array.isArray(f[key])||f[key].length>6000)fail('Invalid recovery data.');
+      const ids=new Set(),heldRecorders=new Set(f.secured);
+      for(const r of f.recoveries){
+        if(!r||typeof r.id!=='string'||!/^recovery-/.test(r.id)||ids.has(r.id)||!Number.isFinite(r.x)||Math.abs(r.x)>3000||!Number.isFinite(r.y)||r.y<58||r.y>18120||!['scrap','crystal'].every(k=>Number.isInteger(r[k])&&r[k]>=0&&r[k]<=1e9))fail('Invalid recovery manifest.');
+        ids.add(r.id);
+        if(r.recorders!==undefined&&(!Array.isArray(r.recorders)||!r.recorders.every(n=>Number.isInteger(n)&&n>=0&&n<lengths[i])||new Set(r.recorders).size!==r.recorders.length))fail('Invalid recovery recorders.');
+        for(const n of r.recorders||[]){if(heldRecorders.has(n))fail('A recorder has more than one owner.');heldRecorders.add(n);}
+      }
+      if(f.pendingCargo?.recorders!==undefined&&(!Array.isArray(f.pendingCargo.recorders)||new Set(f.pendingCargo.recorders).size!==f.pendingCargo.recorders.length||!f.pendingCargo.recorders.every(n=>Number.isInteger(n)&&n>=0&&n<lengths[i]&&!heldRecorders.has(n))))fail('Invalid pending recorders.');
+      if(data.activeDive?.levelId===id){
+        const carried=data.activeDive.player?.cargo?.recorders;
+        if(!Array.isArray(carried)||new Set(carried).size!==carried.length||carried.some(n=>heldRecorders.has(n)))fail('Duplicate active recorder ownership.');
+        const pods=data.activeDive.items?.filter(n=>n.type==='recovery'&&!n.collected)||[];
+        if(pods.length!==f.recoveries.length||new Set(pods.map(n=>n.id)).size!==pods.length)fail('Dive recovery manifest is inconsistent.');
+        for(const pod of pods){const r=f.recoveries.find(n=>n.id===pod.id);if(!r||pod.scrap!==r.scrap||pod.crystal!==r.crystal||JSON.stringify(pod.recorders||[])!==JSON.stringify(r.recorders||[]))fail('Dive recovery manifest is inconsistent.');}
+      }
       fieldCount++;
     }
     if(!fieldCount||!data.levels[data.selectedLevel])fail('Selected level is missing.');
@@ -107,7 +122,7 @@
     }
     return true;
   }
-  function pack(payload,version='0.18.1'){
+  function pack(payload,version='0.18.2'){
     validateCampaign(payload);const text=JSON.stringify(payload);
     return JSON.stringify({format:'the-abyss-below/campaign',formatVersion:1,gameVersion:version,exportedAt:new Date().toISOString(),integrity:{algorithm:'fnv1a32',value:checksum(text)},payload},null,2);
   }

@@ -18,11 +18,11 @@ Previous destinations remain available for resource completion and repeat hunts.
 
 ### Economy
 
-Two independent banked wallets: credits from scrap (18 each), and crystal units. All paid ship-upgrade increments consume both. Ammo remains credits-only and is never granted by upgrades, death, launch or docking. The starting flashlight and two-slot mine rack remain fitted but the warhead launcher still needs purchase.
+Two independent banked wallets: credits from scrap (18 each), and crystal units. All paid ship-upgrade increments consume both. Ordinary ammo refills remain credits-only. Upgrades, launch and docking never grant rounds; defeat replaces owned stock with exactly 10 rail rounds, 3 torpedoes and 3 mines. Weapons still require their normal upgrades, and emergency reserves survive until used. The starting flashlight and two-slot mine rack remain fitted but the warhead launcher still needs purchase.
 
 A fresh campaign offers 15,192 CR of fixed scrap and 496 crystal units against 12,223 CR + 432 crystals for all 51 paid upgrades. Predator drops supply renewable credits. Crystal stock is finite, with a margin and per-pressure-gate spending guards. A shop warning protects the next required hull steps from optional spending that would strand access to deeper crystals.
 
-Unbanked fixed resources are journaled and become recovery pods after defeat/quit/reload. This protects the finite crystal economy without pretending the full active expedition has been saved. Pods require physical collection and banking; expendables are not refunded.
+Active expeditions autosave and resume paused. Death and deliberate quit leave persistent recovery sites containing every unbanked scrap unit, crystal and recorder. Invalid checkpoints fall back to the cargo journal. Defeat alone grants fixed rescue ammunition. Recovering a site transfers cargo, not banked progress, and banking recorders unlocks the next level. Older sites remain across later deaths. Each level and campaign slot has independent recovery ownership.
 
 ### Difficulty and navigation
 

@@ -1,5 +1,18 @@
 # v0.18.1 / Guided Ordnance
 
+## v0.18.2 / Recovery Protocol
+
+- Persistent lost-vessel manifests include unbanked scrap, crystals and recorder IDs; recorder-only losses are retained.
+- Recorders in recovery sites are suppressed at original wrecks until recovered and banked. They never simultaneously occupy two sites.
+- Loss beacons are marked and pinned automatically, with a distinctive broken-hull marker and cargo summary on the defeat screen.
+- Loss position is retained even beyond hull pressure limits. Surface/berth and rock overlaps move into nearby recoverable water.
+- Repeated deaths preserve older sites; re-losing recovered cargo creates one new site rather than duplicating it.
+- Each defeat replaces owned stock with exactly 10 rail rounds, 3 torpedoes and 3 mines. Unfitted launchers remain locked; the starter mine rack temporarily accepts its third emergency round.
+- Dock purchases keep normal capacities/prices. Zero/negative refill transactions and UI ring overflow are guarded.
+- Active checkpoints, per-level persistence, all three slots and portable backups carry the new manifests and rescue stock.
+- Ordinary quits keep cargo in a recovery pod without granting rescue ammunition. No economy, homing, controls or audio changes.
+
+
 - Railgun: limited forward acquisition and predictive course correction; torpedoes: wider acquisition and stronger bounded steering.
 - Stable target locks with line-of-sight/range/cone checks, live-target revalidation and safe reacquisition. No automatic fire or new controls.
 - Armed player mines slowly seek local predators, remain tethered to a finite patrol radius around their drop position, and stop at terrain or target loss.
