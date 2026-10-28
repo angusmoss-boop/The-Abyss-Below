@@ -1,0 +1,4 @@
+PASS actual v0.18.1 active save preserved, no retroactive ammo; death manifests and reset stocks isolated across all three slot UI transitions
+PASS export/import round-trip retains exact wreck and emergency stock; out-of-range/duplicate recorder ownership, bad amounts and mismatched checkpoint manifests rejected
+PASS old scrap/crystal pods migrate with empty recorder lists; already-reset old recorders remain in their original wrecks; no retroactive rescue grant
+PASS invalid checkpoint journals all cargo into one recoverable site without minting death stock; next reload does not duplicate the recovery
