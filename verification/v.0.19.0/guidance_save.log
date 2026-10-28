@@ -1,0 +1,3 @@
+PASS actual v0.18.0 active rail/torpedo/mine migration, all economies and histories preserved; lazy guidance initialization; inactive campaign slots untouched
+PASS locked target IDs, turned velocities, launch heading, mine anchor/velocity and cooldowns restore exactly, paused, with working target references
+PASS portable guided campaign accepted; malformed lock IDs, mine anchors and headings rejected safely without mutating campaigns

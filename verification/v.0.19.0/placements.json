@@ -1,0 +1,202 @@
+[
+  {
+    "level": 1,
+    "seed": 17,
+    "passed": true
+  },
+  {
+    "level": 1,
+    "seed": 53,
+    "passed": true
+  },
+  {
+    "level": 1,
+    "seed": 1704,
+    "passed": true
+  },
+  {
+    "level": 1,
+    "seed": 1800,
+    "passed": true
+  },
+  {
+    "level": 1,
+    "seed": 9911,
+    "passed": true
+  },
+  {
+    "level": 1,
+    "seed": 43125,
+    "passed": true
+  },
+  {
+    "level": 1,
+    "seed": 65535,
+    "passed": true
+  },
+  {
+    "level": 1,
+    "seed": 1234567,
+    "passed": true
+  },
+  {
+    "level": 2,
+    "seed": 17,
+    "passed": true
+  },
+  {
+    "level": 2,
+    "seed": 53,
+    "passed": true
+  },
+  {
+    "level": 2,
+    "seed": 1704,
+    "passed": true
+  },
+  {
+    "level": 2,
+    "seed": 1800,
+    "passed": true
+  },
+  {
+    "level": 2,
+    "seed": 9911,
+    "passed": true
+  },
+  {
+    "level": 2,
+    "seed": 43125,
+    "passed": true
+  },
+  {
+    "level": 2,
+    "seed": 65535,
+    "passed": true
+  },
+  {
+    "level": 2,
+    "seed": 1234567,
+    "passed": true
+  },
+  {
+    "level": 3,
+    "seed": 17,
+    "passed": true
+  },
+  {
+    "level": 3,
+    "seed": 53,
+    "passed": true
+  },
+  {
+    "level": 3,
+    "seed": 1704,
+    "passed": true
+  },
+  {
+    "level": 3,
+    "seed": 1800,
+    "passed": true
+  },
+  {
+    "level": 3,
+    "seed": 9911,
+    "passed": true
+  },
+  {
+    "level": 3,
+    "seed": 43125,
+    "passed": true
+  },
+  {
+    "level": 3,
+    "seed": 65535,
+    "passed": true
+  },
+  {
+    "level": 3,
+    "seed": 1234567,
+    "passed": true
+  },
+  {
+    "level": 4,
+    "seed": 17,
+    "passed": true
+  },
+  {
+    "level": 4,
+    "seed": 53,
+    "passed": true
+  },
+  {
+    "level": 4,
+    "seed": 1704,
+    "passed": true
+  },
+  {
+    "level": 4,
+    "seed": 1800,
+    "passed": true
+  },
+  {
+    "level": 4,
+    "seed": 9911,
+    "passed": true
+  },
+  {
+    "level": 4,
+    "seed": 43125,
+    "passed": true
+  },
+  {
+    "level": 4,
+    "seed": 65535,
+    "passed": true
+  },
+  {
+    "level": 4,
+    "seed": 1234567,
+    "passed": true
+  },
+  {
+    "level": 5,
+    "seed": 17,
+    "passed": true
+  },
+  {
+    "level": 5,
+    "seed": 53,
+    "passed": true
+  },
+  {
+    "level": 5,
+    "seed": 1704,
+    "passed": true
+  },
+  {
+    "level": 5,
+    "seed": 1800,
+    "passed": true
+  },
+  {
+    "level": 5,
+    "seed": 9911,
+    "passed": true
+  },
+  {
+    "level": 5,
+    "seed": 43125,
+    "passed": true
+  },
+  {
+    "level": 5,
+    "seed": 65535,
+    "passed": true
+  },
+  {
+    "level": 5,
+    "seed": 1234567,
+    "passed": true
+  }
+]
