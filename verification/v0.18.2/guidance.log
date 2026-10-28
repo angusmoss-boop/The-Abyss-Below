@@ -1,0 +1,8 @@
+PASS six formerly off-axis misses hit: modest rail correction, much wider torpedo capture, both sides of the bow
+PASS exact forward-cone boundaries; no target acquisition to the side or behind
+PASS central-target preference, stable lock, dead-target reacquisition and no targeting of fish, loot or abandoned mines
+PASS rock occlusion, physical projectile collision and visible-secondary selection
+PASS bounded gradual turning, stronger torpedo turn rate, unchanged projectile speed and finite range
+PASS predictive interception of four moving targets without perfect alignment
+PASS railgun and torpedo hit off-axis live AI predators during normal simulation
+PASS homing against an awakened Warden still respects its armour and recovery vulnerability

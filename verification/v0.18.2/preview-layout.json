@@ -1,0 +1,45 @@
+{
+  "note": "Synthetic equipment; actual generated resource pickups, pressure defeat and production renderer. Not physical-device evidence.",
+  "layouts": [
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "touch": true,
+      "status": "PASS"
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "touch": true,
+      "status": "PASS"
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "touch": true,
+      "status": "PASS"
+    },
+    {
+      "viewport": [
+        640,
+        360
+      ],
+      "touch": true,
+      "status": "PASS"
+    },
+    {
+      "viewport": [
+        1440,
+        900
+      ],
+      "touch": false,
+      "status": "PASS"
+    }
+  ]
+}
