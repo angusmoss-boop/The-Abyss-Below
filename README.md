@@ -1,3 +1,11 @@
+# Current release: v0.20.0 / Fluid Frontiers
+
+Apply this release over v0.19.0. Export a campaign backup, then replace the complete extracted update contents together; keep the same origin and site data. See [Fluid Frontiers](FLUID-FRONTIERS-v0.20.0.md) for the new flashlight fans, solid predator movement, individual fish schooling, pickup notices, circular desktop combat HUD, thirty achievements and 25% credit-price uplift. Crystal and ammunition prices are unchanged.
+
+Current reproduction: `python tests/run_v0200.py`. Current evidence: `VERIFICATION-v0.20.0.md` and `verification/v0.20.0/`. Older sections and reports below describe earlier builds, not the current verification status.
+
+---
+
 # The Abyss Below
 
 ## v0.19.0: Forgotten Giants

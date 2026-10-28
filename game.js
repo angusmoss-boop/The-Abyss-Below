@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const BUILD = Object.freeze({version:'0.19.0',name:'Forgotten Giants',id:'0.19.0-forgotten-giants-1'});
+  const BUILD = Object.freeze({version:'0.20.0',name:'Fluid Frontiers',id:'0.20.0-fluid-frontiers-1'});
   window.AbyssBuild=BUILD;
   const GIANTS=window.AbyssGiants;
   let giantSite=null,giantWallCache=[];
@@ -45,7 +45,8 @@
   const ammoStorageLimit = (id,upgrades) => Math.max(RESPAWN_AMMO[id],id==='mine'?MINES.capacity[upgrades.mineCapacity]:WEAPONS[id].capacity[upgrades[id]]);
   const AMMO_PRICE = 18;
   const WEAPON_AMMO_PRICES = Object.freeze({railgun:6,torpedo:24});
-  const CREDIT_PRICE_FACTOR = 1.5;
+  const CREDIT_PRICE_FACTOR = 1.5; // v0.17 baseline; the new uplift is applied after its rounding.
+  const CREDIT_UPLIFT = 1.25;
   const SALVAGE_REGEN = Object.freeze({delay:300,interval:45,offscreenMargin:100,pickupInterval:.25});
   const freshSalvage = () => ({version:1,elapsed:0,nextSpawnAt:0,harvested:[],due:{}});
   function normaliseSalvage(value,loot,looted){
@@ -77,9 +78,9 @@
   const FLASHLIGHT = Object.freeze([
     null,
     Object.freeze({length:260,halfAngle:.29,power:.04}),
-    Object.freeze({length:360,halfAngle:.38,power:.055}),
-    Object.freeze({length:480,halfAngle:.48,power:.075}),
-    Object.freeze({length:620,halfAngle:.60,power:.10})
+    Object.freeze({length:360,halfAngle:35*Math.PI/180,power:.055,sector:true}),
+    Object.freeze({length:480,halfAngle:55*Math.PI/180,power:.075,sector:true}),
+    Object.freeze({length:620,halfAngle:75*Math.PI/180,power:.10,sector:true})
   ]);
   const MOBILE_ZOOM = .70; // World-only zoom. DOM instruments and touch targets keep their size.
   const LEVELS = Object.freeze([
@@ -217,7 +218,7 @@
     {id:'oxygen', name:'AIR RECYCLER', desc:'Expand oxygen capacity and slow oxygen consumption.', base:70, limit:5},
     {id:'battery', name:'DEEP-CELL BATTERY', desc:'More energy, cheaper boost bursts and 10% faster boost recharge per level.', base:65, limit:5},
     {id:'engine', name:'MAGNETIC THRUSTERS', desc:'Mk I unlocks boost. Every mark improves normal speed, boost speed and boost endurance: 3 / 4 / 5 / 6 seconds.', base:75, limit:4},
-    {id:'flashlight', name:'EXPLORATION FLASHLIGHT', desc:'Mk I fitted. Upgrade the forward beam for longer reach and a wider view. Uses power slowly while switched on.', prices:[0,75,150,300], limit:4},
+    {id:'flashlight', name:'EXPLORATION FLASHLIGHT', desc:'Mk I keeps the original beam. Mk II / III / IV widen forward coverage to 70 / 110 / 150 degrees with longer reach. The rear stays dark. Uses power slowly while switched on.', prices:[0,75,150,300], limit:4},
     {id:'sonar', name:'WIDEBAND SONAR', desc:'Wider scans, longer-lived echoes, lower power cost and shorter cooldowns.', base:90, limit:4},
     {id:'quiet', name:'SILENT DRIVE', desc:'Passively suppress movement noise and reduce predator detection at every speed.', base:95, limit:4},
     {id:'minePower', name:'SEA MINE WARHEADS', desc:'Buy Mk I to unlock mines. Four warhead tiers: 60 / 110 / 180 / 240 damage.', prices:[100,180,320,520], limit:4},
@@ -317,27 +318,32 @@
   function beamIntersects(x,y,radius=0){
     if(!headlightsActive())return false;
     const dx=x-player.x,dy=y-player.y,cos=Math.cos(player.facing),sin=Math.sin(player.facing);
-    const forward=dx*cos+dy*sin-LIGHTING.bowOffset,side=-dx*sin+dy*cos;
-    return forward>=-radius && forward<=flashlightSpec().length+radius &&
-      Math.abs(side)<=LIGHTING.nearHalfWidth+Math.max(0,forward)*Math.tan(flashlightSpec().halfAngle)+radius;
+    const forward=dx*cos+dy*sin-LIGHTING.bowOffset,side=-dx*sin+dy*cos,spec=flashlightSpec();
+    if(!spec.sector)return forward>=-radius && forward<=spec.length+radius &&
+      Math.abs(side)<=LIGHTING.nearHalfWidth+Math.max(0,forward)*Math.tan(spec.halfAngle)+radius;
+    // A radial fan, not a very wide rectangle. The bow stays the apex, so no
+    // tier reveals water behind the vessel. The radius allows partial silhouettes.
+    const reach=Math.hypot(forward,side);
+    return forward>=-radius&&reach<=spec.length+radius&&
+      Math.abs(Math.atan2(side,Math.max(0,forward)))<=spec.halfAngle+Math.asin(Math.min(1,(radius+LIGHTING.nearHalfWidth)/Math.max(1,reach)));
   }
   function buildBeamTexture(){
-    // Finite, feathered cone: no all-round visibility bubble and no stray blur outside it.
     const mark=saved.upgrades.flashlight;
     if(beamTextures.has(mark))return beamTextures.get(mark);
-    const length=flashlightSpec().length,halfHeight=Math.ceil(LIGHTING.nearHalfWidth+length*Math.tan(flashlightSpec().halfAngle));
-    const scale=2,texture=document.createElement('canvas');
-    texture.width=length*scale;texture.height=halfHeight*2*scale;
+    const spec=flashlightSpec(),length=spec.length;
+    const halfHeight=Math.ceil(spec.sector?length*Math.sin(spec.halfAngle)+LIGHTING.nearHalfWidth:LIGHTING.nearHalfWidth+length*Math.tan(spec.halfAngle));
+    // Bound the wide fan's allocation. Mk I retains its original pixel algorithm.
+    const scale=spec.sector?1.5:2,texture=document.createElement('canvas');
+    texture.width=Math.ceil(length*scale);texture.height=Math.ceil(halfHeight*2*scale);
     const target=texture.getContext('2d'),pixels=target.createImageData(texture.width,texture.height);
     for(let py=0;py<texture.height;py++){
       const side=Math.abs((py+.5)/scale-halfHeight);
       for(let px=0;px<texture.width;px++){
-        const forward=(px+.5)/scale,halfWidth=LIGHTING.nearHalfWidth+forward*Math.tan(flashlightSpec().halfAngle);
-        const lateral=1-smoothstep(.55,1,side/halfWidth);
-        const reach=1-smoothstep(.10,1,forward/length);
+        const forward=(px+.5)/scale,halfWidth=LIGHTING.nearHalfWidth+forward*Math.tan(spec.halfAngle);
+        const lateral=spec.sector?1-smoothstep(.73,1,Math.atan2(Math.max(0,side-LIGHTING.nearHalfWidth),forward)/spec.halfAngle):1-smoothstep(.55,1,side/halfWidth);
+        const reach=1-smoothstep(.10,1,(spec.sector?Math.hypot(forward,side):forward)/length);
         const i=(py*texture.width+px)*4;
-        pixels.data[i]=150;pixels.data[i+1]=226;pixels.data[i+2]=238;
-        pixels.data[i+3]=Math.round(255*lateral*reach);
+        pixels.data[i]=150;pixels.data[i+1]=226;pixels.data[i+2]=238;pixels.data[i+3]=Math.round(255*lateral*reach);
       }
     }
     target.putImageData(pixels,0,0);
@@ -366,7 +372,7 @@
   const scanPowerCost = () => sonarCost()+(disruptorReady()?DISRUPTOR.power[saved.upgrades.disruptor]:0);
   const mineCapacity = () => MINES.capacity[saved.upgrades.mineCapacity];
   const mineDamage = () => MINES.damage[saved.upgrades.minePower];
-  const upgradeCost = (upgrade,level) => Math.ceil((upgrade.prices?.[level]??Math.floor(upgrade.base*Math.pow(1.55,level)))*CREDIT_PRICE_FACTOR);
+  const upgradeCost = (upgrade,level) => Math.ceil(Math.ceil((upgrade.prices?.[level]??Math.floor(upgrade.base*Math.pow(1.55,level)))*CREDIT_PRICE_FACTOR)*CREDIT_UPLIFT);
   const crystalCost = (upgrade,level) => CRYSTAL_PRICES[upgrade.id][level]||0;
   const predatorAlive = enemy => !enemy.dead && enemy.health>0;
   function createPredator(data){
@@ -615,6 +621,7 @@
     if(closest&&collectItem(closest,true))player.autoSalvageCooldown=SALVAGE_REGEN.pickupInterval;
   }
   function newDive() {
+    pickupNotices=[];
     // A new launch is distinct from restoring the existing expedition.
     loadedActive=null;running=false;buildingWorld=true;createWorld();buildingWorld=false;dockVisitActive=!field.awaitingDock;
     player={x:600,y:160,vx:0,vy:0,airborne:false,surfaceCooldownUntil:0,facing:-Math.PI/2,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,damageCooldown:0,scanCooldown:0,boost:boostCapacity(),boosting:false,boostLocked:false,boostNeedsRelease:false,boostRechargeDelay:0,cargo:{scrap:0,crystal:0,recorders:[],plates:[]},lastRepair:-100,mineAmmo:0,mineCooldown:0,weaponAmmo:{...saved.weaponAmmo},weaponCooldown:{railgun:0,torpedo:0},damageFlashUntil:0,nextDamageFlash:0,kills:0,shield:shieldCapacity(),shieldDelay:0,shieldFlashUntil:0,magnetFlash:null,autoSalvageCooldown:0,trip:{deepest:0,hullDamage:0}};
@@ -630,6 +637,36 @@
   }
   function addEvent(msg) {eventLines.unshift(msg);eventLines=eventLines.slice(0,3);$('eventLog').innerHTML=eventLines.map(x=>'<div>◈ '+x+'</div>').join('');}
   function announce(message,duration=2.8) { $('notification').textContent=message;$('notification').classList.remove('hidden');toastUntil=clock+duration; }
+  let pickupNotices=[];
+  const PICKUP_STYLE=Object.freeze({scrap:['#9ce4d3','SCRAP'],crystal:['#c6a2ff','CRYSTAL'],recorder:['#f3ce86','RECORDER'],plate:['#f3ce86','PLATE'],air:['#9bdcec','OXYGEN'],power:['#e6c78e','POWER'],contract:['#a9dced','PACKAGE'],cache:['#9bdcec','SUPPLY CACHE']});
+  function pickupNotice(kind,amount=1){
+    if(!player||!(amount>0)||!PICKUP_STYLE[kind])return;
+    pickupNotices=pickupNotices.filter(n=>clock-n.birth<1.65);
+    const recent=pickupNotices.find(n=>n.kind===kind&&clock-n.birth<.18);
+    if(recent){recent.amount+=amount;return;}
+    // A small stack beside the vessel, not a full-width announcement.
+    const nearby=pickupNotices.filter(n=>clock-n.birth<.55).length;
+    pickupNotices.push({kind,amount,x:player.x,y:player.y,birth:clock,lane:nearby%5});
+    if(pickupNotices.length>12)pickupNotices.shift();
+  }
+  function drawPickupNotices(){
+    const zoom=viewport.zoom||1;
+    pickupNotices=pickupNotices.filter(n=>clock-n.birth<1.65&&clock>=n.birth);
+    for(const n of pickupNotices){
+      const age=clock-n.birth,[color,label]=PICKUP_STYLE[n.kind];
+      ctx.save();ctx.translate(n.x-camera.x,n.y-camera.y);ctx.scale(1/zoom,1/zoom);
+      ctx.translate(20,-15-n.lane*16-age*25);ctx.globalAlpha=Math.min(1,age/.07)*(1-smoothstep(.8,1.65,age));
+      const text='+'+Math.round(n.amount)+' '+label;ctx.font='600 10px ui-monospace,monospace';
+      ctx.fillStyle='rgba(3,15,23,.72)';ctx.beginPath();ctx.roundRect(-5,-11,ctx.measureText(text).width+24,17,6);ctx.fill();
+      ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=1.2;ctx.beginPath();
+      if(n.kind==='crystal'){ctx.moveTo(0,-5);ctx.lineTo(4,-10);ctx.lineTo(8,-5);ctx.lineTo(4,0);ctx.closePath();ctx.stroke();}
+      else if(n.kind==='recorder'){ctx.strokeRect(0,-9,9,8);ctx.arc(2.5,-6,1.2,0,TAU);ctx.moveTo(8,-6);ctx.arc(6.5,-6,1.2,0,TAU);ctx.stroke();}
+      else if(n.kind==='air'){ctx.arc(4,-5,4,0,TAU);ctx.moveTo(2,-5);ctx.lineTo(6,-5);ctx.moveTo(4,-7);ctx.lineTo(4,-3);ctx.stroke();}
+      else if(n.kind==='power'){ctx.moveTo(5,-10);ctx.lineTo(1,-4);ctx.lineTo(5,-4);ctx.lineTo(3,1);ctx.lineTo(8,-6);ctx.lineTo(4,-6);ctx.stroke();}
+      else{ctx.rect(0,-9,8,8);ctx.moveTo(2,-6);ctx.lineTo(6,-6);ctx.stroke();}
+      ctx.fillText(text,14,-2);ctx.restore();
+    }
+  }
   function clearSalvageLine(item){
     // Check the actual collision polygons, not only their bounding circles.
     const dx=item.x-player.x,dy=item.y-player.y,steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/6));
@@ -676,7 +713,7 @@
       // Re-check on use so low power never collects a remote item for free.
       if(!remoteSalvageAvailable(item))return false;
       player.battery=Math.max(0,player.battery-magnetPower());
-      player.magnetFlash={x:item.x,y:item.y,until:clock+.35};
+      // Pickup confirmation is emitted at the vessel; no tractor line.
     }
     item.collected=true;recordSalvageHarvest(item);rememberSurveyObject('items',item);window.AbyssAudio?.event(item.type==='recorder'?'recorder':'pickup');
     const quantity=item.quantity||1;
@@ -691,12 +728,12 @@
       player.cargo.plates=GIANTS.plates([...(player.cargo.plates||[]),...(recovery.plates||[])]).filter(id=>!giants.banked.includes(id));
       for(const i of recovery.recorders)if(!saved.secured.includes(i)&&!player.cargo.recorders.includes(i))player.cargo.recorders.push(i);
       if(field.survey.waypoint&&distance(field.survey.waypoint,recovery)<1)field.survey.waypoint=null;
-      announce('LOST CARGO RECOVERED · RETURN TO HUB',3);addEvent('Recovered '+recoveryContents(recovery));
+      pickupNotice('scrap',recovery.scrap);pickupNotice('crystal',recovery.crystal);pickupNotice('recorder',recovery.recorders.length);pickupNotice('plate',(recovery.plates||[]).length);if(recovery.kind==='wreck')addStat('wreckRecoveries',1);addEvent('Recovered '+recoveryContents(recovery));
     }
-    else if(item.type==='scrap') {player.cargo.scrap+=quantity;if(!automatic){addEvent('Scrap recovered (+'+quantity+')');announce('SALVAGE +'+quantity+' SCRAP',1.8);}else{player.magnetFlash={x:item.x,y:item.y,until:clock+.35};}}
-    else if(item.type==='crystal') {player.cargo.crystal+=quantity;addEvent('Abyss crystals recovered (+'+quantity+')');announce('RARE CRYSTALS +'+quantity,2);}
-    else if(item.type==='air') {player.oxygen=Math.min(maxOxygen(),player.oxygen+35);player.battery=Math.min(maxBattery(),player.battery+12);addEvent('Emergency supply cache');announce('OXYGEN +35 · ENERGY +12',2);}
-    else if(item.type==='recorder') {player.cargo.recorders.push(item.index);addEvent('ENCRYPTED RECORDER FOUND');announce('FLIGHT RECORDER RECOVERED · RETURN TO STATION',4);}
+    else if(item.type==='scrap') {player.cargo.scrap+=quantity;pickupNotice('scrap',quantity);if(!automatic)addEvent('Scrap recovered (+'+quantity+')');}
+    else if(item.type==='crystal') {player.cargo.crystal+=quantity;addEvent('Abyss crystals recovered (+'+quantity+')');pickupNotice('crystal',quantity);}
+    else if(item.type==='air') {const air=Math.min(35,maxOxygen()-player.oxygen),power=Math.min(12,maxBattery()-player.battery);player.oxygen+=air;player.battery+=power;pickupNotice('air',air);pickupNotice('power',power);if(!air&&!power)pickupNotice('cache',1);addEvent('Emergency supply cache');}
+    else if(item.type==='recorder') {player.cargo.recorders.push(item.index);addEvent('ENCRYPTED RECORDER FOUND');pickupNotice('recorder',1);}
     checkAchievements();persist();updateUI();return true;
   }
   function scan() {
@@ -903,7 +940,17 @@
     {id:'attraction',name:'Magnetic Attraction',description:'Make 50 remote resource pickups with the Salvage Magnet.',target:50,kind:'stat',stat:'magnetPickups',icon:'17'},
     {id:'shield',name:'Shield Specialist',description:'Absorb 500 damage with the Kinetic Shield.',target:500,kind:'stat',stat:'shieldAbsorbed',icon:'18'},
     {id:'getaway',name:'Clean Getaway',description:'Return with cargo from at least 200 m without taking hull damage during that trip.',target:1,kind:'stat',stat:'cleanGetaways',icon:'19'},
-    {id:'systems',name:'All Systems Go',description:'Fully upgrade all 14 ship systems.',target:14,kind:'systems',icon:'20'}
+    {id:'systems',name:'All Systems Go',description:'Fully upgrade all 14 ship systems.',target:14,kind:'systems',icon:'20'},
+    {id:'warden-breaker',name:'Warden Breaker',description:'Defeat the Cathedral Warden.',target:1,kind:'warden',icon:'21'},
+    {id:'wreck-diver',name:'Wreck Diver',description:'Recover and bank your first ship identification plate.',target:1,kind:'plates',icon:'22'},
+    {id:'forgotten-fleet',name:'Forgotten Fleet',description:'Explore all five wrecks and bank all five identification plates.',target:5,kind:'plates',icon:'23'},
+    {id:'open-sesame',name:'Open Sesame',description:'Open the permanent service shortcut in all five wrecks.',target:5,kind:'shortcuts',icon:'24'},
+    {id:'first-commission',name:'First Commission',description:'Complete and claim your first dock contract.',target:1,kind:'contracts',icon:'25'},
+    {id:'trusted-contractor',name:'Trusted Contractor',description:'Complete and claim 10 dock contracts.',target:10,kind:'contracts',icon:'26'},
+    {id:'versatile-operator',name:'Versatile Operator',description:'Complete one of each contract type: cargo, survey, hunt and silent recovery.',target:4,kind:'contract-types',icon:'27'},
+    {id:'recovery-specialist',name:'Recovery Specialist',description:'Recover cargo from five destroyed submarines.',target:5,kind:'stat',stat:'wreckRecoveries',icon:'28'},
+    {id:'dolphin-pilot',name:'Dolphin Pilot',description:'Breach the surface ten times under your own momentum.',target:10,kind:'stat',stat:'surfaceBreaches',icon:'29'},
+    {id:'heavy-haul',name:'Heavy Haul',description:'Bank at least 40 scrap units in one return to the harbour.',target:40,kind:'stat',stat:'bestScrapHaul',icon:'30'}
   ]);
   const addStat=(key,amount)=>{saved.stats[key]=(saved.stats[key]||0)+Math.max(0,amount);};
   const totalRecorders=()=>LEVELS.reduce((n,l)=>n+(campaignLevels[l.id]?.secured.length||0),0);
@@ -915,6 +962,11 @@
     return {scrapTotal:sum('scrap',false),scrapRemaining:sum('scrap',true),crystalTotal:sum('crystal',false)+extra,crystalRemaining:sum('crystal',true)+extra,collected:nodes.filter(n=>n.type==='scrap'?harvested.has(n.id):looted.has(n.id)).length,total:nodes.length+Math.ceil(extra/2)};
   }
   function achievementProgress(a){
+    if(a.kind==='warden')return Number(signals.warden.defeated);
+    if(a.kind==='plates')return giants.banked.length;
+    if(a.kind==='shortcuts')return Object.values(giants.sites).filter(s=>s.opened).length;
+    if(a.kind==='contracts')return signals.completed;
+    if(a.kind==='contract-types')return ['cargo','survey','hunt','silent'].filter(k=>(saved.stats['contract'+k]||0)>0).length;
     if(a.kind==='recorders')return totalRecorders();
     if(a.kind==='level')return Number(levelComplete(LEVELS[a.level].id));
     if(a.kind==='depth')return saved.bestDepth;
@@ -930,14 +982,14 @@
     if(newly.length&&!silent){
       const toast=$('achievementToast');toast.textContent='ACHIEVEMENT UNLOCKED · '+newly[0].name.toUpperCase()+(newly.length>1?' + '+(newly.length-1)+' MORE':'');toast.classList.remove('hidden');clearTimeout(achievementTimer);achievementTimer=setTimeout(()=>toast.classList.add('hidden'),4800);
     }
-    for(const id of ['menuAchievementCount','pauseAchievementCount'])if($(id))$(id).textContent=ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length+' / 20';
+    for(const id of ['menuAchievementCount','pauseAchievementCount'])if($(id))$(id).textContent=ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length+' / '+ACHIEVEMENTS.length;
     return newly.length;
   }
   function showAchievements(){
     if($('upgradeDialog').open)return;
     checkAchievements();persist();achievementReturnPause=paused;paused=true;resetPilotInput();
     const earned=ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length;
-    $('achievementSummary').textContent=earned+' / 20 UNLOCKED · THIS CAMPAIGN';
+    $('achievementSummary').textContent=earned+' / '+ACHIEVEMENTS.length+' UNLOCKED · THIS CAMPAIGN';
     $('achievementList').innerHTML=ACHIEVEMENTS.map(a=>{
       const done=Boolean(saved.achievements[a.id]),value=Math.min(a.target,Math.floor(achievementProgress(a))),pct=clamp(value/a.target*100,0,100);
       return '<article class="achievement-card '+(done?'earned':'')+'"><span class="achievement-medal" aria-hidden="true">'+(done?'✓':a.icon)+'</span><div><div class="achievement-title"><h3>'+a.name+'</h3><span>'+(done?'UNLOCKED':value+' / '+a.target)+'</span></div><p>'+a.description+'</p><div class="achievement-track" role="progressbar" aria-label="'+a.name+'" aria-valuenow="'+value+'" aria-valuemin="0" aria-valuemax="'+a.target+'"><i style="width:'+pct+'%"></i></div></div></article>';
@@ -1000,6 +1052,7 @@
     const wasComplete=levelComplete(LEVEL_ID),gained=player.cargo.scrap*18,bankedCrystals=player.cargo.crystal;
     const earnedXP=player.cargo.scrap*9+bankedCrystals*23+player.cargo.recorders.length*90;
     const delivered=player.cargo.recorders.length,realReturn=!dockVisitActive;
+    saved.stats.bestScrapHaul=Math.max(saved.stats.bestScrapHaul||0,player.cargo.scrap);
     addStat('bankedScrap',player.cargo.scrap);addStat('bankedCrystals',bankedCrystals);
     if(realReturn&&player.trip?.deepest>=200&&player.trip.hullDamage<.001&&(gained||bankedCrystals||delivered))addStat('cleanGetaways',1);
     saved.credits+=gained;saved.crystals+=bankedCrystals;saved.xp+=earnedXP;
@@ -1329,7 +1382,7 @@
   function handleSurfaceCrossing(previousY){
     if(!player.airborne&&previousY>=SURFACE.y&&player.y<SURFACE.y){
       if(-player.vy>=SURFACE.breachSpeed&&clock>=(player.surfaceCooldownUntil||0)){
-        player.airborne=true;player.boosting=false;
+        player.airborne=true;player.boosting=false;addStat('surfaceBreaches',1);checkAchievements();persist();
         emitSurfaceSplash(player.x,player.vy,false);
       }else{player.y=SURFACE.y+.02;player.vy=0;}
     }else if(player.airborne&&player.y>=SURFACE.y&&player.vy>=0){
@@ -1339,7 +1392,7 @@
     }
   }
   function update(dt) {
-    simulationStepping=true;
+    simulationStepping=true;navigationPlansThisFrame=0;
     clock+=dt;
     if(!player)return;
     player.previousX=player.x;player.previousY=player.y;
@@ -1436,7 +1489,7 @@
         }
       }
       const chase=enemy.aggression>.13;
-      const intent=predatorIntent(enemy,dt,chase,tier);
+      const intent=navigatePredator(enemy,predatorIntent(enemy,dt,chase,tier));
       const tx=intent.x,ty=intent.y;
       const ed=Math.hypot(tx-enemy.x,ty-enemy.y)||1;
       const es=intent.speed;
@@ -1545,10 +1598,6 @@
       if(d<250 || enemy.alertUntil>clock || beamIntersects(enemy.x,enemy.y,60)){drawEnemy(enemy);drawPredatorHealth(enemy);drawPredatorIntent(enemy);}
     }
     if(player){
-      if(player.magnetFlash?.until>clock){
-        ctx.save();ctx.globalAlpha=(player.magnetFlash.until-clock)/.35;ctx.strokeStyle='#8cebd0';ctx.lineWidth=1.5;ctx.setLineDash([5,5]);
-        ctx.beginPath();ctx.moveTo(player.x,player.y);ctx.lineTo(player.magnetFlash.x,player.magnetFlash.y);ctx.stroke();ctx.restore();
-      }
       drawPlayer();
       if(shieldCapacity()>0&&player.shieldFlashUntil>clock){
         ctx.save();ctx.translate(player.x,player.y);ctx.rotate(player.facing);ctx.globalAlpha=(player.shieldFlashUntil-clock)/.45;
@@ -1567,6 +1616,7 @@
     if(environmentEnabled){ctx.save();ctx.translate(-camera.x,-camera.y);for(const l of environment.landmarks)if(l.revealUntil>clock&&onscreen(l.x,l.y,200)){ctx.globalAlpha=clamp((l.revealUntil-clock)/sonarEchoSeconds(),0,.9);drawLandmark(l,true);}ctx.restore();}
     if(player.damageFlashUntil>clock){ctx.save();ctx.translate(-camera.x,-camera.y);drawDamageFlash();ctx.restore();}
     drawTargetIndicators();
+    drawPickupNotices();
     drawMouseTarget();
     drawEdgeArrows();
   }
@@ -2293,6 +2343,49 @@
       ctx.restore();
     }
   }
+  const DESKTOP_ACTIONS=Object.freeze([
+    ['rail','RAIL','Z','mobileRail','#97e0f5'],['torpedo','TORPEDO','X','mobileTorpedo','#efb783'],['mine','MINE','F','mobileMine','#e8979e'],
+    ['boost','BOOST','SPACE','mobileBoost','#83c5f2'],['use','USE','E','mobileInteract','#96e8d0'],['sonar','SONAR','Q','mobileSonar','#96d7ce'],
+    ['repair','REPAIR','R','mobileRepair','#bad0dd'],['lights','LIGHTS','L',null,'#ecd79d'],['map','CHART','M',null,'#a0c8d9'],
+    ['journal','JOURNAL','J',null,'#baabd8'],['pause','PAUSE','ESC',null,'#a2dcd5']
+  ]);
+  function buildDesktopActions(){
+    const icons={lights:'<path d="M5 8v8M8 5v14m0-3c5 0 7 2 7 2V6s-2 2-7 2m10-1 3-2m-3 7h4m-4 5 3 2"/>',map:'<path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2Zm6-2v16m6-14v16"/>',journal:'<path d="M5 3h13v18H5zM8 7h7M8 11h7M8 15h5"/>',pause:'<path d="M8 5v14M16 5v14"/>'};
+    const rail=document.querySelector('.desktop-keybinds');
+    rail.innerHTML='<div class="desktop-pilot-hint"><span class="helm-mark" aria-hidden="true">⌁</span><span><b>PILOT</b><small>HOLD MOUSE / WASD</small></span></div><div class="desktop-action-bank">'+DESKTOP_ACTIONS.map(([id,name,key,mobile,color])=>{
+      const glyph=mobile?$(mobile).querySelector('.action-glyph').outerHTML:'<svg class="action-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+icons[id]+'</svg>';
+      const readout=id==='rail'?'railKeyAmmo':id==='torpedo'?'torpedoKeyAmmo':'desktop-'+id+'-value';
+      return '<div class="desktop-action" id="desktop-'+id+'" style="--action-color:'+color+'"><span class="desktop-action-name">'+name+'</span><div class="desktop-action-orb">'+glyph+'<svg class="desktop-ring" viewBox="0 0 60 60" aria-hidden="true"><circle class="desktop-track" cx="30" cy="30" r="27"/><circle class="desktop-ready" cx="30" cy="30" r="27" pathLength="100"/></svg><span class="desktop-timer"></span><kbd>'+key+'</kbd></div><b class="desktop-readout" id="'+readout+'">—</b></div>';
+    }).join('')+'</div>';
+  }
+  function updateDesktopActions(){
+    if(!player||touchControls)return;
+    const data={},active=running&&!paused;
+    for(const [kind,id] of [['railgun','rail'],['torpedo','torpedo']]){
+      const mark=saved.upgrades[kind],ammo=player.weaponAmmo[kind]||0,cd=player.weaponCooldown[kind]||0,cap=WEAPONS[kind].capacity[mark];
+      data[id]={value:mark?ammo+'/'+cap:'UNFITTED',locked:!mark,unavailable:!mark||!ammo||!active||cd>0,progress:mark?1-cd/WEAPONS[kind].cooldown:0,timer:cd,detail:mark?'Rounds remaining: '+ammo+' of '+cap+'. Cooldown '+cd.toFixed(1)+' seconds.':'Purchase this weapon at the dock.'};
+    }
+    data.mine={value:saved.upgrades.minePower?player.mineAmmo+'/'+mineCapacity():'UNFITTED',locked:!saved.upgrades.minePower,unavailable:!saved.upgrades.minePower||!player.mineAmmo||!active||player.mineCooldown>0,progress:saved.upgrades.minePower?1-player.mineCooldown/MINES.deployCooldown:0,timer:player.mineCooldown};
+    const boostPercent=boostCapacity()?player.boost/boostCapacity():0;
+    const boostTime=player.boostLocked?Math.max(0,player.boostRechargeDelay)+(boostCapacity()-player.boost)/boostRechargeRate():Math.max(0,player.boostRechargeDelay);
+    data.boost={value:boostUnlocked()?Math.round(boostPercent*100)+'%':'UNFITTED',locked:!boostUnlocked(),unavailable:!boostUnlocked()||player.boostLocked||player.battery<=.5||!active,progress:boostPercent,timer:boostTime,active:player.boosting,detail:'Charge '+Math.round(boostPercent*100)+' percent. '+(player.boostLocked?'Full recharge in approximately '+Math.ceil(boostTime)+' seconds.':'Hold Space while piloting.')};
+    const nearby=nearestInteractable();
+    data.use={value:nearby?nearby.type==='station'?'DOCK':'IN RANGE':'HOLD',progress:nearby?1:0,active:Boolean(nearby),unavailable:!active,detail:'Hold E to collect crystals, recorders and recovery cargo, or dock. Scrap collects automatically.'};
+    data.sonar={value:player.scanCooldown>0?'CHARGING':player.battery<sonarCost()?'LOW POWER':'READY',timer:player.scanCooldown,progress:1-player.scanCooldown/(player.scanDuration||sonarCooldown()),unavailable:!active||player.scanCooldown>0||player.battery<sonarCost(),detail:'Sonar costs '+scanPowerCost()+' power.'};
+    const repairLeft=Math.max(0,4-(clock-(player.lastRepair??-99)));
+    data.repair={value:player.cargo.scrap+' SCRAP',timer:repairLeft,progress:1-repairLeft/4,unavailable:!active||player.cargo.scrap<2||player.hull>=maxHull()-1||repairLeft>0,detail:'Field repair uses 2 scrap, restores up to 30 hull. Four-second cooldown.'};
+    data.lights={value:player.lights?'ON':'OFF',progress:player.lights?1:0,active:player.lights,unavailable:!active,detail:'Toggle the forward flashlight. Mk '+roman(saved.upgrades.flashlight)+'.'};
+    data.map={value:'SURVEY',progress:0};data.journal={value:'ARCHIVE',progress:0};data.pause={value:'MENU',progress:0};
+    for(const [id,name,key] of DESKTOP_ACTIONS){
+      const el=$('desktop-'+id),d=data[id];if(!el||!d)continue;
+      const label=el.querySelector('.desktop-readout');if(label.textContent!==d.value)label.textContent=d.value;
+      el.style.setProperty('--readiness',clamp(d.progress||0,0,1)*100);
+      el.classList.toggle('is-locked',Boolean(d.locked));el.classList.toggle('is-unavailable',Boolean(d.unavailable));el.classList.toggle('is-active',Boolean(d.active));
+      const timer=el.querySelector('.desktop-timer'),time=(d.timer||0)>.04?d.timer<10?d.timer.toFixed(1)+'s':Math.ceil(d.timer)+'s':'';
+      timer.textContent=time;el.classList.toggle('has-timer',Boolean(time));
+      el.setAttribute('aria-label',name+', key '+key+', '+d.value+(time?', cooldown '+time:'')+'. '+(d.detail||''));
+    }
+  }
   function updateWeaponUI(){
     if(!player)return;
     for(const [id,button,label,pc] of [['railgun','mobileRail','railButtonLabel','railKeyAmmo'],['torpedo','mobileTorpedo','torpedoButtonLabel','torpedoKeyAmmo']]){
@@ -2415,7 +2508,7 @@
     $('mobileInteract').classList.toggle('available',Boolean(running&&!paused&&close));
     $('mobileRepair').setAttribute('aria-disabled',String(paused||!running||player.cargo.scrap<2||player.hull>=maxHull()));
     refreshFlashlightControl();
-    updateLivingHUD();drawRadar();
+    updateLivingHUD();updateDesktopActions();drawRadar();
   }
   let focusMode=false;
   function setFocusMode(on){
@@ -2517,7 +2610,7 @@
       <li><strong>Abandoned contact mines:</strong> rusty horned spheres sway on chains. Touching one detonates it, harming nearby predators and the submarine. Your own deployed mines remain safe to the ship. Sonar reveals the tether and the chart remembers the hazard. Cleared contact mines never return, even after docking. The harbour, central route, fixed deposits, recorder approaches and recovery pods are kept clear.</li>
       <li><strong>Wildlife:</strong> Silver Darts, Sunstripe Reeflets, Ribbonfins and Violet Glassfish form harmless schools. Gentle piloting parts the school; boost, nearby predators and passing sonar scatter it before it regroups. Fish cannot be collected and do not clutter the chart. Anemones, fan corals, crabs and tube colonies react to lights, movement and currents.</li>
       <li><strong>Vent fields:</strong> rising bubbles and a rumble warn for three seconds before a three-second plume. Active vents push the ship and predators upward. Sunbreak Shelf bubble seeps are harmless; hotter vents in later levels damage the ship while inside. Wait for a quiet phase or take a different route. The chart records discovered vents, not their live phase. New scenery never defeats darkness.</li>
-      <li><strong>Guided weapons:</strong> hold <kbd>Z</kbd> / the top weapon icon for railgun bolts; tap <kbd>X</kbd> / the lower-left weapon icon for one explosive torpedo. Railgun is at the top of the weapon triangle, torpedo below-left and mine below-right. Inner rings show ammunition; outer rings show firing cooldowns. Exact stocks are in telemetry (the sliders icon). Rail bolts gently correct toward predators within 32° of the bow; torpedoes turn more strongly within 65°. Both lead moving targets, stop at rock and need Mk I fitted at the dock. Armed player mines slowly seek predators within 20 m, staying within 24 m of their drop point. No extra aiming button is needed. Each upgrade increases damage and magazine capacity. All rounds are bought in the dock Ammunition tab: rail 6 CR, torpedo 24 CR, mine 18 CR each. Docking, upgrades, waiting, loading and respawning never grant ammunition.</li>
+      <li><strong>Guided weapons:</strong> hold <kbd>Z</kbd> / the top weapon icon for railgun bolts; tap <kbd>X</kbd> / the lower-left weapon icon for one explosive torpedo. Railgun is at the top of the weapon triangle, torpedo below-left and mine below-right. Inner rings show ammunition; outer rings show firing cooldowns. Exact stocks and timers appear in the circular desktop keybind rail; on mobile use telemetry (the sliders icon). Rail bolts gently correct toward predators within 32° of the bow; torpedoes turn more strongly within 65°. Both lead moving targets, stop at rock and need Mk I fitted at the dock. Armed player mines slowly seek predators within 20 m, staying within 24 m of their drop point. No extra aiming button is needed. Each upgrade increases damage and magazine capacity. All rounds are bought in the dock Ammunition tab: rail 6 CR, torpedo 24 CR, mine 18 CR each. Docking, upgrades, waiting and loading never grant ammunition. Death replaces your stock with exactly 10 rail rounds, 3 torpedoes and 3 mines.</li>
       <li><strong>Environmental sound:</strong> nearby chains, vents, kelp, school movement, wreck groans and harbour machinery use the ambience slider. Explosions, docking clamps and interaction sounds use effects. Mute and both volume controls remain in SOUND SETTINGS; visible hazard warnings work without audio.</li>
       <li><kbd>Esc</kbd> / <strong>PAUSE</strong> freezes the dive. MENU saves it across sessions; QUIT abandons the dive and leaves a recovery pod. CAMPAIGN SLOTS keeps up to three independent games. New Game selects an empty slot; only confirmed deletion removes an occupied slot. Reloading preserves the last successful active-dive snapshot. Continue restores paused; the ocean does not advance while you are away. Clearing browser data still removes local saves.</li>
     </ul></div>`;
@@ -2539,7 +2632,7 @@
     document.body.classList.toggle('desktop-ui',!touchControls);
   }
   function bind() {
-    syncInputMode();bindLivingUI();bindSlots();bindWeaponInputs();bindSignalsUI();
+    buildDesktopActions();syncInputMode();bindLivingUI();bindSlots();bindWeaponInputs();bindSignalsUI();
     const cockpitObserver=new ResizeObserver(syncCockpitLayout);
     for(const node of [canvas.parentElement,...document.querySelectorAll('.cockpit-hud,.mobile-controls,.desktop-keybinds')])cockpitObserver.observe(node);
     primaryPointer.addEventListener('change',()=>{resetPilotInput();syncInputMode();resize();syncCockpitLayout();updateUI();});
@@ -2732,6 +2825,7 @@
   }
   function restoreActiveDive(){
     const snapshot=loadedActive;if(!snapshot)return false;
+    pickupNotices=[];
     buildingWorld=true;running=false;
     LEVEL_ID=snapshot.levelId;field=campaignLevels[LEVEL_ID];applyLevelGeometry();createWorld();
     clock=snapshot.clock;idCounter=Math.max(cleanCount(snapshot.idCounter),scene.items.length+1);
@@ -2860,11 +2954,11 @@
       if(state.opened){announce('SERVICE SHORTCUT OPEN · NO POWER REQUIRED',2);return false;}
       if(!state.scanned){announce('SCAN WITH SONAR TO IDENTIFY THE SERVICE CIRCUIT',2.5);return false;}
       state.opened=true;rebuildGiantWalls();syncGiantObjects();window.AbyssAudio?.event('dock');announce('BULKHEAD RELEASED · SHORTCUT PERMANENTLY OPEN',3);
-      addEvent(giantSite.name+' service passage opened');
+      addEvent(giantSite.name+' service passage opened');checkAchievements();
     }else if(object.kind==='plate'){
       if(giants.banked.includes(giantSite.id)||plateInRecovery(giantSite.id)||plateCarried(giantSite.id))return false;
       player.cargo.plates=GIANTS.plates([...(player.cargo.plates||[]),giantSite.id]);object.collected=true;
-      rememberGiantObject(object);window.AbyssAudio?.event('recorder');announce('IDENTIFICATION PLATE ABOARD · RETURN TO HARBOUR',3.5);
+      rememberGiantObject(object);window.AbyssAudio?.event('recorder');pickupNotice('plate',1);
       addEvent(giantSite.name+' identification recovered');syncGiantObjects();
     }else return false;
     persist();updateUI();return true;
@@ -3053,26 +3147,138 @@
         intent={x:tx,y:ty,speed:tier.speed};if(!visible&&Math.hypot(tx-e.x,ty-e.y)<22)intent.speed=0;
       }else{e.aggression=Math.max(0,e.aggression-dt*1.7);e.biteAllowed=false;}
     }
-    // Close-range avoidance chooses a clear tangent; it never teleports through
-    // solid hull walls and never raises the species' normal chase-speed cap.
-    if(intent.speed>0&&distance(e,player)<1000){const angle=Math.atan2(intent.y-e.y,intent.x-e.x),look=55;
-      if(!wildClear(e.x+Math.cos(angle)*look,e.y+Math.sin(angle)*look,18)){
-        let best=null;for(const offset of [.7,-.7,1.35,-1.35,2,-2]){const a=angle+offset;
-          if(wildClear(e.x+Math.cos(a)*look,e.y+Math.sin(a)*look,18)){best={x:e.x+Math.cos(a)*100,y:e.y+Math.sin(a)*100,speed:intent.speed};break;}}
-        intent=best||{x:e.x,y:e.y,speed:0};
-      }
-    }
     return intent;
   }
+  // Shared local A* chart. Occupancy is cached by species clearance and wall
+  // revision; routes are transient and never become part of a campaign export.
+  let navigationSource=null,navigationWalls=null,navigationPlansThisFrame=0;
+  let navigationCells=new Map(),navigationEdges=new Map(),predatorRoutes=new WeakMap();
+  const NAV_CELL=36;
+  const predatorRadius=e=>e.tier==='warden'?34:e.tier==='reaper'?26:e.tier==='apex'?22:18;
+  function refreshNavigation(){
+    if(navigationSource!==scene.rocks||navigationWalls!==giantWallCache||navigationCells.size>24000||navigationEdges.size>48000){
+      navigationSource=scene.rocks;navigationWalls=giantWallCache;
+      navigationCells.clear();navigationEdges.clear();predatorRoutes=new WeakMap();
+    }
+  }
+  function predatorWaterClear(x,y,radius=18,minY=SURFACE.y+radius){
+    return y>=minY&&Math.hypot(x-HARBOUR.x,y-HARBOUR.y)>=HARBOUR.exclusionRadius+1&&wildClear(x,y,radius);
+  }
+  function predatorSegmentClear(a,b,radius,minY){
+    const length=Math.hypot(b.x-a.x,b.y-a.y),steps=Math.max(1,Math.ceil(length/7));
+    for(let i=0;i<=steps;i++)if(!predatorWaterClear(lerp(a.x,b.x,i/steps),lerp(a.y,b.y,i/steps),radius,minY))return false;
+    return true;
+  }
+  function planPredatorRoute(e,target){
+    refreshNavigation();
+    const radius=predatorRadius(e),minY=e.tier==='reaper'?8120:SURFACE.y+radius;
+    const key=(ix,iy)=>ix+','+iy;
+    const point=(ix,iy)=>({x:ix*NAV_CELL,y:iy*NAV_CELL});
+    const free=(ix,iy)=>{
+      const id=radius+':'+minY+':'+key(ix,iy);
+      if(!navigationCells.has(id))navigationCells.set(id,predatorWaterClear(ix*NAV_CELL,iy*NAV_CELL,radius+2,minY));
+      return navigationCells.get(id);
+    };
+    const edge=(a,b)=>{
+      const id=radius+':'+minY+':'+[key(a.ix,a.iy),key(b.ix,b.iy)].sort().join('/');
+      if(!navigationEdges.has(id))navigationEdges.set(id,predatorSegmentClear(a,b,radius+2,minY));
+      return navigationEdges.get(id);
+    };
+    const nearest=(p,connected)=>{
+      const ix=Math.round(p.x/NAV_CELL),iy=Math.round(p.y/NAV_CELL),candidates=[];
+      for(let ring=0;ring<=4;ring++){
+        for(let dy=-ring;dy<=ring;dy++)for(let dx=-ring;dx<=ring;dx++){
+          if(Math.max(Math.abs(dx),Math.abs(dy))!==ring)continue;
+          const q={...point(ix+dx,iy+dy),ix:ix+dx,iy:iy+dy};
+          if(free(q.ix,q.iy)&&(!connected||predatorSegmentClear(p,q,radius,minY)))candidates.push(q);
+        }
+        if(candidates.length)return candidates.sort((a,b)=>distance(a,p)-distance(b,p))[0];
+      }
+      return null;
+    };
+    const start=nearest(e,true),goal=nearest(target,false);if(!start||!goal)return [];
+    const minX=Math.min(start.ix,goal.ix)-10,maxX=Math.max(start.ix,goal.ix)+10;
+    const minRow=Math.min(start.iy,goal.iy)-10,maxRow=Math.max(start.iy,goal.iy)+10;
+    // Binary heap avoids repeatedly sorting an open-set array on mobile.
+    const heap=[];
+    const push=node=>{heap.push(node);let i=heap.length-1;while(i){const parent=(i-1)>>1;if(heap[parent].f<=node.f)break;heap[i]=heap[parent];i=parent;}heap[i]=node;};
+    const pop=()=>{const top=heap[0],last=heap.pop();if(heap.length){let i=0;while(i*2+1<heap.length){let child=i*2+1;if(child+1<heap.length&&heap[child+1].f<heap[child].f)child++;if(heap[child].f>=last.f)break;heap[i]=heap[child];i=child;}heap[i]=last;}return top;};
+    const heuristic=q=>Math.hypot(q.ix-goal.ix,q.iy-goal.iy);
+    const first={...start,g:0,h:heuristic(start),parent:null};first.f=first.h;push(first);
+    const bestCost=new Map([[key(first.ix,first.iy),0]]);let best=first,visited=0;
+    while(heap.length&&visited++<1600){
+      const n=pop();if(n.g!==bestCost.get(key(n.ix,n.iy)))continue;
+      if(n.h<best.h)best=n;if(n.ix===goal.ix&&n.iy===goal.iy){best=n;break;}
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+        if(!dx&&!dy)continue;const ix=n.ix+dx,iy=n.iy+dy;
+        if(ix<minX||ix>maxX||iy<minRow||iy>maxRow||!free(ix,iy))continue;
+        // Prevent corner cutting even when the endpoint itself is clear.
+        if(dx&&dy&&(!free(n.ix+dx,n.iy)||!free(n.ix,n.iy+dy)))continue;
+        const g=n.g+(dx&&dy?Math.SQRT2:1),id=key(ix,iy);if(g>=(bestCost.get(id)??Infinity))continue;
+        const q={...point(ix,iy),ix,iy};if(!edge(n,q))continue;
+        const h=heuristic(q),next={...q,g,h,f:g+h,parent:n};bestCost.set(id,g);push(next);
+      }
+    }
+    if(best===first)return [];
+    const path=[];for(let n=best;n;n=n.parent)path.push({x:n.x,y:n.y});path.reverse();
+    if(best.ix===goal.ix&&best.iy===goal.iy&&predatorSegmentClear(best,target,radius,minY))path.push({...target});
+    return path;
+  }
+  function navigatePredator(e,intent){
+    if(intent.speed<=0||e.huntPhase==='rush'||e.huntPhase==='windup'||e.huntPhase==='recover')return intent;
+    refreshNavigation();
+    const radius=predatorRadius(e),minY=e.tier==='reaper'?8120:SURFACE.y+radius;
+    const target={x:intent.x,y:clamp(intent.y,minY,MAX_WORLD_Y-radius-1)};
+    let route=predatorRoutes.get(e);
+    if(!route){route={path:[],nextPlan:0,checkAt:0,direct:false,target};predatorRoutes.set(e,route);}
+    if(clock>=route.checkAt||distance(route.target,target)>48){
+      route.direct=predatorSegmentClear(e,target,radius+1,minY);route.checkAt=clock+.18;
+    }
+    if(route.direct){route.path=[];route.target=target;return {...intent,...target};}
+    if(distance(e,player)<1100&&clock>=route.nextPlan&&navigationPlansThisFrame<2){
+      navigationPlansThisFrame++;route.path=planPredatorRoute(e,target);route.target=target;route.nextPlan=clock+.85;
+    }
+    while(route.path.length&&distance(e,route.path[0])<18)route.path.shift();
+    if(route.path.length){
+      if(route.path.length>1&&predatorSegmentClear(e,route.path[1],radius+1,minY))route.path.shift();
+      if(predatorSegmentClear(e,route.path[0],radius,minY))return {...route.path[0],speed:intent.speed};
+      route.path=[];route.nextPlan=0;
+    }
+    // Cheap local fallback for distant patrols or a genuinely impassable route.
+    const angle=Math.atan2(target.y-e.y,target.x-e.x),look=Math.max(48,Math.min(100,intent.speed*.5));
+    const side=route.side||1;
+    for(const offset of [0,.5*side,-.5*side,1*side,-1*side,1.55*side,-1.55*side,2.2*side,-2.2*side]){
+      const a=angle+offset,q={x:e.x+Math.cos(a)*look,y:e.y+Math.sin(a)*look};
+      if(predatorSegmentClear(e,q,radius+1,minY)){if(offset)route.side=Math.sign(offset);return {...q,speed:intent.speed};}
+    }
+    return {x:e.x,y:e.y,speed:0};
+  }
   function resolvePredatorWreckCollision(e){
-    const px=e.previousX??e.x,py=e.previousY??e.y,dx=e.x-px,dy=e.y-py;
-    const near=giantSite&&Math.abs(e.x-giantSite.x)<giantSite.w/2+80&&Math.abs(e.y-giantSite.y)<giantSite.h/2+80;
-    const variant=e.behaviour&&e.behaviour!=='ordinary';if(!near&&!variant)return;
-    const clear=(x,y)=>near?!giantSolid(x,y,18)&&(variant?wildClear(x,y,18):true):wildClear(x,y,18);
-    const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/7));let x=px,y=py;
-    for(let i=1;i<=steps;i++){const nx=px+dx*i/steps,ny=py+dy*i/steps;
+    // Despite the legacy name this now applies to EVERY species and EVERY
+    // solid rock, hull, closed bulkhead, trench boundary and seabed.
+    const radius=predatorRadius(e),minY=e.tier==='reaper'?8120:SURFACE.y+radius;
+    const clear=(x,y)=>predatorWaterClear(x,y,radius,minY);
+    let px=e.previousX??e.x,py=e.previousY??e.y;
+    if(!clear(px,py)){
+      // Old versions permitted enemies inside rock. Repair only an already
+      // invalid starting position; a moving enemy never teleports past a wall.
+      let found=null;
+      for(let r=8;r<=640&&!found;r+=8)for(let j=0;j<32;j++){
+        const a=j*TAU/32,x=px+Math.cos(a)*r,y=py+Math.sin(a)*r;
+        if(clear(x,y)){found={x,y};break;}
+      }
+      if(!found){e.x=px;e.y=py;e.vx=0;e.vy=0;return;}
+      e.x=found.x;e.y=found.y;e.vx=0;e.vy=0;e.previousX=e.x;e.previousY=e.y;predatorRoutes.delete(e);return;
+    }
+    const dx=e.x-px,dy=e.y-py,steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/5));let x=px,y=py;
+    for(let i=0;i<steps;i++){
+      const nx=x+dx/steps,ny=y+dy/steps;
       if(clear(nx,ny)){x=nx;y=ny;continue;}
-      if(clear(nx,y)){x=nx;e.vy=0;}else if(clear(x,ny)){y=ny;e.vx=0;}else{e.vx=0;e.vy=0;}break;}
+      // Tangential sliding is allowed, but each axis is tested independently.
+      if(clear(nx,y)){x=nx;e.vy=0;}
+      else if(clear(x,ny)){y=ny;e.vx=0;}
+      else{e.vx=0;e.vy=0;break;}
+    }
     e.x=x;e.y=y;
   }
   function drawPredatorIntent(e){
@@ -3415,38 +3621,85 @@
     if(depthOf(player.y)>350){const wreck=scene.wrecks.find(w=>distance(w,player)<270);if(wreck)wildSound('wreckGroan',wreck,380,11);}
   }
   function updateFishSchools(dt){
-    const visible=(scene.schools||[]).filter(s=>onscreen(s.x,s.y,300)).sort((a,b)=>distance(a,player)-distance(b,player)).slice(0,WILD.maxActiveSchools);
+    const visible=(scene.schools||[]).filter(s=>onscreen(s.x,s.y,420)).sort((a,b)=>distance(a,player)-distance(b,player)).slice(0,WILD.maxActiveSchools);
     wildActiveSchools=visible.length;
     for(const s of visible){
-      const spec=FISH[s.species],nearRock=scene.rocks.filter(r=>Math.abs(r.x-s.x)<r.radius+200&&Math.abs(r.y-s.y)<r.radius+200);
-      const threats=scene.predators.filter(e=>predatorAlive(e)&&distance(e,s)<230);
-      const threat=threats.sort((a,b)=>distance(a,s)-distance(b,s))[0];
-      const pd=distance(player,s),boostFear=player.boosting&&pd<220,sonarFear=s.sonarUntil>clock,predatorFear=Boolean(threat&&distance(threat,s)<175);
-      const wasFrightened=s.fear>.4,targetFear=boostFear||sonarFear||predatorFear?1:pd<100?.25:0;
-      s.fear=lerp(s.fear,targetFear,Math.min(1,dt*(targetFear>s.fear?5:.6)));
-      if(!wasFrightened&&s.fear>.4&&boostFear)wildSound('schoolRush',s,230,4);
-      let desired=s.heading+Math.sin(clock*.31+s.phase)*.07;
-      if(threat&&predatorFear)desired=Math.atan2(s.y-threat.y,s.x-threat.x);
-      else if(boostFear||pd<90)desired=Math.atan2(s.y-player.y,s.x-player.x);
-      else if(sonarFear)desired=Math.atan2(s.y-(s.sonarY??player.y),s.x-(s.sonarX??player.x));
-      else if(Math.hypot(s.x-s.homeX,s.y-s.homeY)>190)desired=Math.atan2(s.homeY-s.y,s.homeX-s.x);
-      s.heading=lerpAngle(s.heading,desired,Math.min(1,dt*(s.fear> .3?3.2:.9)));
-      const water=currentAt(s.x,s.y),speed=spec.speed*(1+s.fear*1.8);
-      let nx=s.x+(Math.cos(s.heading)*speed+water.x*.55)*dt,ny=s.y+(Math.sin(s.heading)*speed+ventFlowAt(s.x,s.y)*.5)*dt;
-      if(wildClear(nx,ny,24)){s.x=nx;s.y=ny;}else{s.heading+=dt*3;}
-      for(let i=0;i<s.fish.length;i++){
-        const f=s.fish[i],spread=1+s.fear*.75,formX=Math.cos(s.heading+Math.PI*.5)*(i%3-1)*12*spread-Math.cos(s.heading)*Math.floor(i/3)*10;
-        const formY=Math.sin(s.heading+Math.PI*.5)*(i%3-1)*12*spread-Math.sin(s.heading)*Math.floor(i/3)*10;
-        let tx=Math.cos(s.heading)*speed+(s.x+formX-f.x)*1.4,ty=Math.sin(s.heading)*speed+(s.y+formY-f.y)*1.4;
-        for(const g of s.fish){if(g===f)continue;const dx=f.x-g.x,dy=f.y-g.y,d2=dx*dx+dy*dy;if(d2>0&&d2<144){tx+=dx/d2*45;ty+=dy/d2*45;}}
-        const fd=distance(f,player);if(fd<65){const strength=(65-fd)*1.8;tx+=(f.x-player.x)/(fd||1)*strength;ty+=(f.y-player.y)/(fd||1)*strength;}
-        for(const rock of nearRock){const dx=f.x-rock.x,dy=f.y-rock.y,d=Math.hypot(dx,dy),edge=rock.radius+22;if(d<edge){tx+=dx/(d||1)*(edge-d)*3;ty+=dy/(d||1)*(edge-d)*3;}}
-        f.vx=lerp(f.vx,tx+water.x*.4,Math.min(1,dt*3));f.vy=lerp(f.vy,ty,Math.min(1,dt*3));
-        const fs=Math.hypot(f.vx,f.vy),cap=speed*1.9;if(fs>cap){f.vx*=cap/fs;f.vy*=cap/fs;}
-        nx=f.x+f.vx*dt;ny=f.y+f.vy*dt;
-        if(wildClear(nx,ny,6)){f.x=nx;f.y=ny;}else{f.vx*=-.5;f.vy*=-.5;}
-        if(Math.hypot(f.vx,f.vy)>2)f.angle=lerpAngle(f.angle,Math.atan2(f.vy,f.vx),Math.min(1,dt*6));
+      const spec=FISH[s.species],fish=s.fish;if(!fish.length)continue;
+      // The school centre follows its members. No indexed slots, rows or grids.
+      const cx=fish.reduce((v,f)=>v+f.x,0)/fish.length,cy=fish.reduce((v,f)=>v+f.y,0)/fish.length;
+      s.x=cx;s.y=cy;
+      const threats=scene.predators.filter(e=>predatorAlive(e)&&distance(e,s)<330);
+      const predator=threats.sort((a,b)=>distance(a,s)-distance(b,s))[0];
+      const pd=distance(player,s),boatRadius=player.boosting?265:170;
+      const boatFear=pd<boatRadius,sonarFear=s.sonarUntil>clock,predatorFear=Boolean(predator&&distance(predator,s)<245);
+      const wasFrightened=s.fear>.4,targetFear=predatorFear||sonarFear||player.boosting&&boatFear?1:boatFear?.7:0;
+      s.fear=lerp(s.fear,targetFear,1-Math.exp(-dt*(targetFear>s.fear?4.5:.48)));
+      if(!wasFrightened&&s.fear>.4&&boatFear)wildSound('schoolRush',s,270,4);
+      let desired=s.heading+Math.sin(clock*.23+s.phase)*.24+Math.sin(clock*.071+s.phase*2)*.13;
+      let threat=null;
+      if(predatorFear)threat=predator;
+      else if(boatFear)threat=player;
+      else if(sonarFear)threat={x:s.sonarX??player.x,y:s.sonarY??player.y};
+      if(threat)desired=Math.atan2(cy-threat.y,cx-threat.x);
+      else if(Math.hypot(cx-s.homeX,cy-s.homeY)>330)desired=Math.atan2(s.homeY-cy,s.homeX-cx);
+      const ahead={x:cx+Math.cos(desired)*70,y:cy+Math.sin(desired)*70};
+      if(!wildClear(ahead.x,ahead.y,18))for(const offset of [.8,-.8,1.5,-1.5,2.2,-2.2]){
+        const a=desired+offset;if(wildClear(cx+Math.cos(a)*70,cy+Math.sin(a)*70,18)){desired=a;break;}
       }
+      s.heading=lerpAngle(s.heading,desired,1-Math.exp(-dt*(s.fear>.3?1.8:.55)));
+      const hx=Math.cos(s.heading),hy=Math.sin(s.heading),water=currentAt(cx,cy),base=spec.speed*(1+s.fear*2.2);
+      // Snapshot positions/velocities: iteration order must not turn into a grid.
+      const before=fish.map(f=>({x:f.x,y:f.y,vx:f.vx,vy:f.vy}));
+      for(let i=0;i<fish.length;i++){
+        const f=fish[i],old=before[i];
+        if(!Number.isFinite(f.wanderState))f.wanderState=((Math.abs(Math.sin(f.phase+1))*0xffffffff)>>>0)||1;
+        const random=()=>{f.wanderState=(Math.imul(f.wanderState,1664525)+1013904223)>>>0;return f.wanderState/4294967296;};
+        f.paceTimer=(f.paceTimer??0)-dt;
+        if(f.paceTimer<=0){f.paceTarget=.76+random()*.48;f.wanderTarget=(random()-.5)*1.2;f.paceTimer=1.2+random()*2.8;}
+        f.pace=lerp(f.pace??1,f.paceTarget,1-Math.exp(-dt*.9));
+        f.wander=lerp(f.wander??0,f.wanderTarget,1-Math.exp(-dt*.75));
+        const longitudinal=(old.x-cx)*hx+(old.y-cy)*hy;
+        // Rear fish catch up; leaders ease off, without fixed positions.
+        const catchUp=clamp(1-longitudinal/(110+s.fear*140),.65,1.5);
+        const swim=base*f.pace*catchUp,a=s.heading+f.wander+Math.sin(clock*(.7+f.size*.3)+f.phase)*.12;
+        let tx=Math.cos(a)*swim,ty=Math.sin(a)*swim,alignX=0,alignY=0,neighbors=0;
+        const sep=20+s.fear*31;
+        for(let j=0;j<before.length;j++){
+          if(j===i)continue;const g=before[j],dx=old.x-g.x,dy=old.y-g.y,d=Math.hypot(dx,dy);
+          if(d<140+s.fear*70){alignX+=g.vx;alignY+=g.vy;neighbors++;}
+          if(d<sep){const ang=d>.01?Math.atan2(dy,dx):f.phase;const force=(1-d/sep)*(35+s.fear*55);tx+=Math.cos(ang)*force;ty+=Math.sin(ang)*force;}
+        }
+        if(neighbors){tx+=(alignX/neighbors-old.vx)*.13;ty+=(alignY/neighbors-old.vy)*.13;}
+        const centreDistance=Math.hypot(cx-old.x,cy-old.y),cohesion=centreDistance>240+s.fear*160?.65:s.fear>.3?.06:.22;
+        tx+=(cx-old.x)*cohesion;ty+=(cy-old.y)*cohesion;
+        if(threat){
+          const dx=old.x-threat.x,dy=old.y-threat.y,d=Math.hypot(dx,dy),reach=player.boosting?320:235;
+          if(d<reach){const flee=base*1.8*(1-d/reach)+28;const angle=d>.01?Math.atan2(dy,dx):f.phase;tx+=Math.cos(angle)*flee;ty+=Math.sin(angle)*flee;}
+        }
+        for(const rock of nearbyWildRocks(old.x,old.y)){
+          const dx=old.x-rock.x,dy=old.y-rock.y,d=Math.hypot(dx,dy),edge=rock.radius+25;
+          if(d<edge){tx+=dx/(d||1)*(edge-d)*2.8;ty+=dy/(d||1)*(edge-d)*2.8;}
+        }
+        const prospective=Math.atan2(ty,tx),look=22;
+        if(!wildClear(old.x+Math.cos(prospective)*look,old.y+Math.sin(prospective)*look,7)){
+          for(const offset of [1,-1,1.8,-1.8,Math.PI]){const angle=prospective+offset;
+            if(wildClear(old.x+Math.cos(angle)*look,old.y+Math.sin(angle)*look,7)){tx=Math.cos(angle)*swim;ty=Math.sin(angle)*swim;break;}}
+        }
+        const response=1-Math.exp(-dt*(s.fear>.3?3:1.8));
+        f.vx=lerp(old.vx,tx+water.x*.4,response);f.vy=lerp(old.vy,ty+ventFlowAt(old.x,old.y)*.2,response);
+        const speed=Math.hypot(f.vx,f.vy),cap=base*2;if(speed>cap){f.vx*=cap/speed;f.vy*=cap/speed;}
+        // Swept swimming, including at the fast scatter speed.
+        const steps=Math.max(1,Math.ceil(Math.hypot(f.vx,f.vy)*dt/5));
+        for(let k=0;k<steps;k++){
+          const x=f.x+f.vx*dt/steps,y=f.y+f.vy*dt/steps;
+          if(wildClear(x,y,6)){f.x=x;f.y=y;}
+          else if(wildClear(x,f.y,6)){f.x=x;f.vy*=.3;}
+          else if(wildClear(f.x,y,6)){f.y=y;f.vx*=.3;}
+          else{f.vx*=.5;f.vy*=.5;break;}
+        }
+        if(Math.hypot(f.vx,f.vy)>2)f.angle=lerpAngle(f.angle,Math.atan2(f.vy,f.vx),1-Math.exp(-dt*5));
+      }
+      s.x=fish.reduce((v,f)=>v+f.x,0)/fish.length;s.y=fish.reduce((v,f)=>v+f.y,0)/fish.length;
     }
   }
   function updateBenthos(dt){
@@ -3934,7 +4187,7 @@
     if(!realReturn)return;
     const c=signals.active;
     if(c?.status==='return'){
-      saved.credits+=c.reward;signals.earned+=c.reward;signals.completed++;
+      saved.credits+=c.reward;signals.earned+=c.reward;signals.completed++;addStat('contract'+c.kind,1);
       const b=signals.boards[c.levelId];if(b){b.serial++;b.offers=[];}
       signals.active=null;addEvent('Assignment banked · +'+c.reward+' CR');
       window.AbyssAudio?.event('contractComplete',0,1,true);
@@ -3963,7 +4216,7 @@
     if(s.kind==='warden-site'){showWardenPrompt();return;}
     const c=signals.active;if(!c||c.status!=='active')return;
     c.points[s.pointIndex].done=true;s.collected=true;c.status='return';window.AbyssAudio?.event('recorder');
-    announce('ASSIGNMENT CARGO SECURED · RETURN FOR '+c.reward+' CR',3);persist();updateUI();
+    pickupNotice('contract',1);persist();updateUI();
   }
   function bankedRecord(r){return Boolean(campaignLevels[r.levelId]?.secured.includes(r.index));}
   function drawArchiveDock(){
@@ -4045,7 +4298,8 @@
         e.heading=Math.atan2(e.aimY,e.aimX);window.AbyssAudio?.event('wardenWarning',clamp((e.x-player.x)/300,-1,1));announce('WARDEN WIND-UP · MOVE ACROSS ITS PATH',1.6);
       }else{
         const tx=home.x+Math.sin(clock*.3)*30,ty=home.y+Math.cos(clock*.22)*75;
-        const n=Math.max(1,Math.hypot(tx-e.x,ty-e.y));vx=(tx-e.x)/n*35;vy=(ty-e.y)/n*35;
+        const intent=navigatePredator(e,{x:tx,y:ty,speed:35});
+        const n=Math.max(1,Math.hypot(intent.x-e.x,intent.y-e.y));vx=(intent.x-e.x)/n*intent.speed;vy=(intent.y-e.y)/n*intent.speed;
       }
     }else if(e.wardenPhase==='windup'){
       e.aggression=1;if(e.phaseLeft<=0){e.wardenPhase='charge';e.phaseLeft=WARDEN.charge;window.AbyssAudio?.event('wardenCharge',clamp((e.x-player.x)/300,-1,1));}
@@ -4056,12 +4310,12 @@
       e.aggression=0;if(e.phaseLeft<=0){e.wardenPhase='listen';e.phaseLeft=2.5;}
     }
     const next={x:e.x+vx*dt,y:e.y+vy*dt};
-    if(projectileTerrainHit(e,next,22)!==null){
+    if(projectileTerrainHit(e,next,predatorRadius(e))!==null){
       if(e.wardenPhase==='charge'){e.wardenPhase='recover';e.phaseLeft=WARDEN.recovery+1;window.AbyssAudio?.event('wardenImpact',clamp((e.x-player.x)/300,-1,1));}
       vx=0;vy=0;
     }else{e.x=next.x;e.y=next.y;}
     if(distance(e,home)>WARDEN.radius+35){const angle=Math.atan2(e.y-home.y,e.x-home.x);e.x=home.x+Math.cos(angle)*WARDEN.radius;e.y=home.y+Math.sin(angle)*WARDEN.radius;}
-    e.vx=vx;e.vy=vy;
+    e.vx=vx;e.vy=vy;resolvePredatorWreckCollision(e);
     if(e.wardenPhase==='listen'&&Math.hypot(vx,vy)>2)e.heading=lerpAngle(e.heading,Math.atan2(vy,vx),dt*2);
     signals.warden.health=e.health;
   }
@@ -4201,6 +4455,14 @@
   // Tiny inspection hook for automated smoke tests.
   window.AbyssDiagnostics={state:()=>({slot:window.AbyssSlots.active,campaignTitle,weaponAmmo:{...player.weaponAmmo},weaponCooldown:{...player.weaponCooldown},damageFlashing:player.damageFlashUntil>clock,projectiles:scene.projectiles?.length||0,airborne:Boolean(player.airborne),dockSafe:inHarbour(player),surfaceY:SURFACE.y,splashCount:surfaceEffects.length,version:BUILD.version,versionName:BUILD.name,buildId:BUILD.id,shield:player.shield,shieldCapacity:shieldCapacity(),shieldDelay:player.shieldDelay,magnetRange:magnetRange(),magnetPower:magnetPower(),disruptorMark:saved.upgrades.disruptor,scanPowerCost:scanPowerCost(),upgradeOpen:$('upgradeDialog').open,storageHealthy,campaignId,levelId:LEVEL_ID,levelName:currentLevel().name,crystals:saved.crystals,totalRecorders:totalRecorders(),achievements:ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length,recoveryPods:field.recoveries.length,levelComplete:levelComplete(LEVEL_ID),boostCapacity:boostCapacity(),boostUnlocked:boostUnlocked(),boostMultiplier:boostMultiplier(),boostSeconds:boostCapacity()/BOOST.drain,joystickVisible:$('mobileJoystick').classList.contains('engaged'),zoom:viewport.zoom,flashlightMark:saved.upgrades.flashlight,flashlightLength:flashlightSpec().length,flashlightAngle:flashlightSpec().halfAngle*360/Math.PI,flashlightPowerRate:flashlightPowerRate(),worldWidth:widthAt(player.y)*2,populationCycle:field.cycle,mineAmmo:player.mineAmmo,mineCapacity:mineCapacity(),minePower:saved.upgrades.minePower,mineCapacityMark:saved.upgrades.mineCapacity,mineDamage:mineDamage(),mineCooldown:player.mineCooldown,deployedMines:scene.mines.length,kills:player.kills,normalSpeed:normalSpeedAt(saved.upgrades.engine),maxNormalSpeed:normalSpeedAt(THRUST.maxMark),ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),inputMode:touchControls?'touch':'desktop',vesselLabel:vesselLabel(),boost:player.boost,boosting:player.boosting,boostLocked:player.boostLocked,boostNeedsRelease:player.boostNeedsRelease,boostRechargeDelay:player.boostRechargeDelay,boostPowerRate:boostPowerRate(),boostRechargeRate:boostRechargeRate(),scanCooldown:player.scanCooldown,sonarCost:sonarCost(),mouseHeld:mouseHelm.pointerId!==null,boostHeld,facing:player.facing,hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,hasSavedDive:Boolean(loadedActive),lastSaveWall,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier==='common').length,reaperCount:scene.predators.filter(e=>e.tier==='reaper').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,noise:player.noise})};
   if(location.search.includes('testmode=1')||window.ABYSS_TEST_MODE===true){
+    window.AbyssDiagnostics.pickups=()=>JSON.parse(JSON.stringify(pickupNotices));
+    window.AbyssDiagnostics.beamAt=(x,y,r=0)=>beamIntersects(x,y,r);
+    window.AbyssDiagnostics.navigationPath=(id,target)=>{const e=scene.predators.find(e=>e.id===id);return e?planPredatorRoute(e,target):[];};
+    window.AbyssDiagnostics.predatorClear=id=>{const e=scene.predators.find(e=>e.id===id);return e?predatorWaterClear(e.x,e.y,predatorRadius(e),e.tier==='reaper'?8120:SURFACE.y+predatorRadius(e)):null;};
+    window.AbyssDiagnostics.predatorSweep=(id,dx,dy)=>{const e=scene.predators.find(e=>e.id===id);if(!e)return;e.previousX=e.x;e.previousY=e.y;e.x+=dx;e.y+=dy;resolvePredatorWreckCollision(e);return {x:e.x,y:e.y};};
+    window.AbyssDiagnostics.fishPulse=dt=>{clock+=dt;updateFishSchools(dt);render();};
+    window.AbyssDiagnostics.mutateFish=(school,index,values)=>{const f=scene.schools[school]?.fish[index];if(f)Object.assign(f,values);};
+    window.AbyssDiagnostics.mutateSchool=(index,values)=>{if(scene.schools[index])Object.assign(scene.schools[index],values);};
     window.AbyssDiagnostics.audioFrame=audioFrame;
     window.AbyssDiagnostics.movementNoiseAt=movementNoiseAt;
     window.AbyssDiagnostics.weaponStock=values=>{for(const id of Object.keys(WEAPONS)){if(Number.isFinite(values[id]))saved.weaponAmmo[id]=player.weaponAmmo[id]=clamp(Math.floor(values[id]),0,WEAPONS[id].capacity[saved.upgrades[id]]);}updateUI();persist();};
@@ -4246,7 +4508,7 @@
         predators:predators.map((e,n)=>createPredator({behaviour:'ordinary',id:'fixture-enemy-'+n,tier:'common',vx:0,vy:0,phase:0,aggression:0,lastHit:-10,alertUntil:0,forgetUntil:0,revealUntil:0,...e,x:x+e.dx,y:y+e.dy,homeX:x+e.dx,homeY:y+e.dy})),
         wrecks:wrecks.map(w=>({...w,x:x+w.dx,y:y+w.dy})),vents:vents.map(v=>({phase:0,...v,x:x+v.dx,y:y+v.dy})),dust:[],blasts:[],projectiles:[],
         mines:mines.map(m=>({id:idCounter++,mark:1,damage:60,birth:0,armedAt:0,detonated:false,revealUntil:0,...m,x:x+m.dx,y:y+m.dy}))};
-      running=true;paused=true;clock=0;surfaceEffects=[];sonarWaves=[];sonarTerrainEchoes=[];toastUntil=0;$('notification').classList.add('hidden');
+      running=true;paused=true;clock=0;pickupNotices=[];surfaceEffects=[];sonarWaves=[];sonarTerrainEchoes=[];toastUntil=0;$('notification').classList.add('hidden');
       camera={x:x-viewport.w/2,y:y-viewport.h*.52};
       for(const id of ['menuOverlay','pauseOverlay','modalOverlay'])$(id).classList.add('hidden');
       updateUI();render();return {x,y,camera:{...camera},viewport:{...viewport}};
@@ -4333,7 +4595,7 @@
     window.AbyssDiagnostics.openDiscoveries=()=>openJournal('discoveries');
     window.AbyssDiagnostics.predatorBehaviour=()=>{for(const e of scene.predators)delete e.behaviour;initialisePredatorBehaviours();};
     window.AbyssDiagnostics.rescueRules=()=>({...RESPAWN_AMMO});
-    window.AbyssDiagnostics.economy=()=>({regen:{...SALVAGE_REGEN},creditFactor:CREDIT_PRICE_FACTOR,prices:{mine:AMMO_PRICE,...WEAPON_AMMO_PRICES},salvage:JSON.parse(JSON.stringify(field.salvage))});
+    window.AbyssDiagnostics.economy=()=>({regen:{...SALVAGE_REGEN},creditFactor:CREDIT_PRICE_FACTOR,creditUplift:CREDIT_UPLIFT,prices:{mine:AMMO_PRICE,...WEAPON_AMMO_PRICES},salvage:JSON.parse(JSON.stringify(field.salvage))});
     window.AbyssDiagnostics.buyOrdnance=buyOrdnance;
     window.AbyssDiagnostics.autoPickup=()=>{const before=paused;paused=false;autoCollectSalvage(.25);paused=before;updateUI();return player.cargo.scrap;};
     window.AbyssDiagnostics.economyPulse=(seconds,allowPaused=false)=>{const before=paused;if(allowPaused)paused=false;updateSalvageRegeneration(seconds);paused=before;persist();return window.AbyssDiagnostics.economy();};

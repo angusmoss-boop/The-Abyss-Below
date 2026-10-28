@@ -1,5 +1,5 @@
 /* Shell, dock and menu skin. */
-:root{--abyss-build:"0.19.0-forgotten-giants-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
+:root{--abyss-build:"0.20.0-fluid-frontiers-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
 body{background:radial-gradient(ellipse at 40% -20%,#12344a 0%,#061019 65%)}
@@ -713,7 +713,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 }
 @media(prefers-reduced-motion:reduce){body.touch-ui .action-circle,body.touch-ui .ring-value,body.touch-ui .stock-value{transition:none}}
 
-/* v0.19.0 / Lost Signals: approved artwork, unchanged cockpit and controls. */
+/* v0.20.0 / Lost Signals: approved artwork, unchanged cockpit and controls. */
 .brand-app-icon{width:44px;height:44px;object-fit:cover;border-radius:12px;box-shadow:0 0 20px #48bcdf22;border:1px solid #4a8c9b66;flex:none}
 #menuOverlay{background:radial-gradient(ellipse at 25% 30%,#123c4be8,#030c15f5 70%);padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
 #menuOverlay .crystal-menu{display:grid;grid-template-columns:43% minmax(0,1fr);width:min(950px,100%);max-height:calc(100dvh - 36px);padding:0;overflow:auto;border:1px solid #38657399;border-radius:22px;background:#071923;box-shadow:0 30px 110px #000b;text-align:left;scrollbar-width:thin;scrollbar-color:#3c6470 #071923}
@@ -781,7 +781,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 }
 @media(prefers-reduced-motion:reduce){#menuOverlay button{transition:none}}
 
-/* v0.19.0 Lost Signals: the archive and dispatch desk share the existing cockpit palette. */
+/* v0.20.0 Lost Signals: the archive and dispatch desk share the existing cockpit palette. */
 .dock-tabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:thin;flex-shrink:0;padding-bottom:5px;}
 .dock-tabs>[role=tab]{flex:1 0 auto;min-width:82px;padding:11px 10px;font-size:10px;white-space:nowrap;}
 .signals-intro{padding:8px 0 18px;border-bottom:1px solid #24444e;margin-bottom:16px;}
@@ -870,7 +870,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 .rescue-loadout{border:1px solid #75cfbb42;border-radius:12px;background:#102b2c88;padding:13px 15px;margin-top:15px;display:grid;gap:7px}
 .rescue-loadout span{font-size:9px;letter-spacing:1.5px;color:#8cb5ad}.rescue-loadout strong{font-size:13px;color:#b3f2db}.rescue-loadout small{font-size:11px;line-height:1.5;color:#9bb5b9}
 @media(max-height:500px){.recovery-manifest{margin:9px 0}.recovery-manifest span{padding:6px}.recovery-manifest b{font-size:19px}.rescue-loadout{padding:9px 12px;margin-top:9px}}
-/* v0.19.0 / Forgotten Giants. Discovery cards share the existing journal;
+/* v0.20.0 / Forgotten Giants. Discovery cards share the existing journal;
    no new gameplay controls and no new modal nesting. */
 .journal-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
 .journal-tabs button{min-width:0;padding:12px 5px;font-size:10px;letter-spacing:.045em}
@@ -900,3 +900,31 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 .wreck-shape-1:before{transform:rotate(7deg);border-radius:8px 18px 7px 7px}.wreck-shape-2:before{border-radius:35%;transform:rotate(-3deg)}.wreck-shape-3:before{border-radius:30px;background:repeating-linear-gradient(90deg,transparent,transparent 38px,#a8c0c977 39px,#a8c0c977 43px)}.wreck-shape-4:before{left:7%;right:7%;height:36%;border-radius:5px 40px 5px 5px}
 @media(max-width:600px){.discovery-intro{padding:16px}.discovery-intro h3{font-size:22px}.discovery-summary{align-items:flex-start;flex-direction:column;gap:12px}.discovery-summary label{width:100%;justify-content:space-between}.discovery-summary select{max-width:70%;min-height:42px}.discovery-grid{grid-template-columns:1fr;padding:14px;gap:14px}.journal-tabs button{font-size:8px;letter-spacing:0;padding:12px 2px}.discovery-card h4{font-size:19px}.discovery-pin{min-height:42px}}
 @media(max-height:480px) and (min-width:601px){.discovery-grid{padding:12px;gap:12px}.discovery-intro{padding:12px 18px}.discovery-intro h3{font-size:20px}.wreck-silhouette{height:70px}}
+
+/* v0.20.0: circular, live desktop action reference. This is an instrument panel,
+   not a clickable overlay: clicks pass through to the mouse helm. */
+.desktop-ui .desktop-keybinds{left:12px;right:12px;bottom:12px;max-width:1030px;gap:14px;flex-wrap:nowrap;align-items:center;padding:9px 14px 10px;border-radius:23px;border:1px solid #729eab32;background:linear-gradient(180deg,#07172138,#06131cd9);box-shadow:0 8px 30px #0005;pointer-events:none;backdrop-filter:blur(3px)}
+.desktop-pilot-hint{display:flex;align-items:center;gap:8px;flex:0 0 112px;color:#90afbb}
+.desktop-pilot-hint .helm-mark{font-size:29px;color:#8ed5cf}
+.desktop-pilot-hint b{display:block;font-size:9px;letter-spacing:2px;color:#b9dbdf}
+.desktop-pilot-hint small{display:block;max-width:90px;font:9px/1.5 ui-monospace,monospace;margin-top:5px;color:#7f9eac}
+.desktop-action-bank{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:8px;min-width:0;flex:1}
+.desktop-action{--action-color:#9edbd8;--readiness:100;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;position:relative;color:var(--action-color)}
+.desktop-action-name{font-size:8px;letter-spacing:1px;font-weight:700;line-height:12px;color:#9ab6bf}
+.desktop-action-orb{width:54px;height:54px;max-width:100%;aspect-ratio:1;position:relative;display:grid;place-items:center;border-radius:50%;background:radial-gradient(circle at 35% 20%,#30576678,#0718238c 75%);border:1px solid #7b9caa52;box-shadow:inset 0 1px 5px #bdebf10e,0 3px 9px #0003}
+.desktop-action-orb .action-glyph{width:26px;height:26px;position:relative;display:block;filter:drop-shadow(0 0 4px #91e4df18)}
+.desktop-ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);fill:none;stroke-width:1.6}
+.desktop-track{stroke:#86a3b327}.desktop-ready{stroke:var(--action-color);stroke-dasharray:var(--readiness) 100;opacity:.8;transition:stroke-dasharray .12s linear}
+.desktop-action-orb kbd{position:absolute;right:-3px;bottom:-2px;padding:2px 4px;border-radius:5px;background:#102530;border:1px solid #678b9c87;color:#d9edf1;font:700 9px/12px ui-monospace,monospace;min-width:20px;text-align:center;box-shadow:0 2px 4px #0005}
+.desktop-readout{font:650 10px/15px ui-monospace,monospace;white-space:nowrap;letter-spacing:.2px;min-height:15px;color:var(--action-color)}
+.desktop-timer{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:700 12px ui-monospace,monospace;color:#edf7f8;text-shadow:0 1px 3px #000}
+.desktop-action.has-timer .desktop-timer{display:block}.desktop-action.has-timer .action-glyph{opacity:.22}
+.desktop-action.is-locked{--action-color:#69808d;opacity:.48}.desktop-action.is-locked .desktop-readout{font-size:8px}
+.desktop-action.is-unavailable:not(.is-locked) .desktop-action-orb{background:#10212b88}
+.desktop-action.is-active .desktop-action-orb{border-color:var(--action-color);box-shadow:inset 0 0 14px #8be4cf20,0 0 8px #78d8d018}
+.desktop-ui .interaction-prompt{bottom:calc(var(--control-clearance,126px) + 10px)}
+@media(max-width:1190px){.desktop-ui .desktop-keybinds{gap:9px;padding:8px 10px}.desktop-pilot-hint{flex-basis:76px}.desktop-pilot-hint .helm-mark{display:none}.desktop-action-bank{gap:5px}.desktop-action-orb{width:48px;height:48px}.desktop-action-name{font-size:7px;letter-spacing:.5px}.desktop-readout{font-size:9px}}
+@media(max-width:930px){.desktop-pilot-hint{display:none}.desktop-action-bank{grid-template-columns:repeat(11,minmax(0,1fr))}}
+@media(max-width:680px){.desktop-action-bank{grid-template-columns:repeat(6,minmax(0,1fr));row-gap:6px}.desktop-action-orb{width:44px;height:44px}.desktop-action-name{line-height:10px}.desktop-readout{line-height:12px;min-height:12px}.desktop-ui .desktop-keybinds{border-radius:17px;left:8px;right:8px;bottom:8px}}
+@media(max-width:370px){.desktop-action-bank{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px 2px}.desktop-action-orb{width:40px;height:40px}.desktop-action-name{font-size:6px}.desktop-readout{font-size:8px}.desktop-action-orb kbd{font-size:7px;padding:1px 3px}}
+.touch-ui .desktop-keybinds{display:none!important}

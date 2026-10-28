@@ -2,7 +2,7 @@
    Backups are portable JSON, not encrypted, cloud-synchronised or cheat-proof. */
 (() => {
   'use strict';
-  const buildId='0.19.0-forgotten-giants-1';
+  const buildId='0.20.0-fluid-frontiers-1';
   const levels=['sunbreak-shelf','glassbone-rift','drowned-gardens','midnight-cathedral','calypso-abyss'];
   const lengths=[2,3,4,5,6];
   const chapters=['The wrong timestamp','Something in the walls','An ocean that remembers','The listening chamber','The other end of the call'];
@@ -130,7 +130,7 @@
     window.AbyssGiants?.validateBackup(data);
     return true;
   }
-  function pack(payload,version='0.19.0'){
+  function pack(payload,version='0.20.0'){
     validateCampaign(payload);const text=JSON.stringify(payload);
     return JSON.stringify({format:'the-abyss-below/campaign',formatVersion:1,gameVersion:version,exportedAt:new Date().toISOString(),integrity:{algorithm:'fnv1a32',value:checksum(text)},payload},null,2);
   }
@@ -138,7 +138,7 @@
     if(typeof text!=='string'||text.length>maxBytes)throw Error('Choose a campaign backup smaller than 12 MB.');
     let file;try{file=JSON.parse(text);}catch(_){throw Error('The file is not valid JSON. Your campaigns have not changed.');}
     if(file?.format!=='the-abyss-below/campaign'||file.formatVersion!==1)throw Error('Not a supported Abyss Below campaign export.');
-    if(!/^0\.\d+\.\d+$/.test(file.gameVersion||'')||Number(file.gameVersion.split('.')[1])>19)throw Error('This backup requires a newer game version.');
+    if(!/^0\.\d+\.\d+$/.test(file.gameVersion||'')||Number(file.gameVersion.split('.')[1])>Number(buildId.split('.')[1]))throw Error('This backup requires a newer game version.');
     if(file.integrity?.algorithm!=='fnv1a32'||file.integrity.value!==checksum(JSON.stringify(file.payload)))throw Error('Backup integrity check failed. Nothing was imported.');
     validateCampaign(file.payload);return {payload:file.payload,gameVersion:file.gameVersion,exportedAt:file.exportedAt};
   }

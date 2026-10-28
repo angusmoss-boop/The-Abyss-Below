@@ -1,3 +1,15 @@
+# v0.20.0: Fluid Frontiers
+
+- Keep Mk I lighting unchanged; upgraded forward fans now span 70 / 110 / 150 degrees, with existing length/drain and dark rear.
+- Apply swept rock/wreck/world collisions to all predators; add bounded local route steering and legacy embedded-position repair.
+- Replace magnetic collection beams with compact icon/quantity notices for all pickup categories.
+- Replace fixed school slots with individual smoothly varied swimming, front/rear speed adjustment and wider reactive scattering.
+- Add a desktop circular keyboard-reference/action bank with weapon stock, cooldowns and live state; preserve mobile controls.
+- Keep original 20 achievements; add Warden, discovery, shortcut, contract, recovery, breach and haul objectives for 30 total.
+- Increase every paid upgrade's previous credit cost by 25%, rounded up; preserve crystal/ammunition prices and fitted equipment.
+- Fix backup importer release compatibility so a current-version export can be reimported.
+- Preserve the three campaign slots and active expedition schema.
+
 # v0.19.0: Forgotten Giants
 
 - Added five optional cutaway wreck interiors in side alcoves, without moving original rocks or resources.

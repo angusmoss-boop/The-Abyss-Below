@@ -4,7 +4,7 @@
  */
 (() => {
   'use strict';
-  const buildId='0.19.0-forgotten-giants-1';
+  const buildId='0.20.0-fluid-frontiers-1';
   const vessels=Object.freeze([
     {id:'wayfarer',level:'sunbreak-shelf',name:'THE WAYFARER',kind:'COASTAL FREIGHTER',depth:190,side:-1,w:620,h:340,color:'#edaa75',finish:'RESCUE ORANGE',palette:['#ffdbc0','#cf7945','#744a36','#f0e5d4'],rooms:['FORWARD STORES','CARGO HOLD','SERVICE DECK'],story:'The Wayfarer never carried scientists. Her manifest lists food, spare filters and letters from home. When the coastal evacuation began, the captain emptied the forward hold for passengers and turned back towards the research harbour. A hand-painted arrow still points to the emergency exit. The last entry in her log contains no coordinates, only: "Room for twelve more."'},
     {id:'prospector-nine',level:'glassbone-rift',name:'PROSPECTOR NINE',kind:'MINERAL SURVEY VESSEL',depth:430,side:1,w:700,h:380,color:'#d5bc60',finish:'INDUSTRIAL GRAPHITE',palette:['#d5dce3','#646f7a','#303d49','#efce67'],rooms:['PROCESSING BAY','ORE TRANSFER','CREW ACCESS'],story:'Prospector Nine mapped the fractures before the research stations existed. Her cutters were shut down from the bridge, not by a power failure. Scored into a maintenance plate is a sketch of a repeating waveform beside the words "not a bearing fault". The crew left every floodlight facing the same empty stretch of water.'},
