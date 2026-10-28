@@ -2,7 +2,7 @@
    Backups are portable JSON, not encrypted, cloud-synchronised or cheat-proof. */
 (() => {
   'use strict';
-  const buildId='0.18.2-recovery-protocol-1';
+  const buildId='0.19.0-forgotten-giants-1';
   const levels=['sunbreak-shelf','glassbone-rift','drowned-gardens','midnight-cathedral','calypso-abyss'];
   const lengths=[2,3,4,5,6];
   const chapters=['The wrong timestamp','Something in the walls','An ocean that remembers','The listening chamber','The other end of the call'];
@@ -88,7 +88,7 @@
       for(const key of ['drops','recoveries'])if(!Array.isArray(f[key])||f[key].length>6000)fail('Invalid recovery data.');
       const ids=new Set(),heldRecorders=new Set(f.secured);
       for(const r of f.recoveries){
-        if(!r||typeof r.id!=='string'||!/^recovery-/.test(r.id)||ids.has(r.id)||!Number.isFinite(r.x)||Math.abs(r.x)>3000||!Number.isFinite(r.y)||r.y<58||r.y>18120||!['scrap','crystal'].every(k=>Number.isInteger(r[k])&&r[k]>=0&&r[k]<=1e9))fail('Invalid recovery manifest.');
+        if(!r||typeof r.id!=='string'||!/^recovery-/.test(r.id)||ids.has(r.id)||!Number.isFinite(r.x)||(r.x<-2440||r.x>3640)||!Number.isFinite(r.y)||r.y<58||r.y>18120||!['scrap','crystal'].every(k=>Number.isInteger(r[k])&&r[k]>=0&&r[k]<=1e9))fail('Invalid recovery manifest.');
         ids.add(r.id);
         if(r.recorders!==undefined&&(!Array.isArray(r.recorders)||!r.recorders.every(n=>Number.isInteger(n)&&n>=0&&n<lengths[i])||new Set(r.recorders).size!==r.recorders.length))fail('Invalid recovery recorders.');
         for(const n of r.recorders||[]){if(heldRecorders.has(n))fail('A recorder has more than one owner.');heldRecorders.add(n);}
@@ -111,18 +111,26 @@
       if(!q.cargo||!['scrap','crystal'].every(k=>Number.isInteger(q.cargo[k])&&q.cargo[k]>=0)||!Array.isArray(q.cargo.recorders)||!q.cargo.recorders.every(i=>Number.isInteger(i)&&i>=0&&i<lengths[levels.indexOf(a.levelId)]))fail('Invalid dive cargo.');
       if(!a.items.every(n=>Number.isFinite(n.x)&&Number.isFinite(n.y)&&['scrap','crystal','air','recorder','recovery'].includes(n.type)))fail('Invalid dive items.');
       if(!a.predators.every(n=>['common','apex','reaper','warden'].includes(n.tier)&&Number.isFinite(n.x)&&Number.isFinite(n.y)&&Number.isFinite(n.health)))fail('Invalid dive contacts.');
-      if(!Number.isFinite(a.clock)||a.clock<0||q.x<-1400||q.x>2600||q.y<-2000||q.y>120+[300,600,1000,1400,1800][levels.indexOf(a.levelId)]*10+10)fail('Dive position or clock is invalid.');
+      if(!Number.isFinite(a.clock)||a.clock<0||q.x<-2440||q.x>3640||q.y<-2000||q.y>120+[300,600,1000,1400,1800][levels.indexOf(a.levelId)]*10+10)fail('Dive position or clock is invalid.');
       const guidanceValid=o=>(o.targetId==null||typeof o.targetId==='string'&&o.targetId.length<=100||Number.isInteger(o.targetId)&&o.targetId>=0&&o.targetId<=1e9)&&['launchHeading','originX','originY','heading','vx','vy'].every(k=>o[k]===undefined||Number.isFinite(o[k])&&Math.abs(o[k])<=100000);
       if(!a.mines.every(m=>Number.isFinite(m.x)&&Number.isFinite(m.y)&&Number.isFinite(m.armedAt)&&Number.isFinite(m.damage)&&m.damage>=0&&guidanceValid(m)))fail('Invalid mine checkpoint.');
-      if(!a.waves.every(w=>Number.isFinite(w.x)&&Number.isFinite(w.y)&&Number.isFinite(w.birth)&&Number.isFinite(w.radius)&&Array.isArray(w.contacts)&&w.contacts.every(c=>['items','predators','rocks','wrecks','vents','mines','landmarks','derelictMines','ventFields','schools','signals','wall','floor'].includes(c.kind)&&typeof c.hit==='boolean')))fail('Invalid sonar checkpoint.');
+      if(!a.waves.every(w=>Number.isFinite(w.x)&&Number.isFinite(w.y)&&Number.isFinite(w.birth)&&Number.isFinite(w.radius)&&Array.isArray(w.contacts)&&w.contacts.every(c=>['items','predators','rocks','wrecks','vents','mines','landmarks','derelictMines','ventFields','schools','signals','giantObjects','wall','floor'].includes(c.kind)&&typeof c.hit==='boolean')))fail('Invalid sonar checkpoint.');
       if(a.projectiles&&(!Array.isArray(a.projectiles)||a.projectiles.length>200||!a.projectiles.every(o=>['railgun','torpedo'].includes(o.kind)&&['x','y','vx','vy','damage','remaining','radius'].every(k=>Number.isFinite(o[k]))&&o.damage>0&&o.remaining>=0&&guidanceValid(o))))fail('Invalid projectile checkpoint.');
+      for(const e of a.predators){
+        if(e.behaviour!==undefined&&!['ordinary','pack','ambush','interceptor'].includes(e.behaviour))fail('Invalid predator behaviour.');
+        if(!['seenX','seenY','seenVX','seenVY','seenAt','huntLeft','rushAngle','previousX','previousY'].every(k=>e[k]===undefined||Number.isFinite(e[k])&&Math.abs(e[k])<1e9))fail('Invalid predator memory.');
+        if(e.huntPhase!==undefined&&!['idle','windup','rush','retreat','recover'].includes(e.huntPhase))fail('Invalid ambush phase.');
+        if(e.packIndex!==undefined&&(!Number.isInteger(e.packIndex)||e.packIndex<0||e.packIndex>2))fail('Invalid predator pack.');
+        if(e.packId!==undefined&&(typeof e.packId!=='string'||!/^pack-\d+$/.test(e.packId)))fail('Invalid predator pack.');
+      }
       for(const e of a.predators)if(e.tier==='warden'&&(!['listen','windup','charge','recover'].includes(e.wardenPhase)||!['homeX','homeY','phaseLeft','heading','aimX','aimY'].every(k=>Number.isFinite(e[k]))))fail('Invalid Warden checkpoint.');
       if(a.signals&&(!Array.isArray(a.signals)||a.signals.length>5||!a.signals.every(o=>['contract-package','survey-buoy','warden-site'].includes(o.kind)&&Number.isFinite(o.x)&&Number.isFinite(o.y))))fail('Invalid assignment checkpoint.');
       if(a.events&&!a.events.every(e=>typeof e==='string'&&e.length<300&&!/[<>]/.test(e)))fail('Invalid event log.');
     }
+    window.AbyssGiants?.validateBackup(data);
     return true;
   }
-  function pack(payload,version='0.18.2'){
+  function pack(payload,version='0.19.0'){
     validateCampaign(payload);const text=JSON.stringify(payload);
     return JSON.stringify({format:'the-abyss-below/campaign',formatVersion:1,gameVersion:version,exportedAt:new Date().toISOString(),integrity:{algorithm:'fnv1a32',value:checksum(text)},payload},null,2);
   }
@@ -130,7 +138,7 @@
     if(typeof text!=='string'||text.length>maxBytes)throw Error('Choose a campaign backup smaller than 12 MB.');
     let file;try{file=JSON.parse(text);}catch(_){throw Error('The file is not valid JSON. Your campaigns have not changed.');}
     if(file?.format!=='the-abyss-below/campaign'||file.formatVersion!==1)throw Error('Not a supported Abyss Below campaign export.');
-    if(!/^0\.\d+\.\d+$/.test(file.gameVersion||'')||Number(file.gameVersion.split('.')[1])>18)throw Error('This backup requires a newer game version.');
+    if(!/^0\.\d+\.\d+$/.test(file.gameVersion||'')||Number(file.gameVersion.split('.')[1])>19)throw Error('This backup requires a newer game version.');
     if(file.integrity?.algorithm!=='fnv1a32'||file.integrity.value!==checksum(JSON.stringify(file.payload)))throw Error('Backup integrity check failed. Nothing was imported.');
     validateCampaign(file.payload);return {payload:file.payload,gameVersion:file.gameVersion,exportedAt:file.exportedAt};
   }

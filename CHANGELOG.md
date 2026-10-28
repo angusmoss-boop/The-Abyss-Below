@@ -1,3 +1,14 @@
+# v0.19.0: Forgotten Giants
+
+- Added five optional cutaway wreck interiors in side alcoves, without moving original rocks or resources.
+- Added four open exits per structure, a sonar-identifiable panel and a permanent bulkhead shortcut.
+- Added manual identification-plate recovery, archived stories and five earned cosmetic finishes in Journal / Discoveries.
+- Integrated plate-only and mixed losses into persistent wreck recovery, three slots, active snapshots and portable backups.
+- Added some Drifter packs, telegraphed Stalker ambushes and observation-limited Reaper interception at unchanged tier speed/health.
+- Added visible-only guidance-candidate markers for rail and torpedo, no new input or cost.
+- Expanded survey bounds while preserving the original cell origin; stable object IDs protect evolving wreck sonar snapshots.
+- Preserved previous currency, finite crystals, salvage regeneration, mission, Warden, ammo and audio rules.
+
 # v0.18.1 / Guided Ordnance
 
 ## v0.18.2 / Recovery Protocol

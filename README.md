@@ -1,18 +1,18 @@
 # The Abyss Below
 
-## v0.18.2: Recovery Protocol
+## v0.19.0: Forgotten Giants
 
-A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. Death now leaves a persistent wreck carrying **all unbanked scrap, crystals and recorders**. Its beacon is automatically marked and pinned on the level survey. Collect it with E / USE and return to the hub to bank the cargo. Earlier wrecks are never deleted by another death.
+Five optional, explorable wreck interiors now occupy connected side chambers. Sonar identifies service panels; USE opens permanent shortcuts and collects identification plates. Bank a plate to archive its story and unlock a cosmetic hull finish. Unbanked plates remain in recovery wrecks after death, including plate-only losses.
 
-Defeat replaces ammunition with **10 rail rounds, 3 torpedoes and 3 mines**, irrespective of the previous amount. Weapons must still be fitted to fire. Emergency stock persists across saves; the starting two-slot mine rack can temporarily hold the third rescue mine. Ordinary refills still cost credits, and normal paid capacity is unchanged.
+Some Drifters form small packs, Stalkers telegraph a rush and retreat, and Reapers intercept briefly observed movement. Normal tier health, speed caps and counts are unchanged. Visible-only rail/torpedo targeting hints match the existing guidance candidates. No new action buttons or currency.
 
-Read [RECOVERY-PROTOCOL-v0.18.2.md](RECOVERY-PROTOCOL-v0.18.2.md) for the mechanics and migration details, and [VERIFICATION-v0.18.2.md](VERIFICATION-v0.18.2.md) for current test evidence and limits. Automatic weapon guidance from [v0.18.1](GUIDED-ORDNANCE-v0.18.1.md) and all Lost Signals content remain.
+Read [FORGOTTEN-GIANTS-v0.19.0.md](FORGOTTEN-GIANTS-v0.19.0.md) for new mechanics and [VERIFICATION-v0.19.0.md](VERIFICATION-v0.19.0.md) for current evidence and limitations. The existing recovery and exact 10 / 3 / 3 death-ammunition rules remain.
 
 ## Install or update
 
-Apply the update ZIP over v0.18.1 at the repository root. Save and export a campaign backup first; banking cargo is a sensible precaution. Upload the extracted contents together, including all changed runtime files, the worker and `version.json`. Use the complete ZIP for a fresh checkout. These files do not deploy themselves.
+Apply the extracted update ZIP over **v0.18.2** at the repository root. Save and export a backup first; banking cargo is a sensible precaution. Upload all changed runtime files together, including the new `forgotten-giants.js`, worker and `version.json`. Use the complete ZIP for a fresh checkout. These files do not deploy themselves.
 
-Reopen the same site online and check for **v0.18.2 / Recovery Protocol**. Keep the same origin and browser profile. Do not clear site data, uninstall or create a new campaign to update. Local/offline/unverified menu status is not proof of a hosted update.
+Reopen the same site online and check for **v0.19.0 / Forgotten Giants**. Keep the same origin and browser profile. Do not clear site data, uninstall or start a new campaign to update. Local/offline/unverified menu status is not proof of a hosted update.
 
 ## Automatic guidance
 
@@ -56,7 +56,7 @@ Mobile has an icon-only weapon triangle (railgun above torpedo and mine). A sing
 | Action | Desktop | Mobile |
 |---|---|---|
 | Pilot | Hold left mouse; or WASD/arrows | Drag open water |
-| Crystals / recorders / supplies / dock | E | Large collection icon |
+| Crystals / recorders / plates / panels / supplies / dock | E | Large collection icon |
 | Scrap recovery | Automatic within magnet range | Automatic within magnet range |
 | Boost | Hold Space, requires magnetic thrusters | Hold chevrons |
 | Railgun | Hold Z | Hold upper weapon icon |

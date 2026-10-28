@@ -2,7 +2,7 @@
    Start/resume only after user input. Settings persist independently of campaigns. */
 (() => {
   'use strict';
-  const KEY='abyss-audio-v1', BUILD='0.18.2-recovery-protocol-1';
+  const KEY='abyss-audio-v1', BUILD='0.19.0-forgotten-giants-1';
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   let settings={effects:.5,ambience:.35,music:.3,muted:false};
   try { const v=JSON.parse(localStorage.getItem(KEY)||'null'); if(v){
@@ -131,6 +131,7 @@
       case 'assignmentScan':play(520,640,.25,.07);play(780,880,.32,.055,pan,'sine',.16);break;
       case 'contractComplete':[330,440,554,660].forEach((f,i)=>play(f,f,.5,.055,0,'sine',i*.12));break;
       case 'wardenWake':play(48,36,1.8,.12,pan,'triangle');play(96,72,1.5,.04,pan,'sine',.2);break;
+      case 'stalkerWindup':play(165,245,.72,.055,pan,'triangle');play(330,410,.60,.018,pan,'sine');break;
       case 'wardenWarning':play(110,210,1.3,.11,pan,'triangle');play(220,420,1.2,.04,pan,'sine');break;
       case 'wardenCharge':hiss(.7,.15,450);play(90,40,.8,.12,pan,'triangle');break;
       case 'wardenImpact':hiss(.75,.13,600);play(65,26,.9,.14,pan,'triangle');break;
