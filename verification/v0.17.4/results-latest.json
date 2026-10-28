@@ -1,0 +1,90 @@
+{
+  "build": "0.17.4-crystal-descent-1",
+  "completed_utc": "2026-10-28T00:54:45.104658+00:00",
+  "results": [
+    {
+      "suite": "branding",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 1.35
+    },
+    {
+      "suite": "branding_ui",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 30.98
+    },
+    {
+      "suite": "launch",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 19.32
+    },
+    {
+      "suite": "resume",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 25.37
+    },
+    {
+      "suite": "slots",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 20.89
+    },
+    {
+      "suite": "combat_touch",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 10.18
+    },
+    {
+      "suite": "stealth",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 24.42
+    },
+    {
+      "suite": "audio_transitions",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 16.41
+    },
+    {
+      "suite": "music",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 9.7
+    },
+    {
+      "suite": "sync",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.3
+    },
+    {
+      "suite": "worker",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.17
+    }
+  ],
+  "runtime_hashes": {
+    "service-worker.js": "a9f03d9418d0cd82a831ec14023d959f1de4482a5d5b535a7e8ed6198d41f613",
+    "index.html": "70ad20feaefd3f1cae81bf859d410d1b3d304bca3e92cb17e26cb33d98557b4f",
+    "styles.css": "90babc0f7993f1bb23ea6efe53aaa405c8487d33089f94ddeb51152b0f229112",
+    "campaign-slots.js": "bd455e6e5cc416ac74988f9fc87d6d84b7f4edd373775279964a70145ad138fc",
+    "audio.js": "dfe02240579ed39e38a5ee5fe9e5d5edc8b5e64c8996f1db61ef17dbd53e8582",
+    "game.js": "7327519c15d774d44ea33242c922b4f667cabb1e3896aa8927b6ed919b35353f",
+    "version-sync.js": "9e75d8cb40022e6d8b6bf85ee477b026607f9f52f4fe2b5c395b2019ea005578",
+    "manifest.webmanifest": "981eb85f60456f04814a858ec70aedadb03fa16f2a355affe7cee5187ee3bb2d",
+    "launch.js": "034afdb82f59325cdaf2a025324b53e4aca5ad058a0cf28a6c0327ee7d65498d",
+    "icon-192.png": "767c0d175f694f0acd47faac80fccea427e4437884a5583fe787e2d57293a4c0",
+    "icon-512.png": "8a88e9cc041b8dcdd5a69821793e8ce48e208234c1142e61141e72bb3426febe",
+    "icon-maskable-512.png": "8a88e9cc041b8dcdd5a69821793e8ce48e208234c1142e61141e72bb3426febe",
+    "apple-touch-icon.png": "3fb5123e1b7e4ed3d3907b4a45087a647b922772437cada61a6cfe06470cb8b0",
+    "favicon-32.png": "8472bb51a9d7fa34b4fd85670b0ecf80415664d1191f812f7c4c7de8a50941ca",
+    "favicon.ico": "49a27c92f8ed93ed60932ba84cbeb462e2955bf7e863d9728d3344dc73ffa2b2",
+    "launch-art.webp": "b15f58b3841c9c77b59f85a55b3810a26492d444de0bc64eb38fcb06928326ac"
+  }
+}
