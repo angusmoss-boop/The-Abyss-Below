@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const BUILD = Object.freeze({version:'0.17.3',name:'Smooth Signals',id:'0.17.3-smooth-signals-1'});
+  const BUILD = Object.freeze({version:'0.17.4',name:'Crystal Descent',id:'0.17.4-crystal-descent-1'});
   window.AbyssBuild=BUILD;
   const $ = id => document.getElementById(id);
   const canvas = $('gameCanvas');
@@ -3372,4 +3372,5 @@
     window.AbyssDiagnostics.economyPulse=(seconds,allowPaused=false)=>{const before=paused;if(allowPaused)paused=false;updateSalvageRegeneration(seconds);paused=before;persist();return window.AbyssDiagnostics.economy();};
     window.AbyssDiagnostics.grantCredits=(value)=>{saved.credits=Math.max(0,Math.floor(value));persist();updateUI();};
   }
+  window.AbyssLaunch?.ready();
 })();

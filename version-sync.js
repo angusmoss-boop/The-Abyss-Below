@@ -15,7 +15,7 @@
   }
   $('checkVersionBtn').onclick=null; // Clear the slow/missing-checker fallback.
 
-  const CORE=['index.html','styles.css','campaign-slots.js','audio.js','game.js','version-sync.js','service-worker.js','manifest.webmanifest'];
+  const CORE=['index.html','styles.css','campaign-slots.js','audio.js','game.js','version-sync.js','service-worker.js','manifest.webmanifest','launch.js','icon-192.png','icon-512.png','icon-maskable-512.png','apple-touch-icon.png','favicon-32.png','favicon.ico','launch-art.webp'];
   const state={status:'checking',checkedAt:null,remote:null,detail:'',inFlight:false};
   let currentCheck=null,lastAttempt=0,generation=0,canReload=false,recheckRequested=false;
   $('menuVersion').textContent='v'+BUILD.version;$('menuVersionName').textContent=BUILD.name;

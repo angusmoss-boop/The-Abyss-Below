@@ -1,5 +1,5 @@
 /* Shell, dock and menu skin. */
-:root{--abyss-build:"0.17.3-smooth-signals-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
+:root{--abyss-build:"0.17.4-crystal-descent-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
 body{background:radial-gradient(ellipse at 40% -20%,#12344a 0%,#061019 65%)}
@@ -712,3 +712,71 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
  body.touch-ui .primary-actions{margin:0;gap:var(--pad-gap)}
 }
 @media(prefers-reduced-motion:reduce){body.touch-ui .action-circle,body.touch-ui .ring-value,body.touch-ui .stock-value{transition:none}}
+
+/* v0.17.4 / Crystal Descent: approved artwork, unchanged cockpit and controls. */
+.brand-app-icon{width:44px;height:44px;object-fit:cover;border-radius:12px;box-shadow:0 0 20px #48bcdf22;border:1px solid #4a8c9b66;flex:none}
+#menuOverlay{background:radial-gradient(ellipse at 25% 30%,#123c4be8,#030c15f5 70%);padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
+#menuOverlay .crystal-menu{display:grid;grid-template-columns:43% minmax(0,1fr);width:min(950px,100%);max-height:calc(100dvh - 36px);padding:0;overflow:auto;border:1px solid #38657399;border-radius:22px;background:#071923;box-shadow:0 30px 110px #000b;text-align:left;scrollbar-width:thin;scrollbar-color:#3c6470 #071923}
+.menu-art-panel{position:relative;min-height:100%;overflow:hidden;background:#082335;border-right:1px solid #35647766;isolation:isolate}
+.menu-launch-art{display:block;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 48%;z-index:-2}
+.menu-art-shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,#04101800 45%,#04101866 66%,#041018f2 100%)}
+.menu-title-block{position:absolute;bottom:31px;left:25px;right:20px;text-shadow:0 2px 24px #03131b}
+#menuOverlay .menu-kicker{font-size:8px;letter-spacing:1.9px;color:#c0e9eb;line-height:1.5}
+#menuOverlay h1{font-size:clamp(36px,4.3vw,52px);line-height:1.02;letter-spacing:3px;margin:12px 0 0}
+#menuOverlay h1 span{color:#a4f0e4}
+.menu-art-caption{font-size:8px;letter-spacing:2.4px;color:#a4c3cd;margin:17px 0 0}
+.menu-command-panel{padding:29px 26px 20px;min-width:0;align-self:center}
+.menu-welcome{font-size:9px;font-weight:800;color:#84cec9;letter-spacing:2px;margin:0 0 10px}
+.menu-description{font-size:13px;line-height:1.75;color:#94b1c0;margin:0 0 20px}
+#menuOverlay .primary-btn{border:1px solid #a5f4e3;min-height:49px;border-radius:10px;background:linear-gradient(125deg,#a5edde,#6ed5d1);box-shadow:0 5px 24px #52ceb214;font-size:11px;letter-spacing:1.3px;padding:12px 16px;max-width:none}
+#menuOverlay .menu-progress{font-size:9px!important;min-height:0;text-align:left;letter-spacing:.5px}
+#menuOverlay .menu-progress:empty,#menuOverlay .save-status:empty{display:none}
+#menuOverlay .save-status{font-size:10px;line-height:1.5;margin:8px 0;color:#e5bd86}
+.menu-navigation{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0 0}
+#menuOverlay .menu-secondary-btn{display:flex;align-items:center;justify-content:center;gap:5px;min-height:44px;font-size:8px;font-weight:800;letter-spacing:.65px;line-height:1.5;padding:9px 7px;border-radius:8px;margin:0;max-width:none;color:#aacbd4;background:linear-gradient(130deg,#102e3a,#0b232f);border:1px solid #31515f;transition:background .15s,border-color .15s}
+#menuOverlay .menu-secondary-btn:hover:not(:disabled){border-color:#6cacb5;background:#143542}
+#menuOverlay .menu-secondary-btn:focus-visible,#menuOverlay .primary-btn:focus-visible{outline:2px solid #a6f0e2;outline-offset:3px}
+#menuOverlay .menu-secondary-btn:disabled{opacity:.4;cursor:not-allowed}
+#menuOverlay .achievement-menu-btn>span{font-size:7px;padding:2px 4px;white-space:nowrap}
+#menuOverlay .version-card{padding:12px;margin:18px 0 0;border-radius:10px;background:#06151e;border:1px solid #27434f;max-width:none}
+#menuOverlay .version-heading{font-size:10px;gap:8px;flex-wrap:wrap}
+#menuOverlay .version-card p{font-size:10px;line-height:1.5;margin:8px 0}
+#menuOverlay .sync-indicator{font-size:8px;letter-spacing:.7px}
+#menuOverlay .version-btn{min-height:32px;font-size:8px;border-radius:5px}
+#menuOverlay .menu-bottom{font-size:7px;letter-spacing:1.3px;line-height:1.5;margin-top:14px;padding-top:13px;color:#668d9e;text-align:center}
+#menuOverlay .install-btn{margin-top:12px;min-height:44px;width:100%}
+@media(max-width:600px){
+ #menuOverlay{padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+ #menuOverlay .crystal-menu{grid-template-columns:1fr;max-width:420px;max-height:calc(100dvh - max(24px,env(safe-area-inset-top) + env(safe-area-inset-bottom)));border-radius:20px}
+ .menu-art-panel{min-height:174px;border-right:0;border-bottom:1px solid #35647766;display:flex;align-items:center;padding:22px 17px;gap:17px;background:radial-gradient(ellipse at 20% 30%,#144f64,#061b2b)}
+ .menu-launch-art{position:relative;inset:auto;z-index:0;width:122px;height:122px;object-fit:cover;object-position:center;border:1px solid #6bb5cb77;border-radius:21px;box-shadow:0 8px 38px #0007;flex:none}
+ .menu-art-shade{display:none}
+ .menu-title-block{position:static;min-width:0;text-shadow:none}
+ #menuOverlay .menu-kicker{font-size:6px;letter-spacing:1.3px;line-height:1.7}
+ #menuOverlay h1{font-size:28px;letter-spacing:2px;margin:10px 0 0}
+ .menu-art-caption{font-size:6px;line-height:1.8;letter-spacing:1.3px;margin-top:11px}
+ .menu-command-panel{padding:20px 19px 17px}
+ .menu-welcome{font-size:8px;letter-spacing:1.6px;margin-bottom:6px}
+ .menu-description{font-size:11px;line-height:1.6;margin-bottom:15px}
+ .menu-navigation{margin-top:12px;gap:7px}
+ #menuOverlay .menu-secondary-btn{font-size:8px;letter-spacing:.4px}
+ #menuOverlay .version-card{margin-top:15px;padding:11px}
+ .brand-app-icon{width:36px;height:36px;border-radius:9px}
+}
+@media(max-width:360px){
+ .menu-art-panel{padding:18px 13px;gap:13px;min-height:150px}.menu-launch-art{width:102px;height:102px;border-radius:18px}
+ #menuOverlay h1{font-size:24px;letter-spacing:1.2px}.menu-command-panel{padding:17px 14px 15px}
+ #menuOverlay .menu-secondary-btn{font-size:7px;padding-inline:4px}.menu-art-caption{font-size:5.5px;letter-spacing:.8px}
+}
+@media(min-width:601px) and (max-height:600px){
+ #menuOverlay{padding:12px}
+ #menuOverlay .crystal-menu{max-height:calc(100dvh - 24px);grid-template-columns:34% minmax(0,1fr)}
+ .menu-art-panel{position:sticky;top:0;min-height:calc(100dvh - 26px);align-self:start}
+ .menu-title-block{bottom:20px;left:19px;right:15px}
+ #menuOverlay h1{font-size:32px;letter-spacing:2px}.menu-art-caption{font-size:6px;letter-spacing:1.3px}
+ .menu-command-panel{padding:18px 22px}.menu-welcome{font-size:8px}.menu-description{font-size:11px;margin-bottom:13px}
+ .menu-navigation{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:11px}
+ #menuOverlay .menu-secondary-btn{font-size:7px;padding:7px 5px;letter-spacing:.2px}
+ #menuOverlay .version-card{margin-top:12px}.menu-launch-art{object-position:50% 45%}
+}
+@media(prefers-reduced-motion:reduce){#menuOverlay button{transition:none}}

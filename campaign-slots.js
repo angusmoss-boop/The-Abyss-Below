@@ -80,7 +80,7 @@
     }catch(_){error='Could not delete that campaign. Storage is unavailable.';return false;}
   }
   window.AbyssSlots={active,key,title:()=>cleanName(index.titles[active-1],active),load,save,summaries,activate,remove,
-    buildId:'0.17.3-smooth-signals-1',status:()=>({active,key,error,recovered,disabled,corruptActive}),
+    buildId:'0.17.4-crystal-descent-1',status:()=>({active,key,error,recovered,disabled,corruptActive}),
     // Only pre-v3 profiles may enter the old converter on a first-ever installation.
     allowLegacy:()=>active===1&&isEmpty(expected)&&!oldIndex&&!get(LEGACY)&&!get(LEGACY+'.backup')};
 })();

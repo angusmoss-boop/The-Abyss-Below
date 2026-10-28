@@ -1,7 +1,7 @@
 /* One verified, self-contained shell per release. No campaign data lives here. */
-const BUILD={version:'0.17.3',id:'0.17.3-smooth-signals-1'};
+const BUILD={version:'0.17.4',id:'0.17.4-crystal-descent-1'};
 const CACHE='abyss-below-shell-'+BUILD.id;
-const SHELL=['./','./index.html','./styles.css?v=0.17.3','./campaign-slots.js?v=0.17.3','./audio.js?v=0.17.3','./game.js?v=0.17.3','./version-sync.js?v=0.17.3','./manifest.webmanifest?v=0.17.3','./icon-192.png','./icon-512.png','./icon-maskable-512.png'];
+const SHELL=["./","./index.html","./styles.css?v=0.17.4","./campaign-slots.js?v=0.17.4","./audio.js?v=0.17.4","./game.js?v=0.17.4","./version-sync.js?v=0.17.4","./manifest.webmanifest?v=0.17.4","./launch.js?v=0.17.4","./icon-192.png?v=0.17.4","./icon-512.png?v=0.17.4","./icon-maskable-512.png?v=0.17.4","./apple-touch-icon.png?v=0.17.4","./favicon-32.png?v=0.17.4","./favicon.ico?v=0.17.4","./launch-art.webp?v=0.17.4"];
 const digest=async data=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',data)),b=>b.toString(16).padStart(2,'0')).join('');
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{

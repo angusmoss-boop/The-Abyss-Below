@@ -1,23 +1,56 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta name="abyss-build" content="0.17.3-smooth-signals-1">
+  <meta name="abyss-build" content="0.17.4-crystal-descent-1">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#06121d" />
   <meta name="description" content="The Abyss Below: a submarine exploration and survival game." />
   <title>The Abyss Below | Deepwater Expedition</title>
-  <link rel="manifest" href="manifest.webmanifest?v=0.17.3" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="manifest" href="manifest.webmanifest?v=0.17.4" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.17.4" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=0.17.4" />
+  <link rel="shortcut icon" href="favicon.ico?v=0.17.4" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=0.17.4" />
+  <link rel="preload" as="image" href="launch-art.webp?v=0.17.4" fetchpriority="high" />
+  <script src="launch.js?v=0.17.4"></script>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="stylesheet" href="styles.css?v=0.17.3" />
+  <link rel="stylesheet" href="styles.css?v=0.17.4" />
+  <style>
+    /* Paint a branded start before the main stylesheet or game is ready. */
+    #launchScreen{display:none;position:fixed;inset:0;z-index:1000;background:#061019;color:#e5f7ff;align-items:center;justify-content:center;text-align:center;font-family:system-ui,sans-serif;padding:24px;transition:opacity .24s ease;}
+    .abyss-launching #launchScreen{display:flex;}
+    #launchScreen.leaving{opacity:0;pointer-events:none;}
+    .launch-content{width:min(100%,360px);}
+    .launch-art{display:block;width:min(64vw,34vh,270px);height:auto;aspect-ratio:1;margin:0 auto 24px;border-radius:26px;box-shadow:0 0 75px #279ed133;}
+    .launch-eyebrow{font-size:9px;letter-spacing:3px;color:#7baab6;margin:0 0 14px;}
+    .launch-title{font-size:clamp(26px,6vw,39px);letter-spacing:4px;line-height:1.05;font-weight:900;margin:0;}
+    .launch-title span{color:#8fdfd6;}
+    .launch-status{font-size:10px;letter-spacing:2px;color:#9bbbc6;margin:22px 0 12px;}
+    .launch-line{height:2px;width:100px;margin:0 auto;background:#17313e;overflow:hidden;}
+    .launch-line::after{content:'';display:block;width:40%;height:100%;background:#8be6d6;animation:launch-sweep 1.6s ease-in-out infinite alternate;}
+    .launch-build{color:#607f91;font-size:9px;letter-spacing:1.5px;margin-top:18px;}
+    @keyframes launch-sweep{to{transform:translateX(150%);}}
+    @media(prefers-reduced-motion:reduce){#launchScreen{transition:none;}.launch-line::after{animation:none;width:100%;}}
+    @media(max-height:450px){.launch-content{width:min(94%,600px);display:grid;grid-template-columns:150px 1fr;gap:0 26px;align-items:center;}.launch-art{grid-row:1/7;width:150px;margin:0;}.launch-eyebrow{margin-bottom:8px;}.launch-title{font-size:28px;}.launch-status{margin:14px 0 10px;}.launch-build{margin:12px 0 0;}}
+  </style>
 </head>
 <body>
+  <div id="launchScreen" role="status" aria-live="polite" aria-label="Loading The Abyss Below" tabindex="-1">
+    <div class="launch-content">
+      <img id="launchArt" class="launch-art" src="launch-art.webp?v=0.17.4" width="1024" height="1024" alt="NEREID descending into a blue cavern lined with violet crystals" fetchpriority="high" />
+      <p class="launch-eyebrow">NEREID EXPLORATION PROGRAM</p>
+      <h2 class="launch-title">THE ABYSS<br><span>BELOW</span></h2>
+      <p class="launch-status">PREPARING YOUR EXPEDITION</p>
+      <div class="launch-line" aria-hidden="true"></div>
+      <p class="launch-build">v0.17.4 · CRYSTAL DESCENT</p>
+    </div>
+  </div>
+  <noscript><div style="padding:20px;color:#bce9ee;background:#061019">Enable JavaScript to play The Abyss Below. Your saved campaigns have not been changed.</div></noscript>
   <div class="app">
     <header class="masthead">
-      <div class="brand"><div class="brand-symbol">⌁</div><div><div class="brand-eyebrow">NEREID EXPEDITION DIVISION</div><div class="brand-title">THE ABYSS <span>BELOW</span></div></div></div>
+      <div class="brand"><img class="brand-app-icon" src="icon-192.png?v=0.17.4" width="44" height="44" alt="" /><div><div class="brand-eyebrow">NEREID EXPEDITION DIVISION</div><div class="brand-title">THE ABYSS <span>BELOW</span></div></div></div>
       <div class="header-right"><span class="signal-dot"></span><span id="signalText">VESSEL ONLINE</span><button id="helpBtn" class="small-btn">? CONTROLS</button><button id="pauseBtn" class="small-btn">Ⅱ PAUSE</button></div>
     </header>
     <main class="layout">
@@ -89,14 +122,37 @@
         <button id="dockBtn" class="dock-btn" disabled>◈ RETURN TO STATION TO UPGRADE</button>
       </aside>
     </main>
-    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.17.3</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
+    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.17.4</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
   </div>
-  <div class="overlay" id="menuOverlay"><div class="menu-card"><div class="menu-kicker">TRANSMISSION // 0001</div><div class="menu-icon">⌁</div><h1>THE ABYSS<br><span>BELOW</span></h1><section class="version-card" aria-label="Game build and update status">
-  <div class="version-heading"><strong id="menuVersion">v0.17.3</strong><span id="menuVersionName">Smooth Signals</span></div>
+  <div class="overlay" id="menuOverlay"><div class="menu-card crystal-menu">
+    <div class="menu-art-panel">
+      <img class="menu-launch-art" src="launch-art.webp?v=0.17.4" width="1024" height="1024" alt="The NEREID explores an underwater crystal cavern" fetchpriority="high" />
+      <div class="menu-art-shade" aria-hidden="true"></div>
+      <div class="menu-title-block"><div class="menu-kicker">NEREID EXPLORATION PROGRAM</div><h1>THE ABYSS<br><span>BELOW</span></h1><p class="menu-art-caption">A LIGHT IN THE UNKNOWN.</p></div>
+    </div>
+    <div class="menu-command-panel">
+      <p class="menu-welcome">YOUR NEXT DESCENT AWAITS</p>
+      <p class="menu-description">Five depths. Twenty lost transmissions.<br>One light against the abyss.</p>
+      <button id="startBtn" class="primary-btn">BEGIN EXPEDITION <span>→</span></button>
+      <p id="menuProgress" class="menu-progress" aria-live="polite"></p><p id="saveStatus" class="save-status"></p>
+      <div class="menu-navigation">
+        <button id="menuHubBtn" class="menu-secondary-btn">⌁ EXPEDITION HUB</button>
+        <button id="menuSlotsBtn" class="menu-secondary-btn">▦ CAMPAIGN SLOTS</button>
+        <button id="menuAchievementsBtn" class="menu-secondary-btn achievement-menu-btn">◇ ACHIEVEMENTS <span id="menuAchievementCount">0 / 20</span></button>
+        <button id="newGameBtn" class="menu-secondary-btn">✦ NEW GAME</button>
+        <button id="menuAudioBtn" class="menu-secondary-btn">♫ SOUND SETTINGS</button>
+        <button id="instructionsBtn" class="menu-secondary-btn">? PILOT BRIEFING</button>
+      </div>
+      <section class="version-card" aria-label="Game build and update status">
+  <div class="version-heading"><strong id="menuVersion">v0.17.4</strong><span id="menuVersionName">Crystal Descent</span></div>
   <div class="sync-indicator" id="syncIndicator" data-state="checking"><span class="sync-dot" aria-hidden="true"></span><strong id="syncStatus" role="status">CHECKING DEPLOYMENT</strong></div>
   <p id="syncDetail">Checking the latest published build. Your campaign stays on this device.</p>
   <div class="version-actions"><button id="checkVersionBtn" class="version-btn">CHECK AGAIN</button><button id="updateVersionBtn" class="version-btn hidden">LOAD UPDATE</button></div>
-</section><p>Five descents. Twenty lost transmissions. Venture from the sunlit shelf to a 1,800-metre abyss, secure each level’s recorders and return for everything you left behind.</p><div class="menu-feature-list"><span>◈ FIVE PERSISTENT LEVELS</span><span>◈ 20 ACHIEVEMENTS</span><span>◈ LIVING ENVIRONMENTS</span><span>◈ SURVEY &amp; RESUME</span></div><button id="startBtn" class="primary-btn">BEGIN EXPEDITION <span>→</span></button><button id="menuHubBtn" class="menu-secondary-btn">⌁ EXPEDITION HUB</button><button id="menuAchievementsBtn" class="menu-secondary-btn achievement-menu-btn">◇ ACHIEVEMENTS <span id="menuAchievementCount">0 / 20</span></button><button id="menuAudioBtn" class="menu-secondary-btn">♫ SOUND SETTINGS</button><button id="menuSlotsBtn" class="menu-secondary-btn">▦ SAVE / LOAD CAMPAIGNS</button><button id="newGameBtn" class="menu-secondary-btn">✦ NEW GAME</button><p id="menuProgress" class="menu-progress" aria-live="polite"></p><p id="saveStatus" class="save-status"></p><button id="instructionsBtn" class="text-btn">VIEW PILOT BRIEFING</button><button id="installBtn" class="install-btn hidden">⬇ INSTALL ON PHONE</button><div class="menu-bottom">NEREID EXPLORATION PROGRAM · CLASSIFIED</div></div></div>
+</section>
+      <button id="installBtn" class="install-btn hidden">⬇ INSTALL ON PHONE</button>
+      <div class="menu-bottom">THREE CAMPAIGNS · SAVED ON THIS DEVICE</div>
+    </div>
+  </div></div>
   <div class="overlay pause-overlay hidden" id="pauseOverlay" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
     <div class="pause-card">
       <div class="pause-emblem" aria-hidden="true">Ⅱ</div>
@@ -161,9 +217,9 @@
     <div id="telemetryBody" class="telemetry-body"></div>
     <div class="telemetry-tools"><button id="telemetryLightsBtn" class="alt-btn telemetry-lights" aria-pressed="true">FLASHLIGHT ON</button><button id="focusToggleBtn" class="alt-btn" aria-label="Expand play view">EXPAND VIEW</button><button id="focusHelpBtn" class="alt-btn">PILOT MANUAL</button><button id="telemetryAudioBtn" class="alt-btn">SOUND</button></div>
   </dialog>
-  <script src="campaign-slots.js?v=0.17.3" defer></script>
-  <script src="audio.js?v=0.17.3" defer></script>
-  <script src="game.js?v=0.17.3" defer></script>
-  <script src="version-sync.js?v=0.17.3" defer></script>
+  <script src="campaign-slots.js?v=0.17.4" defer></script>
+  <script src="audio.js?v=0.17.4" defer></script>
+  <script src="game.js?v=0.17.4" defer></script>
+  <script src="version-sync.js?v=0.17.4" defer></script>
 </body>
 </html>

@@ -1,3 +1,12 @@
+# v0.17.4 / Crystal Descent
+
+- Approved crystal-cavern art replaces launcher, Apple touch, favicon and title-menu branding.
+- Versioned ordinary and maskable icons, with unchanged application identity and campaign storage.
+- Lightweight startup screen with actual initialization/decode handoff and bounded failure fallbacks.
+- Responsive artwork-led title menu retaining all existing actions and deployment status.
+- Additional icon/artwork checks in deployment verification and the offline shell.
+- No changes to gameplay, economy, control layouts, campaign schema or audio logic.
+
 # v0.17.3 / Smooth Signals
 
 - Fixed reproduced pause envelope snapping to zero by explicitly anchoring current gain before ramping.

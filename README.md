@@ -1,20 +1,16 @@
 # The Abyss Below
 
-## v0.17.3: Smooth Signals
+## v0.17.4: Crystal Descent
 
-A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. This corrective patch fixes audio transition discontinuities, redundant gesture automation and first-use interface music synthesis stalls. The seven-button Delta Helm layout, three campaign slots and the existing economy are unchanged.
+A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. This branding patch uses the approved enlarged-submarine crystal-cavern image for installed-app icons, the in-game loading screen, the title menu and browser branding. Gameplay, audio, local campaign data and the seven-button controls are unchanged.
 
-See [SMOOTH-SIGNALS-v0.17.3.md](SMOOTH-SIGNALS-v0.17.3.md) and [VERIFICATION-v0.17.3.md](VERIFICATION-v0.17.3.md).
+See [CRYSTAL-DESCENT-v0.17.4.md](CRYSTAL-DESCENT-v0.17.4.md) and [VERIFICATION-v0.17.4.md](VERIFICATION-v0.17.4.md).
 
 ## Install or update
 
-For an existing v0.17.2 site, bank cargo and quit the old dive as a precaution, extract the update ZIP, and replace the matching files at the repository root. Publish these files together:
+Apply the update ZIP over v0.17.3 at the repository root. Save first; banking and quitting an active dive is safest. Upload the extracted contents together, including launch.js, launch-art.webp, the replacement icons, manifest, worker and version.json. Use the complete ZIP for a fresh checkout. These files do not deploy themselves.
 
-`index.html`, `styles.css`, **`campaign-slots.js`**, `audio.js`, `game.js`, `version-sync.js`, `service-worker.js`, `manifest.webmanifest`, `version.json`.
-
-Keep the existing icons. Do not upload the ZIP itself or create an extra nested directory. Use the complete ZIP for a new installation. The package does not deploy automatically. Reopen the same site online and check for **v0.17.3 / Smooth Signals**. CHECK AGAIN compares the deployed checksums, runtime build markers and controlling service worker. Local/offline/unverified status must not be interpreted as a successful hosted upgrade.
-
-Keep the same origin and browser profile. Do not clear site data, uninstall or start a new campaign to update. Existing slots retain their saves, finite crystal depletion, owned rounds and upgrades. The existing original-scrap recovery timers are preserved.
+Reopen the same site online and check for **v0.17.4 / Crystal Descent**. Keep the same origin and browser profile. Do not clear site data, uninstall or create a new campaign to update. Local/offline/unverified menu status is not proof of a hosted update. Installed icons may require a separate browser-approved app identity refresh; see the branding guide. All gameplay rules below remain as in v0.17.3.
 
 ## Campaigns
 
@@ -88,13 +84,12 @@ python tests/build_release.py
 
 The version manifest includes the exact runtime checksums. Inconsistent deployed assets intentionally do not get a green sync status.
 
-Current test runner:
+Current targeted test runner:
 
 ```sh
-python tests/run_v0172.py --jobs 3
-python tests/v0172_live_pwa_test.py
+python tests/run_v0174.py
 ```
 
-Tests require Python, Playwright, Node and Chromium. Current evidence is in `verification/v0.17.2/`, not historical reports. Some UI tests use synthetic credits/gear or deterministic scene fixtures, never real user saves. The live PWA test is separate and must not be described as passing because mocked worker tests passed.
+Tests require Python, Pillow, Playwright, Node and Chromium. Current evidence is in `verification/v0.17.4/`. The UI tests render production files in isolated documents with synthetic storage and the actual image bytes. They are not a real Android install or a hosted/offline integration result. Historical test runners remain in the archive for reference and may assert old release markers.
 
-Read **SALVAGE-SUPPLY-v0.17.0.md** for full rules and prices, **VERIFICATION-v0.17.2.md** for current tested/untested boundaries. Historical guides remain for earlier versions. This is a web/PWA source package, not a signed Android app bundle or Play Store-ready release.
+This remains a web/PWA source package, not a signed Android app bundle or Play Store release. Read **VERIFICATION-v0.17.4.md** for current tested/untested boundaries and **SALVAGE-SUPPLY-v0.17.0.md** for economy details.

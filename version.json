@@ -1,19 +1,24 @@
 {
   "schema": 1,
-  "version": "0.17.3",
-  "name": "Smooth Signals",
-  "buildId": "0.17.3-smooth-signals-1",
+  "version": "0.17.4",
+  "name": "Crystal Descent",
+  "buildId": "0.17.4-crystal-descent-1",
   "assets": {
-    "index.html": "6ca1e70e62ad072962fdbdbff059d283d3b481c67e921f0b6700ffc9860d05a9",
-    "styles.css": "ffb6cfb4d40808dadf4c8325812a707898d3892f3bbf295acbb74b8b19521433",
-    "campaign-slots.js": "2168ebd1468e333ff0b2ef77e5644784b3f691136d8e04427ab6da735052ba3d",
-    "audio.js": "30f01b5f696d352cdfdf8ec59b29fe0184927ae9fb516b6f8517bde0d0b7be37",
-    "game.js": "17258aef1539536725e2429d462f1bccefad0984e9a8f8bbab5a42011a0b3f95",
-    "version-sync.js": "2d0894e079a40d3894228ab9f6a86eec721b12bacfe233eee6105b73383f54e9",
-    "service-worker.js": "e0750e4ecb5b1fd334e4bc386a731051e6c87fb073b4aa91e9e11c5b019794c5",
-    "manifest.webmanifest": "02ae4faeec5656f3d0067f32396e1fb87058c75ad7cfe4fc5982964d236083e4",
-    "icon-192.png": "eb31e497f47e2fb14048f1a26f16f41c15de0d786b0be4a35afcbdfc4cc0c216",
-    "icon-512.png": "48b550a89b9352f43df53d834abaf802ba51b37ffd6289dda0ac4870f26bf822",
-    "icon-maskable-512.png": "48b550a89b9352f43df53d834abaf802ba51b37ffd6289dda0ac4870f26bf822"
+    "service-worker.js": "a9f03d9418d0cd82a831ec14023d959f1de4482a5d5b535a7e8ed6198d41f613",
+    "index.html": "70ad20feaefd3f1cae81bf859d410d1b3d304bca3e92cb17e26cb33d98557b4f",
+    "styles.css": "90babc0f7993f1bb23ea6efe53aaa405c8487d33089f94ddeb51152b0f229112",
+    "campaign-slots.js": "bd455e6e5cc416ac74988f9fc87d6d84b7f4edd373775279964a70145ad138fc",
+    "audio.js": "dfe02240579ed39e38a5ee5fe9e5d5edc8b5e64c8996f1db61ef17dbd53e8582",
+    "game.js": "7327519c15d774d44ea33242c922b4f667cabb1e3896aa8927b6ed919b35353f",
+    "version-sync.js": "9e75d8cb40022e6d8b6bf85ee477b026607f9f52f4fe2b5c395b2019ea005578",
+    "manifest.webmanifest": "981eb85f60456f04814a858ec70aedadb03fa16f2a355affe7cee5187ee3bb2d",
+    "launch.js": "034afdb82f59325cdaf2a025324b53e4aca5ad058a0cf28a6c0327ee7d65498d",
+    "icon-192.png": "767c0d175f694f0acd47faac80fccea427e4437884a5583fe787e2d57293a4c0",
+    "icon-512.png": "8a88e9cc041b8dcdd5a69821793e8ce48e208234c1142e61141e72bb3426febe",
+    "icon-maskable-512.png": "8a88e9cc041b8dcdd5a69821793e8ce48e208234c1142e61141e72bb3426febe",
+    "apple-touch-icon.png": "3fb5123e1b7e4ed3d3907b4a45087a647b922772437cada61a6cfe06470cb8b0",
+    "favicon-32.png": "8472bb51a9d7fa34b4fd85670b0ecf80415664d1191f812f7c4c7de8a50941ca",
+    "favicon.ico": "49a27c92f8ed93ed60932ba84cbeb462e2955bf7e863d9728d3344dc73ffa2b2",
+    "launch-art.webp": "b15f58b3841c9c77b59f85a55b3810a26492d444de0bc64eb38fcb06928326ac"
   }
 }
