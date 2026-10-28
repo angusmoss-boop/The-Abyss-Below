@@ -1,0 +1,3 @@
+PASS 8 different hull models, 13 graded module appearances, 4 increasing/changing boost plumes and visible health-based wear using the production renderer
+PASS next-tier previews/thruster tests never buy equipment or change stock; six real dock purchase paths, max-tier gold state and no unearned finishes
+PASS 12 dock viewports: previews, selectors, purchase dialog and pinned departure stay within viewport; no JavaScript errors

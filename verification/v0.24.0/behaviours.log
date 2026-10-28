@@ -1,0 +1,3 @@
+PASS small Drifter packs use different approach offsets without changing individual speed or health
+PASS Stalker wind-up, committed rush and non-biting retreat; stun freezes movement and phase timer
+PASS Reaper intercepts only observed motion; rocks deny target memory and normal speed remains Mk IV speed

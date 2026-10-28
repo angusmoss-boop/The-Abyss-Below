@@ -1,0 +1,93 @@
+[
+  {
+    "width": 320,
+    "height": 568,
+    "all_three_surfaces": "PASS",
+    "three_column_upgrade_grid": true,
+    "live_readings": "PASS"
+  },
+  {
+    "width": 360,
+    "height": 640,
+    "all_three_surfaces": "PASS",
+    "three_column_upgrade_grid": true,
+    "live_readings": "PASS"
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "all_three_surfaces": "PASS",
+    "three_column_upgrade_grid": true,
+    "live_readings": "PASS"
+  },
+  {
+    "width": 430,
+    "height": 932,
+    "all_three_surfaces": "PASS",
+    "three_column_upgrade_grid": true,
+    "live_readings": "PASS"
+  },
+  {
+    "width": 568,
+    "height": 320,
+    "all_three_surfaces": "PASS",
+    "three_column_upgrade_grid": true,
+    "live_readings": "PASS"
+  },
+  {
+    "width": 640,
+    "height": 360,
+    "all_three_surfaces": "PASS",
+    "three_column_upgrade_grid": true,
+    "live_readings": "PASS"
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "all_three_surfaces": "PASS",
+    "three_column_upgrade_grid": true,
+    "live_readings": "PASS"
+  },
+  {
+    "width": 915,
+    "height": 412,
+    "all_three_surfaces": "PASS",
+    "three_column_upgrade_grid": true,
+    "live_readings": "PASS"
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "all_three_surfaces": "PASS",
+    "three_column_upgrade_grid": true,
+    "live_readings": "PASS"
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "all_three_surfaces": "PASS",
+    "three_column_upgrade_grid": true,
+    "live_readings": "PASS"
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "all_three_surfaces": "PASS",
+    "three_column_upgrade_grid": true,
+    "live_readings": "PASS"
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "all_three_surfaces": "PASS",
+    "three_column_upgrade_grid": true,
+    "live_readings": "PASS"
+  },
+  {
+    "width": 1920,
+    "height": 1080,
+    "all_three_surfaces": "PASS",
+    "three_column_upgrade_grid": true,
+    "live_readings": "PASS"
+  }
+]

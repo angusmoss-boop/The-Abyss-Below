@@ -1,0 +1,127 @@
+[
+  {
+    "level": 1,
+    "seed": 24,
+    "contact_pickups": 26
+  },
+  {
+    "level": 1,
+    "seed": 2400,
+    "contact_pickups": 26
+  },
+  {
+    "level": 1,
+    "seed": 4191,
+    "contact_pickups": 26
+  },
+  {
+    "level": 1,
+    "seed": 65535,
+    "contact_pickups": 26
+  },
+  {
+    "level": 1,
+    "seed": 100003,
+    "contact_pickups": 26
+  },
+  {
+    "level": 2,
+    "seed": 24,
+    "contact_pickups": 47
+  },
+  {
+    "level": 2,
+    "seed": 2400,
+    "contact_pickups": 47
+  },
+  {
+    "level": 2,
+    "seed": 4191,
+    "contact_pickups": 47
+  },
+  {
+    "level": 2,
+    "seed": 65535,
+    "contact_pickups": 47
+  },
+  {
+    "level": 2,
+    "seed": 100003,
+    "contact_pickups": 47
+  },
+  {
+    "level": 3,
+    "seed": 24,
+    "contact_pickups": 68
+  },
+  {
+    "level": 3,
+    "seed": 2400,
+    "contact_pickups": 68
+  },
+  {
+    "level": 3,
+    "seed": 4191,
+    "contact_pickups": 68
+  },
+  {
+    "level": 3,
+    "seed": 65535,
+    "contact_pickups": 68
+  },
+  {
+    "level": 3,
+    "seed": 100003,
+    "contact_pickups": 68
+  },
+  {
+    "level": 4,
+    "seed": 24,
+    "contact_pickups": 89
+  },
+  {
+    "level": 4,
+    "seed": 2400,
+    "contact_pickups": 89
+  },
+  {
+    "level": 4,
+    "seed": 4191,
+    "contact_pickups": 89
+  },
+  {
+    "level": 4,
+    "seed": 65535,
+    "contact_pickups": 89
+  },
+  {
+    "level": 4,
+    "seed": 100003,
+    "contact_pickups": 89
+  },
+  {
+    "level": 5,
+    "seed": 24,
+    "contact_pickups": 110
+  },
+  {
+    "level": 5,
+    "seed": 2400,
+    "contact_pickups": 110
+  },
+  {
+    "level": 5,
+    "seed": 4191,
+    "contact_pickups": 110
+  },
+  {
+    "level": 5,
+    "seed": 65535,
+    "contact_pickups": 110
+  },
+  {
+    "level": 5,
+    "seed": 100003,
+    "contact_pickups": 110
+  }
+]

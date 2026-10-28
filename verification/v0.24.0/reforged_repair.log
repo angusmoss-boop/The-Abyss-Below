@@ -1,0 +1,2 @@
+PASS every hull tier: full-health no-op preserves charge; single instant 50% maximum HP repair, no scrap/power/air/shield change; second activation rejected
+PASS pack/time/pause/menu/reload/export do not refill; strict import field; physical docking restores one charge, ammo unchanged; capped heal and keyboard guard

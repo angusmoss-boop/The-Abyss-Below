@@ -1,0 +1,3 @@
+PASS all eight hull specifications: repair pack restores 25% maximum HP, caps at full, no oxygen/power/shield/currency reward, full-health packs remain
+PASS five magnet marks never collect remote crystals; USE reserved for objectives; hull capsule geometry, wall guard, high-speed sweep and dark/empty-battery pickup
+PASS actual finite crystal ownership and coordinates retained through destruction, recovery manifest and save/reload

@@ -1,0 +1,1 @@
+PASS actual v0.23.0 source migration in all 3 slots: exact position/vitals/cargo/ammo/geometry/resources/prices retained, earned finish retained, inactive slots untouched; one initial repair charge, spent state retained on next reload
