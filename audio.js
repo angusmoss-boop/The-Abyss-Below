@@ -1,8 +1,8 @@
-/* Delta Helm: original procedural audio, no downloads or permissions.
+/* Smooth Signals: original procedural audio, no downloads or permissions.
    Start/resume only after user input. Settings persist independently of campaigns. */
 (() => {
   'use strict';
-  const KEY='abyss-audio-v1', BUILD='0.17.2-delta-helm-1';
+  const KEY='abyss-audio-v1', BUILD='0.17.3-smooth-signals-1';
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   let settings={effects:.5,ambience:.35,music:.3,muted:false};
   try { const v=JSON.parse(localStorage.getItem(KEY)||'null'); if(v){
@@ -12,15 +12,25 @@
   let context=null, master=null, fx=null, bed=null, worldGain=null, lifecycleGain=null, previewFx=null, engineGain=null, engine=null, motor=null, motorGain=null, waterGain=null, waterFilter=null;
   let unlocked=false, blocked=false, active=false, lastTick=0, lastThreat=-99,lastCreak=-99,lastEcho=-99;
   const voices=new Set(),voiceGains=new Map(),eventTimes=new Map();
-  let suspensionRequested=false,suspendTimer=null,lifecycleToken=0,worldMuted=null;
+  let suspensionRequested=false,suspendTimer=null,lifecycleToken=0,worldMuted=null,resumePending=null;
   // Pause crossfades on the audio clock. Stop/suspend only AFTER reaching zero.
   const PAUSE_FADE=.38,BACKGROUND_FADE=.22;
+  const automationTargets=new WeakMap();
+  function hold(param,now){
+    // Cancel the old ENDPOINT too. Otherwise a quick resume can leave a pause
+    // ramp scheduled to mute the engine later, after thrust has already resumed.
+    const value=param.value;
+    if(typeof param.cancelAndHoldAtTime==='function')param.cancelAndHoldAtTime(now);
+    else param.cancelScheduledValues(now);
+    // Explicitly anchor the rendered value: in Chromium, switching a running
+    // setTarget envelope directly to a linear ramp can otherwise snap to zero.
+    param.setValueAtTime(value,now);
+  }
   function fade(param,target,seconds=.3){
     if(!param||!context)return;
     const now=context.currentTime;
-    if(typeof param.cancelAndHoldAtTime==='function')param.cancelAndHoldAtTime(now);
-    else{const value=param.value;param.cancelScheduledValues(now);param.setValueAtTime(value,now);}
-    param.linearRampToValueAtTime(target,now+seconds);
+    hold(param,now);param.linearRampToValueAtTime(target,now+seconds);
+    automationTargets.set(param,{kind:'fade',target});
   }
   function releaseVoices(seconds=PAUSE_FADE){
     for(const voice of voices){
@@ -29,7 +39,13 @@
     }
   }
   let noiseBuffer=null;const counts={};
-  function ramp(param,value,seconds=.12){if(!param||!context)return;param.setTargetAtTime(value,context.currentTime,seconds);}
+  function ramp(param,value,seconds=.12){
+    if(!param||!context)return;
+    const previous=automationTargets.get(param);
+    if(previous?.kind==='target'&&previous.target===value&&previous.seconds===seconds)return;
+    const now=context.currentTime;hold(param,now);param.setTargetAtTime(value,now,seconds);
+    automationTargets.set(param,{kind:'target',target:value,seconds});
+  }
   function apply(){if(!context)return;ramp(master.gain,settings.muted?0:.65,.04);ramp(fx.gain,settings.effects,.04);ramp(previewFx?.gain,settings.effects,.04);ramp(bed.gain,settings.ambience,.08);ramp(musicBus?.gain,settings.music,.08);}
   function init(){
     if(context)return true;
@@ -44,8 +60,13 @@
       engineGain=context.createGain();engineGain.gain.value=0;engine.connect(engineGain);engineGain.connect(bed);engine.start();
       motor=context.createOscillator();motor.type='triangle';motor.frequency.value=90;
       motorGain=context.createGain();motorGain.gain.value=0;motor.connect(motorGain);motorGain.connect(bed);motor.start();
-      const buffer=context.createBuffer(1,Math.floor(context.sampleRate*3),context.sampleRate),data=buffer.getChannelData(0);
-      let previous=0;for(let i=0;i<data.length;i++){previous=(previous+Math.random()*.04-.02)/1.02;data[i]=previous*3;}
+      const n=Math.floor(context.sampleRate*3),join=Math.floor(context.sampleRate*.15);
+      const buffer=context.createBuffer(1,n,context.sampleRate),data=buffer.getChannelData(0),raw=new Float32Array(n+join);
+      let previous=0;for(let i=0;i<raw.length;i++){previous=(previous+Math.random()*.04-.02)/1.02;raw[i]=previous*3;}
+      data.set(raw.subarray(0,n));
+      // Overlap the tail's continuation into the head. The loop boundary is now
+      // two adjacent filtered-noise samples, not unrelated endpoints. No dip to silence.
+      for(let i=0;i<join;i++){const mix=.5-.5*Math.cos(Math.PI*i/(join-1));data[i]=raw[n+i]*(1-mix)+raw[i]*mix;}
       const noise=context.createBufferSource();noise.buffer=buffer;noise.loop=true;
       waterFilter=context.createBiquadFilter();waterFilter.type='lowpass';waterFilter.frequency.value=400;
       waterGain=context.createGain();waterGain.gain.value=0;noise.connect(waterFilter);waterFilter.connect(waterGain);waterGain.connect(bed);noise.start();
@@ -54,28 +75,33 @@
   }
   function unlock(){
     if(document.hidden||!init())return Promise.resolve();
-    unlocked=true;suspensionRequested=false;lifecycleToken++;
+    // Most pointer/key events are not audio lifecycle events. Never restart
+    // fades or reapply mixer automation for an already-running context.
+    if(unlocked&&context.state==='running'&&!suspensionRequested&&!blocked)return Promise.resolve();
+    if(resumePending&&!suspensionRequested)return resumePending;
+    unlocked=true;suspensionRequested=false;
+    const token=++lifecycleToken;
     if(suspendTimer!==null){clearTimeout(suspendTimer);suspendTimer=null;}
-    const token=lifecycleToken;
     const ready=()=>{
       if(token!==lifecycleToken||suspensionRequested||document.hidden)return;
       blocked=false;apply();fade(lifecycleGain.gain,1,.2);setScene(musicMode);
     };
-    if(context.state==='suspended')return context.resume().then(ready).catch(()=>{blocked=true;});
-    ready();return Promise.resolve();
+    if(context.state==='running'){ready();return Promise.resolve();}
+    const pending=context.resume().then(ready).catch(()=>{blocked=true;}).finally(()=>{if(resumePending===pending)resumePending=null;});
+    resumePending=pending;return pending;
   }
   function configure(values){
     for(const k of ['effects','ambience','music'])if(Number.isFinite(values[k]))settings[k]=clamp(values[k],0,1);
     if(typeof values.muted==='boolean')settings.muted=values.muted;
     try{localStorage.setItem(KEY,JSON.stringify(settings));}catch(_){}
-    apply();if(settings.muted||settings.music<=0)stopMusic();else setScene(musicMode);return {...settings};
+    apply();if(settings.muted||settings.music<=0){cancelMusicRequest();stopMusic();}else setScene(musicMode);return {...settings};
   }
   function tone(freq,endFreq,duration=.3,gain=.12,pan=0,type='sine',delay=0,bus='effects'){
     if(!context||context.state!=='running'||settings.muted||voices.size>=28)return;
-    const t=context.currentTime+delay,o=context.createOscillator(),g=context.createGain();
+    const t=context.currentTime+.02+delay,o=context.createOscillator(),g=context.createGain();
     g.gain.value=0; // A delayed voice must remain silent if its attack is cancelled by pause.
     o.type=type;o.frequency.setValueAtTime(Math.max(10,freq),t);o.frequency.exponentialRampToValueAtTime(Math.max(10,endFreq),t+duration);
-    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+duration);
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+duration);g.gain.linearRampToValueAtTime(0,t+duration+.015);
     o.connect(g);let p=null;
     if(context.createStereoPanner){p=context.createStereoPanner();p.pan.value=clamp(pan,-1,1);g.connect(p);p.connect(bus==='ambience'?bed:bus==='preview'?previewFx:fx);}else g.connect(bus==='ambience'?bed:bus==='preview'?previewFx:fx);
     voices.add(o);voiceGains.set(o,g);o.onended=()=>{voices.delete(o);voiceGains.delete(o);o.disconnect();g.disconnect();p?.disconnect();};o.start(t);o.stop(t+duration+.025);
@@ -84,9 +110,9 @@
   function noise(duration,gain,pan=0,frequency=600,type='lowpass',delay=0,bus='effects'){
     if(!context||context.state!=='running'||settings.muted||voices.size>=24)return;
     if(!noiseBuffer){noiseBuffer=context.createBuffer(1,Math.floor(context.sampleRate*2.4),context.sampleRate);const data=noiseBuffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;}
-    const source=context.createBufferSource(),filter=context.createBiquadFilter(),g=context.createGain(),t=context.currentTime+delay;
+    const source=context.createBufferSource(),filter=context.createBiquadFilter(),g=context.createGain(),t=context.currentTime+.02+delay;
     g.gain.value=0;source.buffer=noiseBuffer;filter.type=type;filter.frequency.value=frequency;filter.Q.value=.65;
-    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+Math.min(.08,duration/4));g.gain.exponentialRampToValueAtTime(.0001,t+duration);
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+Math.min(.08,duration/4));g.gain.exponentialRampToValueAtTime(.0001,t+duration);g.gain.linearRampToValueAtTime(0,t+duration+.015);
     source.connect(filter);filter.connect(g);let p=null;
     if(context.createStereoPanner){p=context.createStereoPanner();p.pan.value=clamp(pan,-1,1);g.connect(p);p.connect(bus==='ambience'?bed:bus==='preview'?previewFx:fx);}else g.connect(bus==='ambience'?bed:bus==='preview'?previewFx:fx);
     voices.add(source);voiceGains.set(source,g);source.onended=()=>{voices.delete(source);voiceGains.delete(source);source.disconnect();filter.disconnect();g.disconnect();p?.disconnect();};source.start(t);source.stop(t+duration+.03);
@@ -132,16 +158,21 @@
   // Original eight-bar interface themes, rendered once into seamless stereo loops.
   // Rounded sine/triangle keys, a soft bass, and a restrained three-note pad.
   // All voices wrap into the loop buffer, including their release tails.
-  const musicBuffers=new Map();let musicMode='none',musicSource=null,musicVoiceGain=null,musicBus=null,musicNotes=0;
-  function composeMusic(mode){
-    if(musicBuffers.has(mode))return musicBuffers.get(mode);
+  const musicBuffers=new Map(),musicJobs=new Map();
+  let musicMode='none',musicSource=null,musicVoiceGain=null,musicBus=null,musicNotes=0;
+  let musicWorker=null,workerURL=null,workerFailed=false,pendingMusic=null,musicRequestId=0;
+  let musicRenderMode='not-started';
+  // Synthesis runs in a worker, never inside a button or scene handler. The
+  // generator also provides a bounded, yielding fallback if workers are blocked.
+  function* renderMusic(mode){
     const restful=mode==='pause',rate=22050,beat=restful?60/48:mode==='dock'?60/88:60/80,bars=8,length=bars*4*beat,n=Math.round(length*rate);
-    const buffer=context.createBuffer(2,n,rate),L=buffer.getChannelData(0),R=buffer.getChannelData(1);
+    const L=new Float32Array(n),R=new Float32Array(n);let notes=0;
     const chords=mode==='dock'?[[60,64,67,71],[57,60,64,67],[53,57,60,64],[55,59,62,69]]:[[57,60,64,67],[53,57,60,64],[60,64,67,71],[55,59,62,69]];
-    function note(midi,start,duration,amplitude,pan=0,pad=false){
+    function* note(midi,start,duration,amplitude,pan=0,pad=false){
       const frequency=440*Math.pow(2,(midi-69)/12),samples=Math.ceil(duration*rate),offset=Math.round(start*rate);
       const left=Math.sqrt((1-pan)/2),right=Math.sqrt((1+pan)/2);
       for(let i=0;i<samples;i++){
+        if(i>0&&i%4096===0)yield;
         const t=i/rate,phase=2*Math.PI*frequency*t;
         const envelope=pad?Math.min(1,t/(restful?1.1:.35))*Math.max(0,Math.min(1,(duration-t)/(restful?1.7:.65))):Math.min(1,t/(restful?.08:.012))*Math.exp(-t*(restful?2.6:4)/duration)*Math.min(1,(duration-t)/(restful?.6:.12));
         const wave=Math.sin(phase)+(restful?.045:pad?.08:.22)*Math.sin(phase*2)+(restful?.012:.035)*Math.sin(phase*3);
@@ -149,25 +180,88 @@
         L[k]+=v*left;R[k]+=v*right;
         if(!pad){const echo=(k+Math.round(beat*.75*rate))%n;L[echo]+=v*right*.15;R[echo]+=v*left*.15;}
       }
-      musicNotes++;
+      notes++;
     }
     for(let bar=0;bar<bars;bar++){
       const chord=chords[bar%4],start=bar*4*beat;
       if(restful){
         // Slow, warm suspended harmonies and a sparse rounded-key melody. No beat.
-        for(let j=0;j<4;j++)note(chord[j],start+j*.09,5.1*beat,.018,(j-1.5)*.34,true);
-        note(chord[0]-24,start,4.8*beat,.048,0,true);
-        note(chord[2]+12,start+.9*beat,2.9*beat,.041,-.24);
-        if(bar%2===1)note(chord[1]+12,start+2.6*beat,3.2*beat,.033,.27);
+        for(let j=0;j<4;j++)yield* note(chord[j],start+j*.09,5.1*beat,.018,(j-1.5)*.34,true);
+        yield* note(chord[0]-24,start,4.8*beat,.048,0,true);
+        yield* note(chord[2]+12,start+.9*beat,2.9*beat,.041,-.24);
+        if(bar%2===1)yield* note(chord[1]+12,start+2.6*beat,3.2*beat,.033,.27);
         continue;
       }
-      for(let j=0;j<3;j++)note(chord[j],start,4.4*beat,.022,(j-1)*.5,true);
-      note(chord[0]-24,start,2.8*beat,.105,0);note(chord[0]-12,start+2*beat,1.7*beat,.045,-.1);
+      for(let j=0;j<3;j++)yield* note(chord[j],start,4.4*beat,.022,(j-1)*.5,true);
+      yield* note(chord[0]-24,start,2.8*beat,.105,0);yield* note(chord[0]-12,start+2*beat,1.7*beat,.045,-.1);
       const pattern=mode==='dock'?[0,2,1,3,2,1,3,2]:[0,2,3,1,2,0,3,2];
-      for(let j=0;j<8;j++)note(chord[pattern[j]]+12,start+j*.5*beat,.95*beat,mode==='dock'?.074:.058,(j%3-1)*.24);
-      if(bar%2===1){note(chord[2]+12,start+beat,1.8*beat,.042,.3);note(chord[1]+12,start+2.5*beat,1.4*beat,.038,-.3);}
+      for(let j=0;j<8;j++)yield* note(chord[pattern[j]]+12,start+j*.5*beat,.95*beat,mode==='dock'?.074:.058,(j%3-1)*.24);
+      if(bar%2===1){yield* note(chord[2]+12,start+beat,1.8*beat,.042,.3);yield* note(chord[1]+12,start+2.5*beat,1.4*beat,.038,-.3);}
     }
-    musicBuffers.set(mode,buffer);return buffer;
+    return {rate,L,R,notes};
+  }
+  function finishMusic(mode,result){
+    const job=musicJobs.get(mode);if(!job)return;
+    const buffer=context.createBuffer(2,result.L.length,result.rate);
+    buffer.copyToChannel(result.L,0);buffer.copyToChannel(result.R,1);
+    musicNotes+=result.notes;musicBuffers.set(mode,buffer);musicJobs.delete(mode);job.resolve(buffer);
+  }
+  function renderMusicFallback(mode){
+    const job=musicJobs.get(mode);if(!job||job.fallback)return;
+    job.fallback=true;musicRenderMode='yielding-fallback';const iterator=renderMusic(mode);
+    const advance=()=>{
+      if(!musicJobs.has(mode))return;
+      try{
+        const until=performance.now()+3;let result;
+        do{result=iterator.next();if(result.done){finishMusic(mode,result.value);return;}}while(performance.now()<until);
+        setTimeout(advance,0);
+      }catch(error){musicJobs.delete(mode);job.reject(error);}
+    };
+    setTimeout(advance,0);
+  }
+  function failMusicWorker(){
+    workerFailed=true;musicWorker?.terminate();musicWorker=null;
+    if(workerURL){URL.revokeObjectURL(workerURL);workerURL=null;}
+    for(const mode of musicJobs.keys())renderMusicFallback(mode);
+  }
+  function prepareMusic(mode){
+    if(musicBuffers.has(mode))return Promise.resolve(musicBuffers.get(mode));
+    if(musicJobs.has(mode))return musicJobs.get(mode).promise;
+    let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});
+    musicJobs.set(mode,{promise,resolve,reject,fallback:false});
+    if(!workerFailed&&!musicWorker){
+      try{
+        const code='const renderMusic='+renderMusic.toString()+`;self.onmessage=({data:mode})=>{try{const it=renderMusic(mode);let result;do{result=it.next();}while(!result.done);const value=result.value;self.postMessage({mode,value},[value.L.buffer,value.R.buffer]);}catch(error){self.postMessage({mode,error:String(error)});}};self.postMessage({ready:true});`;
+        workerURL=URL.createObjectURL(new Blob([code],{type:'text/javascript'}));musicWorker=new Worker(workerURL);musicRenderMode='worker';
+        musicWorker.onmessage=({data})=>{
+          if(data.ready){if(workerURL){URL.revokeObjectURL(workerURL);workerURL=null;}return;}
+          if(data.error){renderMusicFallback(data.mode);return;}
+          finishMusic(data.mode,data.value);
+        };
+        musicWorker.onerror=event=>{event.preventDefault();failMusicWorker();};
+        musicWorker.onmessageerror=failMusicWorker;
+      }catch(_){failMusicWorker();}
+    }
+    if(musicWorker)musicWorker.postMessage(mode);else renderMusicFallback(mode);
+    return promise;
+  }
+  function cancelMusicRequest(){musicRequestId++;pendingMusic=null;}
+  function requestMusic(mode){
+    if(pendingMusic?.mode===mode)return;
+    const id=++musicRequestId;pendingMusic={mode,id};
+    prepareMusic(mode).then(buffer=>{
+      if(id!==musicRequestId)return;
+      pendingMusic=null;
+      if(musicMode!==mode||settings.muted||settings.music<=0||suspensionRequested||document.hidden||context.state!=='running')return;
+      // Keep the previous interface theme until its replacement is ready, then
+      // crossfade on one audio-clock boundary. No stale asynchronous scene starts.
+      stopMusic(.65);
+      const source=context.createBufferSource(),g=context.createGain(),start=context.currentTime+.02;
+      source.buffer=buffer;source.loop=true;g.gain.value=0;source.connect(g);g.connect(musicBus);
+      source.onended=()=>{source.disconnect();g.disconnect();};
+      g.gain.setValueAtTime(0,start);g.gain.linearRampToValueAtTime(mode==='pause'?.72:1,start+(mode==='pause'?1.1:.65));source.start(start);
+      musicSource=source;musicVoiceGain=g;
+    }).catch(()=>{if(id===musicRequestId){pendingMusic=null;musicRenderMode='unavailable';}});
   }
   function stopMusic(seconds=.4){
     if(!context||!musicSource)return;
@@ -188,16 +282,13 @@
         fade(engineGain.gain,0,PAUSE_FADE);fade(motorGain.gain,0,PAUSE_FADE);fade(waterGain.gain,0,PAUSE_FADE);
       }
     }
-    if(mode==='none'){if(musicSource)stopMusic(.45);return;}
+    if(mode==='none'){if(changed||pendingMusic)cancelMusicRequest();if(musicSource)stopMusic(.45);return;}
     active=false;
-    if(changed&&musicSource)stopMusic(.65);
-    if(settings.muted||settings.music<=0||context.state!=='running')return;
-    if(!musicSource){
-      const source=context.createBufferSource(),g=context.createGain();source.buffer=composeMusic(mode);source.loop=true;
-      g.gain.value=0;source.connect(g);g.connect(musicBus);
-      source.onended=()=>{source.disconnect();g.disconnect();};
-      source.start();g.gain.setValueAtTime(0,context.currentTime);g.gain.linearRampToValueAtTime(mode==='pause'?.72:1,context.currentTime+(mode==='pause'?1.1:.65));
-      musicSource=source;musicVoiceGain=g;
+    if(changed){cancelMusicRequest();requestMusicIfReady();}
+    else if(!musicSource&&!pendingMusic)requestMusicIfReady();
+    function requestMusicIfReady(){
+      if(settings.muted||settings.music<=0||context.state!=='running')return;
+      requestMusic(mode);
     }
   }
   function suspend(){
@@ -205,19 +296,24 @@
     if(!context||suspensionRequested)return;
     suspensionRequested=true;worldMuted=null;
     const token=++lifecycleToken;
-    stopMusic(BACKGROUND_FADE);releaseVoices(BACKGROUND_FADE);
+    cancelMusicRequest();stopMusic(BACKGROUND_FADE);releaseVoices(BACKGROUND_FADE);
     fade(lifecycleGain.gain,0,BACKGROUND_FADE);
     fade(engineGain.gain,0,BACKGROUND_FADE);fade(motorGain.gain,0,BACKGROUND_FADE);fade(waterGain.gain,0,BACKGROUND_FADE);
     // The fade runs in Web Audio even if background timers are throttled. A new
     // gesture invalidates this timer; a stale suspend cannot silence a resumed dive.
-    suspendTimer=setTimeout(()=>{
+    const silentAt=context.currentTime+BACKGROUND_FADE;
+    const suspendWhenQuiet=()=>{
       suspendTimer=null;
       if(token!==lifecycleToken||!suspensionRequested||context.state!=='running')return;
+      const remaining=silentAt-context.currentTime;
+      if(remaining>0){suspendTimer=setTimeout(suspendWhenQuiet,Math.max(20,remaining*1000+20));return;}
       context.suspend().then(()=>{
         if(token!==lifecycleToken&&!suspensionRequested&&!document.hidden)context.resume().catch(()=>{blocked=true;});
       }).catch(()=>{});
-    },(BACKGROUND_FADE+.06)*1000);
+    };
+    suspendTimer=setTimeout(suspendWhenQuiet,(BACKGROUND_FADE+.06)*1000);
   }
+
   function tick(data){
     if(!context||!unlocked||context.state!=='running'||document.hidden||suspensionRequested||musicMode!=='none')return;
     active=true;
@@ -232,6 +328,6 @@
     if(data.threat&&now-lastThreat>4.6){lastThreat=now;tone(95,70,.6,.09,data.pan||0,'triangle');tone(120,80,.5,.045,data.pan||0,'sine',.25);}
     if(data.pressure>.86&&!data.harbour&&now-lastCreak>9){lastCreak=now;tone(75,48,.9,.08,Math.sin(now),'triangle');}
   }
-  const status=()=>({buildId:BUILD,...settings,available:Boolean(window.AudioContext||window.webkitAudioContext),unlocked,state:context?.state||'not-started',blocked,suspendPending:suspensionRequested,worldMuted,worldGain:worldGain?.gain.value??0,outputGain:lifecycleGain?.gain.value??0,voices:voices.size,active,eventCounts:{...counts},maxVoices:28,musicMode,musicPlaying:Boolean(musicSource),musicNotes,musicDuration:musicSource?.buffer?.duration||0});
+  const status=()=>({buildId:BUILD,...settings,available:Boolean(window.AudioContext||window.webkitAudioContext),unlocked,state:context?.state||'not-started',blocked,suspendPending:suspensionRequested,worldMuted,worldGain:worldGain?.gain.value??0,outputGain:lifecycleGain?.gain.value??0,voices:voices.size,active,eventCounts:{...counts},maxVoices:28,musicMode,musicPreparing:pendingMusic?.mode||null,musicRenderMode,musicPlaying:Boolean(musicSource),musicNotes,musicDuration:musicSource?.buffer?.duration||0});
   window.AbyssAudio={unlock,event,tick,suspend,setScene,configure,settings:()=>({...settings}),status};
 })();

@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const BUILD = Object.freeze({version:'0.17.2',name:'Delta Helm',id:'0.17.2-delta-helm-1'});
+  const BUILD = Object.freeze({version:'0.17.3',name:'Smooth Signals',id:'0.17.3-smooth-signals-1'});
   window.AbyssBuild=BUILD;
   const $ = id => document.getElementById(id);
   const canvas = $('gameCanvas');
@@ -2287,7 +2287,6 @@
   }
   function bind() {
     syncInputMode();bindLivingUI();bindSlots();bindWeaponInputs();
-    for(const type of ['pointerdown','keydown'])document.addEventListener(type,()=>{if(!document.hidden)window.AbyssAudio?.unlock();},{capture:true});
     const cockpitObserver=new ResizeObserver(syncCockpitLayout);
     for(const node of [canvas.parentElement,...document.querySelectorAll('.cockpit-hud,.mobile-controls,.desktop-keybinds')])cockpitObserver.observe(node);
     primaryPointer.addEventListener('change',()=>{resetPilotInput();syncInputMode();resize();syncCockpitLayout();updateUI();});

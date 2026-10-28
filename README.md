@@ -1,18 +1,18 @@
 # The Abyss Below
 
-## v0.17.2: Delta Helm
+## v0.17.3: Smooth Signals
 
-A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. This patch implements a left-side weapon triangle above a four-button graduated Boost / Use / Sonar / Repair row. Silent and cruise modes are removed; movement speed controls noise, with existing Silent Drive upgrades working passively. The flashlight switch is in telemetry. All three campaign slots and the v0.17 economy are preserved.
+A dependency-free HTML/CSS/Canvas/JavaScript submarine game for mobile and desktop browsers/PWAs. This corrective patch fixes audio transition discontinuities, redundant gesture automation and first-use interface music synthesis stalls. The seven-button Delta Helm layout, three campaign slots and the existing economy are unchanged.
 
-See [DELTA-HELM-v0.17.2.md](DELTA-HELM-v0.17.2.md) and [VERIFICATION-v0.17.2.md](VERIFICATION-v0.17.2.md).
+See [SMOOTH-SIGNALS-v0.17.3.md](SMOOTH-SIGNALS-v0.17.3.md) and [VERIFICATION-v0.17.3.md](VERIFICATION-v0.17.3.md).
 
 ## Install or update
 
-For an existing v0.17.1 site, bank cargo and quit the old dive as a precaution, extract the update ZIP, and replace the matching files at the repository root. Publish these files together:
+For an existing v0.17.2 site, bank cargo and quit the old dive as a precaution, extract the update ZIP, and replace the matching files at the repository root. Publish these files together:
 
 `index.html`, `styles.css`, **`campaign-slots.js`**, `audio.js`, `game.js`, `version-sync.js`, `service-worker.js`, `manifest.webmanifest`, `version.json`.
 
-Keep the existing icons. Do not upload the ZIP itself or create an extra nested directory. Use the complete ZIP for a new installation. The package does not deploy automatically. Reopen the same site online and check for **v0.17.2 / Delta Helm**. CHECK AGAIN compares the deployed checksums, runtime build markers and controlling service worker. Local/offline/unverified status must not be interpreted as a successful hosted upgrade.
+Keep the existing icons. Do not upload the ZIP itself or create an extra nested directory. Use the complete ZIP for a new installation. The package does not deploy automatically. Reopen the same site online and check for **v0.17.3 / Smooth Signals**. CHECK AGAIN compares the deployed checksums, runtime build markers and controlling service worker. Local/offline/unverified status must not be interpreted as a successful hosted upgrade.
 
 Keep the same origin and browser profile. Do not clear site data, uninstall or start a new campaign to update. Existing slots retain their saves, finite crystal depletion, owned rounds and upgrades. The existing original-scrap recovery timers are preserved.
 

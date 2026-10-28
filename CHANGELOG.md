@@ -1,3 +1,12 @@
+# v0.17.3 / Smooth Signals
+
+- Fixed reproduced pause envelope snapping to zero by explicitly anchoring current gain before ramping.
+- Cancelled stale fade endpoints on quick resume; wait for audio-clock silence before background suspension.
+- Removed duplicate global audio unlock listener; already-running unlock calls no longer restart output/mixer fades.
+- Moved unchanged original music synthesis off the UI thread with a yielding fallback and stale-scene request protection.
+- Repaired the looping water texture join; added attack scheduling headroom and zero-ended one-shot releases.
+- No changes to saves, economy, controls or musical scores. Eleven targeted automated suites passed; physical-device listening and live deployment remain untested.
+
 # v0.17.2 / Delta Helm
 
 - Tight mobile weapon triangle: railgun above torpedo and mine. Cyan linkage is decorative and pointer-transparent.
