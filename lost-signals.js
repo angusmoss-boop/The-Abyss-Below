@@ -2,7 +2,7 @@
    Backups are portable JSON, not encrypted, cloud-synchronised or cheat-proof. */
 (() => {
   'use strict';
-  const buildId='0.23.0-sunken-strongholds-1';
+  const buildId='0.24.0-nereid-reforged-1';
   const levels=['sunbreak-shelf','glassbone-rift','drowned-gardens','midnight-cathedral','calypso-abyss'];
   const lengths=[2,3,4,5,6];
   const chapters=['The wrong timestamp','Something in the walls','An ocean that remembers','The listening chamber','The other end of the call'];
@@ -112,6 +112,7 @@
     if(!fieldCount||!data.levels[data.selectedLevel])fail('Selected level is missing.');
     for(let i=0;i<levels.indexOf(data.selectedLevel);i++)if(data.levels[levels[i]]?.secured.length!==lengths[i])fail('Selected level is not unlocked.');
     if(data.activeDive){const a=data.activeDive,q=a.player;if(a.schema!==1||a.levelId!==data.selectedLevel||a.seed!==data.levels[a.levelId].seed||a.cycle!==data.levels[a.levelId].cycle||!q||!['x','y','vx','vy','facing','hull','oxygen','battery','boost','mineAmmo'].every(k=>Number.isFinite(q[k]))||q.hull<=0)fail('Invalid active dive.');
+      if(q.repairReady!==undefined&&typeof q.repairReady!=='boolean')fail('Invalid emergency repair state.');
       if(q.mineAmmo!==p.mineAmmo||!['railgun','torpedo'].every(k=>q.weaponAmmo?.[k]===p.weaponAmmo[k]))fail('Dive ammunition is inconsistent.');
       for(const k of ['items','predators','mines','blasts','waves','echoes','terrain'])if(!Array.isArray(a[k])||a[k].length>6000)fail('Incomplete active dive.');
       if(!q.cargo||!['scrap','crystal'].every(k=>Number.isInteger(q.cargo[k])&&q.cargo[k]>=0)||!Array.isArray(q.cargo.recorders)||!q.cargo.recorders.every(i=>Number.isInteger(i)&&i>=0&&i<lengths[levels.indexOf(a.levelId)]))fail('Invalid dive cargo.');
@@ -136,7 +137,7 @@
     window.AbyssGiants?.validateBackup(data);window.AbyssRescue?.validateCampaign(data);
     return true;
   }
-  function pack(payload,version='0.23.0'){
+  function pack(payload,version='0.24.0'){
     validateCampaign(payload);const text=JSON.stringify(payload);
     return JSON.stringify({format:'the-abyss-below/campaign',formatVersion:1,gameVersion:version,exportedAt:new Date().toISOString(),integrity:{algorithm:'fnv1a32',value:checksum(text)},payload},null,2);
   }

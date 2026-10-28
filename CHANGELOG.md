@@ -1,3 +1,14 @@
+# v0.24.0: NEREID Reforged
+
+- Add `ship-systems.js`, a shared deterministic renderer for the actual ship and dock previews. Eight hull specifications, fitted weapon/propulsion/support details, graded boost exhaust, earned finishes and health-based wear preserve existing collision and combat stats.
+- Add Shipyard with fitted/next-mark previews, non-mutating thruster tests, earned livery selection, exact HP and normal purchase dialogs with comparison canvases.
+- Preserve 100 + 28 HP per hull mark; make health, safe depth and half-hull repair benefits explicit.
+- Replace mixed caches with instantaneous 25% maximum-hull contact packs. Full hull leaves packs untouched. Preserve legacy coordinates, IDs, depletion and storage types; remove air/power rewards.
+- Auto-collect finite crystals on narrow hull contact during movement substeps; disallow remote magnet and USE pickup. Keep scrap magnets, manual objectives and battery cells as before.
+- Replace scrap-consuming repairs with one instant 50% maximum-hull charge, serviced only at the physical dock. Persist and validate charge state; migrate old active dives once with a ready charge.
+- Add two-finger live world zoom and desktop wheel zoom, 65–200% of the default platform view. Isolate action touches, release steering while pinching, require lifting remaining fingers, preserve HUD size and save the device preference. Add telemetry slider/reset.
+- Preserve all campaign progress, economy, ammo rules, audio, artwork and world layout. Expand release verification to the new renderer asset.
+
 # v0.23.0: Sunken Strongholds
 
 - Enlarge the five optional wrecks to 1340x740 through 2000x1120 world units; add three decks, nine named compartments, thematic equipment, wiring, ribs and visible machinery.

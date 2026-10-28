@@ -1,5 +1,5 @@
 /* Shell, dock and menu skin. */
-:root{--abyss-build:"0.23.0-sunken-strongholds-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
+:root{--abyss-build:"0.24.0-nereid-reforged-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
 body{background:radial-gradient(ellipse at 40% -20%,#12344a 0%,#061019 65%)}
@@ -713,7 +713,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 }
 @media(prefers-reduced-motion:reduce){body.touch-ui .action-circle,body.touch-ui .ring-value,body.touch-ui .stock-value{transition:none}}
 
-/* v0.23.0 / Lost Signals: approved artwork, unchanged cockpit and controls. */
+/* v0.24.0 / Lost Signals: approved artwork, unchanged cockpit and controls. */
 .brand-app-icon{width:44px;height:44px;object-fit:cover;border-radius:12px;box-shadow:0 0 20px #48bcdf22;border:1px solid #4a8c9b66;flex:none}
 #menuOverlay{background:radial-gradient(ellipse at 25% 30%,#123c4be8,#030c15f5 70%);padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
 #menuOverlay .crystal-menu{display:grid;grid-template-columns:43% minmax(0,1fr);width:min(950px,100%);max-height:calc(100dvh - 36px);padding:0;overflow:auto;border:1px solid #38657399;border-radius:22px;background:#071923;box-shadow:0 30px 110px #000b;text-align:left;scrollbar-width:thin;scrollbar-color:#3c6470 #071923}
@@ -781,7 +781,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 }
 @media(prefers-reduced-motion:reduce){#menuOverlay button{transition:none}}
 
-/* v0.23.0 Lost Signals: the archive and dispatch desk share the existing cockpit palette. */
+/* v0.24.0 Lost Signals: the archive and dispatch desk share the existing cockpit palette. */
 .dock-tabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:thin;flex-shrink:0;padding-bottom:5px;}
 .dock-tabs>[role=tab]{flex:1 0 auto;min-width:82px;padding:11px 10px;font-size:10px;white-space:nowrap;}
 .signals-intro{padding:8px 0 18px;border-bottom:1px solid #24444e;margin-bottom:16px;}
@@ -870,7 +870,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 .rescue-loadout{border:1px solid #75cfbb42;border-radius:12px;background:#102b2c88;padding:13px 15px;margin-top:15px;display:grid;gap:7px}
 .rescue-loadout span{font-size:9px;letter-spacing:1.5px;color:#8cb5ad}.rescue-loadout strong{font-size:13px;color:#b3f2db}.rescue-loadout small{font-size:11px;line-height:1.5;color:#9bb5b9}
 @media(max-height:500px){.recovery-manifest{margin:9px 0}.recovery-manifest span{padding:6px}.recovery-manifest b{font-size:19px}.rescue-loadout{padding:9px 12px;margin-top:9px}}
-/* v0.23.0 / Forgotten Giants. Discovery cards share the existing journal;
+/* v0.24.0 / Forgotten Giants. Discovery cards share the existing journal;
    no new gameplay controls and no new modal nesting. */
 .journal-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
 .journal-tabs button{min-width:0;padding:12px 5px;font-size:10px;letter-spacing:.045em}
@@ -901,7 +901,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 @media(max-width:600px){.discovery-intro{padding:16px}.discovery-intro h3{font-size:22px}.discovery-summary{align-items:flex-start;flex-direction:column;gap:12px}.discovery-summary label{width:100%;justify-content:space-between}.discovery-summary select{max-width:70%;min-height:42px}.discovery-grid{grid-template-columns:1fr;padding:14px;gap:14px}.journal-tabs button{font-size:8px;letter-spacing:0;padding:12px 2px}.discovery-card h4{font-size:19px}.discovery-pin{min-height:42px}}
 @media(max-height:480px) and (min-width:601px){.discovery-grid{padding:12px;gap:12px}.discovery-intro{padding:12px 18px}.discovery-intro h3{font-size:20px}.wreck-silhouette{height:70px}}
 
-/* v0.23.0: circular, live desktop action reference. This is an instrument panel,
+/* v0.24.0: circular, live desktop action reference. This is an instrument panel,
    not a clickable overlay: clicks pass through to the mouse helm. */
 .desktop-ui .desktop-keybinds{left:12px;right:12px;bottom:12px;max-width:1030px;gap:14px;flex-wrap:nowrap;align-items:center;padding:9px 14px 10px;border-radius:23px;border:1px solid #729eab32;background:linear-gradient(180deg,#07172138,#06131cd9);box-shadow:0 8px 30px #0005;pointer-events:none;backdrop-filter:blur(3px)}
 .desktop-pilot-hint{display:flex;align-items:center;gap:8px;flex:0 0 112px;color:#90afbb}
@@ -929,7 +929,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 @media(max-width:370px){.desktop-action-bank{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px 2px}.desktop-action-orb{width:40px;height:40px}.desktop-action-name{font-size:6px}.desktop-readout{font-size:8px}.desktop-action-orb kbd{font-size:7px;padding:1px 3px}}
 .touch-ui .desktop-keybinds{display:none!important}
 
-/* v0.23.0 / Lifeline: a coherent command deck, not another layer of HUD cards. */
+/* v0.24.0 / Lifeline: a coherent command deck, not another layer of HUD cards. */
 #menuOverlay,.pause-overlay,.dock-overlay{background:radial-gradient(ellipse at 20% 0%,#16354155,transparent 65%),#020c13bd;backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
 .nav-glyph{width:21px;height:21px;flex:0 0 21px;opacity:.88}.nav-label{flex:1;min-width:0}.nav-count{font:600 9px ui-monospace,monospace;white-space:nowrap;color:#9cbdc3}
 .command-eyebrow{display:flex;align-items:center;gap:8px;color:#8bcbc8;font:650 9px/1.5 ui-monospace,monospace;letter-spacing:1.7px}
@@ -1044,3 +1044,49 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 
 /* Return summary precedes the scrolling catalogue without blocking departure. */
 .rescue-arrival{margin:0 0 14px}.rescue-pin{width:100%;margin:4px 0 15px;min-height:44px}
+/* v0.24 / NEREID Reforged. The world zoom never scales these controls. */
+.view-zoom-badge{position:absolute;top:calc(var(--hud-bottom,100px) + 10px);right:16px;z-index:6;pointer-events:none;padding:7px 10px;border:1px solid #83dacc55;border-radius:12px;background:#051925c9;color:#c1efe5;font:600 10px ui-monospace,monospace;letter-spacing:1px;opacity:0;transform:translateY(-3px);transition:opacity .18s,transform .18s;}
+.view-zoom-badge.visible{opacity:1;transform:translateY(0);}
+.view-zoom-settings{margin:0 18px 14px;padding:14px;border:1px solid #83c3d42c;border-radius:12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 12px;align-items:center;background:#0a243055;}
+.view-zoom-settings label{grid-column:1/-1;font:600 11px ui-monospace,monospace;letter-spacing:1px;color:#a3c6d3;display:flex;justify-content:space-between;}
+.view-zoom-settings input{width:100%;min-width:0;accent-color:#95e8d2;}
+.view-zoom-settings small{grid-column:1/-1;color:#7fa1b4;font-size:11px;line-height:1.5;}
+.view-zoom-settings .alt-btn{min-height:40px;padding:6px 10px;font-size:10px;}
+#mobileRepair.repair-spent{opacity:.32;filter:saturate(.1);}
+#mobileRepair:not(.repair-spent)::after{border-color:#a6e5be66;}
+.dock-balance{grid-template-columns:repeat(5,minmax(0,1fr));}
+.shipyard{padding:2px 1px 8px;}
+.shipyard-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 12px;}
+.shipyard-eyebrow{font:600 9px ui-monospace,monospace;letter-spacing:1.6px;color:#7ea6b6;}
+.shipyard-heading h3{font-size:22px;letter-spacing:3px;margin:5px 0 0;color:#d5f7f0;}
+.shipyard-live{font:600 9px ui-monospace,monospace;color:#94e4cb;letter-spacing:1px;padding:7px 9px;border:1px solid #81cdbb50;border-radius:20px;white-space:nowrap;}
+.shipyard-stage{position:relative;border-radius:18px;border:1px solid #79b9c84a;overflow:hidden;background:#061725;box-shadow:inset 0 1px #b5f7ee15;}
+#shipyardCanvas{display:block;width:100%;height:235px;}
+.shipyard-stage-label{position:absolute;bottom:12px;left:16px;display:flex;flex-direction:column;gap:4px;pointer-events:none;}
+.shipyard-stage-label span{font:600 11px ui-monospace,monospace;letter-spacing:1.5px;color:#b6dedf;}
+.shipyard-stage-label small{font:8px ui-monospace,monospace;letter-spacing:1px;color:#608391;}
+.shipyard-toolbar{display:flex;gap:7px;margin:10px 0 14px;}
+.shipyard-toolbar button{flex:1;min-height:42px;padding:8px;font:600 10px ui-monospace,monospace;letter-spacing:.7px;}
+.shipyard-toolbar .selected{background:#184a504d;border-color:#7bdcc48c;color:#c3ffee;}
+.shipyard-selectors{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.shipyard-selectors label{font:600 9px ui-monospace,monospace;letter-spacing:1px;color:#86a8b9;min-width:0;}
+.shipyard-selectors select{display:block;margin-top:6px;width:100%;height:44px;border-radius:9px;border:1px solid #537b8c75;background:#0a2130;color:#d1e8eb;padding:8px;font:11px ui-monospace,monospace;min-width:0;}
+.shipyard-specs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:15px 0;border:1px solid #547f8e44;border-radius:12px;overflow:hidden;}
+.shipyard-specs span{padding:11px 12px;border-right:1px solid #547f8e33;}
+.shipyard-specs small{display:block;font:8px ui-monospace,monospace;color:#83a4b4;letter-spacing:.7px;margin-bottom:5px;}
+.shipyard-specs b{display:block;font:600 13px ui-monospace,monospace;color:#d0efe7;}
+.shipyard-purchase{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:12px 0;}
+.shipyard-purchase strong{font:600 12px ui-monospace,monospace;letter-spacing:.7px;color:#e0f4ef;}
+.shipyard-purchase p,.shipyard-note{color:#88a8b7;font-size:12px;line-height:1.55;margin:5px 0;}
+.shipyard-purchase button{white-space:nowrap;font-size:11px;min-height:44px;padding:10px 14px;}
+.shipyard-note{font-size:11px;border-top:1px solid #547f8e33;padding-top:10px;}
+.upgrade-visual{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;}
+.upgrade-visual>div{border:1px solid #537b8c55;border-radius:11px;overflow:hidden;background:#0a2130;min-width:0;}
+.upgrade-visual span{display:block;text-align:center;font:600 9px ui-monospace,monospace;letter-spacing:1px;color:#9fd8cf;padding:7px;}
+.upgrade-visual canvas{display:block;width:100%;height:86px;}
+@media(max-width:600px){.dock-balance{grid-template-columns:repeat(3,minmax(0,1fr));}.shipyard-selectors{grid-template-columns:1fr;}.shipyard-specs{grid-template-columns:1fr 1fr;}.shipyard-specs span:nth-child(-n+2){border-bottom:1px solid #547f8e33;}.shipyard-purchase{align-items:stretch;flex-direction:column;gap:8px;}#shipyardCanvas{height:180px;}.shipyard-heading h3{font-size:18px;}.shipyard-eyebrow{font-size:8px;letter-spacing:1px;}.shipyard-live{font-size:8px;padding:6px 7px;}}
+@media(max-height:500px) and (min-width:500px){#shipyardCanvas{height:160px;}.shipyard-heading{margin-bottom:6px;}.shipyard-selectors{grid-template-columns:1fr 1fr;}.shipyard-specs{grid-template-columns:repeat(4,minmax(0,1fr));}.shipyard-purchase{flex-direction:row;align-items:center;}.upgrade-visual canvas{height:65px;}}
+@media(prefers-reduced-motion:reduce){.view-zoom-badge{transition:none;}}
+
+.dock-balance{display:grid;gap:11px 8px;}
+.dock-balance>span{min-width:0;border:0;padding:0;}

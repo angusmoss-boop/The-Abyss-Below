@@ -3,7 +3,7 @@
  */
 (() => {
   'use strict';
-  const buildId='0.23.0-sunken-strongholds-1';
+  const buildId='0.24.0-nereid-reforged-1';
   const TAU=Math.PI*2;
   const NAMES=['PIP','MICA','FERN','ECHO','NOVA'];
   const REWARDS=[180,260,340,420,500];
