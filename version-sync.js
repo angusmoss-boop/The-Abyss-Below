@@ -15,7 +15,7 @@
   }
   $('checkVersionBtn').onclick=null; // Clear the slow/missing-checker fallback.
 
-  const CORE=['index.html','styles.css','campaign-slots.js','audio.js','lost-signals.js','forgotten-giants.js','game.js','version-sync.js','service-worker.js','manifest.webmanifest','launch.js','icon-192.png','icon-512.png','icon-maskable-512.png','apple-touch-icon.png','favicon-32.png','favicon.ico','launch-art.webp'];
+  const CORE=['index.html','styles.css','campaign-slots.js','audio.js','lost-signals.js','forgotten-giants.js','deepwater-rescue.js','game.js','version-sync.js','service-worker.js','manifest.webmanifest','launch.js','icon-192.png','icon-512.png','icon-maskable-512.png','apple-touch-icon.png','favicon-32.png','favicon.ico','launch-art.webp'];
   const state={status:'checking',checkedAt:null,remote:null,detail:'',inFlight:false};
   let currentCheck=null,lastAttempt=0,generation=0,canReload=false,recheckRequested=false;
   $('menuVersion').textContent='v'+BUILD.version;$('menuVersionName').textContent=BUILD.name;
@@ -78,7 +78,7 @@
         if(order<0){status('unverified','LOCAL BUILD AHEAD OF SERVER','Running v'+BUILD.version+'; the server still publishes v'+remote.version+'. Deployment may be in progress.');return state;}
         const htmlBuild=document.querySelector('meta[name="abyss-build"]')?.content;
         const cssBuild=getComputedStyle(document.documentElement).getPropertyValue('--abyss-build').trim().replace(/^["']|["']$/g,'');
-        if(remote.buildId!==BUILD.id||htmlBuild!==BUILD.id||cssBuild!==BUILD.id||window.AbyssAudio?.status().buildId!==BUILD.id||window.AbyssSlots?.buildId!==BUILD.id||window.AbyssSignals?.buildId!==BUILD.id||window.AbyssGiants?.buildId!==BUILD.id){
+        if(remote.buildId!==BUILD.id||htmlBuild!==BUILD.id||cssBuild!==BUILD.id||window.AbyssAudio?.status().buildId!==BUILD.id||window.AbyssSlots?.buildId!==BUILD.id||window.AbyssSignals?.buildId!==BUILD.id||window.AbyssGiants?.buildId!==BUILD.id||window.AbyssRescue?.buildId!==BUILD.id){
           status('mismatch','MIXED BUILD · RELOAD REQUIRED','The loaded interface, styles or game code do not belong to one release. Your saved campaign is kept.',true);return state;
         }
         const worker=await workerBuild();

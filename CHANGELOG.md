@@ -1,3 +1,14 @@
+# v0.22.0: Deepwater Rescue
+
+- Add one persistent, named research-drone rescue per level, approximate distress areas, sonar identification and manual restart/follow/wait through existing USE.
+- Share obstacle routing with bounded movement checks; keep escort failure recoverable after death and abandonment. Pay each rescue once at the physical harbour.
+- Add limited oxygen-service sites with six-second, quarter-tank transfer and physical-return-only restocking. Preserve normal oxygen consumption and dangerous surroundings.
+- Add occasional migration, silt, distant silhouettes and intermittent discovery beacons, with active-time scheduling, darkness, harbour and Warden guards.
+- Add a compact dock summary, detailed expedition report and fleet journal available from main/pause menus. Actual cargo and payments only; no bonus multipliers.
+- Add soft procedural rescue/environment cues through the existing audio mixer and fade-safe lifecycle.
+- Persist all new objects and clocks per level and campaign, including stable sonar IDs and portable backup validation.
+- Preserve resource layouts, currencies, prices, weapons, ammunition rules, thirty achievements, art and combat controls.
+
 # v0.21.0: Lifeline
 
 - Increase oxygen consumption from 0.22 to 0.30 units/second before recycler efficiency, with actual remaining/full-tank time estimates.

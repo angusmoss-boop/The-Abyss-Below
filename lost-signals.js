@@ -2,7 +2,7 @@
    Backups are portable JSON, not encrypted, cloud-synchronised or cheat-proof. */
 (() => {
   'use strict';
-  const buildId='0.21.0-lifeline-1';
+  const buildId='0.22.0-deepwater-rescue-1';
   const levels=['sunbreak-shelf','glassbone-rift','drowned-gardens','midnight-cathedral','calypso-abyss'];
   const lengths=[2,3,4,5,6];
   const chapters=['The wrong timestamp','Something in the walls','An ocean that remembers','The listening chamber','The other end of the call'];
@@ -120,7 +120,7 @@
       if(!Number.isFinite(a.clock)||a.clock<0||q.x<-2440||q.x>3640||q.y<-2000||q.y>120+[300,600,1000,1400,1800][levels.indexOf(a.levelId)]*10+10)fail('Dive position or clock is invalid.');
       const guidanceValid=o=>(o.targetId==null||typeof o.targetId==='string'&&o.targetId.length<=100||Number.isInteger(o.targetId)&&o.targetId>=0&&o.targetId<=1e9)&&['launchHeading','originX','originY','heading','vx','vy'].every(k=>o[k]===undefined||Number.isFinite(o[k])&&Math.abs(o[k])<=100000);
       if(!a.mines.every(m=>Number.isFinite(m.x)&&Number.isFinite(m.y)&&Number.isFinite(m.armedAt)&&Number.isFinite(m.damage)&&m.damage>=0&&guidanceValid(m)))fail('Invalid mine checkpoint.');
-      if(!a.waves.every(w=>Number.isFinite(w.x)&&Number.isFinite(w.y)&&Number.isFinite(w.birth)&&Number.isFinite(w.radius)&&Array.isArray(w.contacts)&&w.contacts.every(c=>['items','predators','rocks','wrecks','vents','mines','landmarks','derelictMines','ventFields','schools','signals','giantObjects','wall','floor'].includes(c.kind)&&typeof c.hit==='boolean')))fail('Invalid sonar checkpoint.');
+      if(!a.waves.every(w=>Number.isFinite(w.x)&&Number.isFinite(w.y)&&Number.isFinite(w.birth)&&Number.isFinite(w.radius)&&Array.isArray(w.contacts)&&w.contacts.every(c=>['items','predators','rocks','wrecks','vents','mines','landmarks','derelictMines','ventFields','schools','signals','giantObjects','rescueObjects','wall','floor'].includes(c.kind)&&typeof c.hit==='boolean')))fail('Invalid sonar checkpoint.');
       if(a.projectiles&&(!Array.isArray(a.projectiles)||a.projectiles.length>200||!a.projectiles.every(o=>['railgun','torpedo'].includes(o.kind)&&['x','y','vx','vy','damage','remaining','radius'].every(k=>Number.isFinite(o[k]))&&o.damage>0&&o.remaining>=0&&guidanceValid(o))))fail('Invalid projectile checkpoint.');
       for(const e of a.predators){
         if(e.behaviour!==undefined&&!['ordinary','pack','ambush','interceptor'].includes(e.behaviour))fail('Invalid predator behaviour.');
@@ -133,10 +133,10 @@
       if(a.signals&&(!Array.isArray(a.signals)||a.signals.length>5||!a.signals.every(o=>['contract-package','survey-buoy','warden-site'].includes(o.kind)&&Number.isFinite(o.x)&&Number.isFinite(o.y))))fail('Invalid assignment checkpoint.');
       if(a.events&&!a.events.every(e=>typeof e==='string'&&e.length<300&&!/[<>]/.test(e)))fail('Invalid event log.');
     }
-    window.AbyssGiants?.validateBackup(data);
+    window.AbyssGiants?.validateBackup(data);window.AbyssRescue?.validateCampaign(data);
     return true;
   }
-  function pack(payload,version='0.21.0'){
+  function pack(payload,version='0.22.0'){
     validateCampaign(payload);const text=JSON.stringify(payload);
     return JSON.stringify({format:'the-abyss-below/campaign',formatVersion:1,gameVersion:version,exportedAt:new Date().toISOString(),integrity:{algorithm:'fnv1a32',value:checksum(text)},payload},null,2);
   }

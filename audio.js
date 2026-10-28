@@ -2,7 +2,7 @@
    Start/resume only after user input. Settings persist independently of campaigns. */
 (() => {
   'use strict';
-  const KEY='abyss-audio-v1', BUILD='0.21.0-lifeline-1';
+  const KEY='abyss-audio-v1', BUILD='0.22.0-deepwater-rescue-1';
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   let settings={effects:.5,ambience:.35,music:.3,muted:false};
   try { const v=JSON.parse(localStorage.getItem(KEY)||'null'); if(v){
@@ -119,7 +119,7 @@
   }
   function event(kind,pan=0,intensity=1,preview=false){
     if(!unlocked||!context||context.state!=='running'||settings.muted||suspensionRequested||voices.size>=24)return;
-    const gaps={echo:.14,chain:2.5,ventWarning:1.6,ventErupt:.7,harbour:4,wreckGroan:5,kelp:1.5,schoolRush:2.5,derelictBlast:.10};
+    const gaps={distress:12,droneHello:1.5,rescueLocated:2,airTransfer:1.1,distantCall:10,siltLift:4,echo:.14,chain:2.5,ventWarning:1.6,ventErupt:.7,harbour:4,wreckGroan:5,kelp:1.5,schoolRush:2.5,derelictBlast:.10};
     const now=context.currentTime;
     if(now-(eventTimes.get(kind)??-100)<(gaps[kind]??.035))return;
     eventTimes.set(kind,now);counts[kind]=(counts[kind]||0)+1;
@@ -127,6 +127,13 @@
     const play=(f,e,d,g,p=pan,type='sine',delay=0,bus='effects')=>tone(f*variation,e*variation,d,g*strength,p,type,delay,preview||kind==='dock'?'preview':bus);
     const hiss=(d,g,f=600,type='lowpass',delay=0,bus='effects')=>noise(d,g*strength,pan,f,type,delay,preview||kind==='dock'?'preview':bus);
     switch(kind){
+      case 'distress':[392,440,392].forEach((f,i)=>play(f,f*.99,.35,.035,pan,'sine',i*.24));hiss(.3,.012,1700,'bandpass');break;
+      case 'droneHello':[440,554,659].forEach((f,i)=>play(f,f,.24,.045,pan,'sine',i*.15));break;
+      case 'rescueLocated':play(620,780,.3,.045);play(930,930,.3,.03,pan,'sine',.18);break;
+      case 'airTransfer':hiss(1.2,.035,1100,'bandpass');play(120,125,1.1,.012,pan);break;
+      case 'rescueHome':[261.63,329.63,392,523.25].forEach((f,i)=>play(f,f,.7,.045,0,'sine',i*.17));break;
+      case 'distantCall':play(52,39,3.6,.055,pan,'sine',0,'ambience');play(82,70,2.8,.018,pan,'sine',.5,'ambience');break;
+      case 'siltLift':hiss(2,.035,650,'lowpass',0,'ambience');break;
       case 'radioOpen':hiss(.16,.025,1900,'bandpass');play(440,442,.25,.04);break;
       case 'assignmentScan':play(520,640,.25,.07);play(780,880,.32,.055,pan,'sine',.16);break;
       case 'contractComplete':[330,440,554,660].forEach((f,i)=>play(f,f,.5,.055,0,'sine',i*.12));break;

@@ -1,5 +1,5 @@
 /* Shell, dock and menu skin. */
-:root{--abyss-build:"0.21.0-lifeline-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
+:root{--abyss-build:"0.22.0-deepwater-rescue-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
 body{background:radial-gradient(ellipse at 40% -20%,#12344a 0%,#061019 65%)}
@@ -713,7 +713,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 }
 @media(prefers-reduced-motion:reduce){body.touch-ui .action-circle,body.touch-ui .ring-value,body.touch-ui .stock-value{transition:none}}
 
-/* v0.21.0 / Lost Signals: approved artwork, unchanged cockpit and controls. */
+/* v0.22.0 / Lost Signals: approved artwork, unchanged cockpit and controls. */
 .brand-app-icon{width:44px;height:44px;object-fit:cover;border-radius:12px;box-shadow:0 0 20px #48bcdf22;border:1px solid #4a8c9b66;flex:none}
 #menuOverlay{background:radial-gradient(ellipse at 25% 30%,#123c4be8,#030c15f5 70%);padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
 #menuOverlay .crystal-menu{display:grid;grid-template-columns:43% minmax(0,1fr);width:min(950px,100%);max-height:calc(100dvh - 36px);padding:0;overflow:auto;border:1px solid #38657399;border-radius:22px;background:#071923;box-shadow:0 30px 110px #000b;text-align:left;scrollbar-width:thin;scrollbar-color:#3c6470 #071923}
@@ -781,7 +781,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 }
 @media(prefers-reduced-motion:reduce){#menuOverlay button{transition:none}}
 
-/* v0.21.0 Lost Signals: the archive and dispatch desk share the existing cockpit palette. */
+/* v0.22.0 Lost Signals: the archive and dispatch desk share the existing cockpit palette. */
 .dock-tabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:thin;flex-shrink:0;padding-bottom:5px;}
 .dock-tabs>[role=tab]{flex:1 0 auto;min-width:82px;padding:11px 10px;font-size:10px;white-space:nowrap;}
 .signals-intro{padding:8px 0 18px;border-bottom:1px solid #24444e;margin-bottom:16px;}
@@ -870,7 +870,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 .rescue-loadout{border:1px solid #75cfbb42;border-radius:12px;background:#102b2c88;padding:13px 15px;margin-top:15px;display:grid;gap:7px}
 .rescue-loadout span{font-size:9px;letter-spacing:1.5px;color:#8cb5ad}.rescue-loadout strong{font-size:13px;color:#b3f2db}.rescue-loadout small{font-size:11px;line-height:1.5;color:#9bb5b9}
 @media(max-height:500px){.recovery-manifest{margin:9px 0}.recovery-manifest span{padding:6px}.recovery-manifest b{font-size:19px}.rescue-loadout{padding:9px 12px;margin-top:9px}}
-/* v0.21.0 / Forgotten Giants. Discovery cards share the existing journal;
+/* v0.22.0 / Forgotten Giants. Discovery cards share the existing journal;
    no new gameplay controls and no new modal nesting. */
 .journal-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
 .journal-tabs button{min-width:0;padding:12px 5px;font-size:10px;letter-spacing:.045em}
@@ -901,7 +901,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 @media(max-width:600px){.discovery-intro{padding:16px}.discovery-intro h3{font-size:22px}.discovery-summary{align-items:flex-start;flex-direction:column;gap:12px}.discovery-summary label{width:100%;justify-content:space-between}.discovery-summary select{max-width:70%;min-height:42px}.discovery-grid{grid-template-columns:1fr;padding:14px;gap:14px}.journal-tabs button{font-size:8px;letter-spacing:0;padding:12px 2px}.discovery-card h4{font-size:19px}.discovery-pin{min-height:42px}}
 @media(max-height:480px) and (min-width:601px){.discovery-grid{padding:12px;gap:12px}.discovery-intro{padding:12px 18px}.discovery-intro h3{font-size:20px}.wreck-silhouette{height:70px}}
 
-/* v0.21.0: circular, live desktop action reference. This is an instrument panel,
+/* v0.22.0: circular, live desktop action reference. This is an instrument panel,
    not a clickable overlay: clicks pass through to the mouse helm. */
 .desktop-ui .desktop-keybinds{left:12px;right:12px;bottom:12px;max-width:1030px;gap:14px;flex-wrap:nowrap;align-items:center;padding:9px 14px 10px;border-radius:23px;border:1px solid #729eab32;background:linear-gradient(180deg,#07172138,#06131cd9);box-shadow:0 8px 30px #0005;pointer-events:none;backdrop-filter:blur(3px)}
 .desktop-pilot-hint{display:flex;align-items:center;gap:8px;flex:0 0 112px;color:#90afbb}
@@ -929,7 +929,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 @media(max-width:370px){.desktop-action-bank{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px 2px}.desktop-action-orb{width:40px;height:40px}.desktop-action-name{font-size:6px}.desktop-readout{font-size:8px}.desktop-action-orb kbd{font-size:7px;padding:1px 3px}}
 .touch-ui .desktop-keybinds{display:none!important}
 
-/* v0.21.0 / Lifeline: a coherent command deck, not another layer of HUD cards. */
+/* v0.22.0 / Lifeline: a coherent command deck, not another layer of HUD cards. */
 #menuOverlay,.pause-overlay,.dock-overlay{background:radial-gradient(ellipse at 20% 0%,#16354155,transparent 65%),#020c13bd;backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
 .nav-glyph{width:21px;height:21px;flex:0 0 21px;opacity:.88}.nav-label{flex:1;min-width:0}.nav-count{font:600 9px ui-monospace,monospace;white-space:nowrap;color:#9cbdc3}
 .command-eyebrow{display:flex;align-items:center;gap:8px;color:#8bcbc8;font:650 9px/1.5 ui-monospace,monospace;letter-spacing:1.7px}
@@ -1026,3 +1026,21 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 @media(prefers-reduced-motion:reduce){.command-menu *,.command-pause *,.dock-overlay *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 /* Labels are text, not the achievement-count badge inherited from the old menu. */
 #menuOverlay .achievement-menu-btn>.nav-label,.command-pause .achievement-menu-btn>.nav-label{font:inherit;letter-spacing:inherit;border:0;background:none;padding:0;border-radius:0;color:inherit;white-space:normal;text-align:left}
+
+/* v0.22 Deepwater Rescue: quiet information, not another combat panel. */
+.rescue-arrival{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:16px;padding:15px 17px;border:1px solid #83d9cb35;border-radius:15px;background:linear-gradient(110deg,#12343c99,#071722dd);box-shadow:inset 3px 0 #8cddca70}
+.rescue-arrival>div{display:flex;flex-direction:column;gap:5px;min-width:0}.rescue-arrival strong{color:#c4eee5;font-size:14px;letter-spacing:.035em}.rescue-arrival strong i{font-style:normal;color:#617d88;margin:0 5px}.rescue-arrival small{color:#8faab4;font-size:11px}.rescue-arrival button{white-space:nowrap;font-size:10px;min-height:42px;padding:9px 13px}
+.rescue-menu-button{display:flex;align-items:center;justify-content:center;gap:9px;min-height:40px}.rescue-menu-button>span{color:#cbe0b7}
+.rescue-dialog{width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 24px);border:1px solid #75aaa85c;border-radius:22px;padding:0;background:radial-gradient(ellipse at top right,#183a44 0,transparent 50%),#071720;color:#d3e8ed;box-shadow:0 25px 100px #0009;overflow:hidden}
+.rescue-dialog[open]{display:flex;flex-direction:column}.rescue-dialog::backdrop{background:#010911b8;backdrop-filter:blur(5px)}.rescue-dialog .explorer-header{flex-shrink:0;padding:21px 24px;border-bottom:1px solid #b0d6d51b}.rescue-dialog h2{font-size:20px;letter-spacing:.075em;margin:5px 0 0}.rescue-body{overflow-y:auto;overscroll-behavior:contain;padding:22px 24px;min-height:0;scrollbar-width:thin;scrollbar-color:#43717d #071720}
+.rescue-report-heading{padding:3px 0 20px}.rescue-report-heading h3{font-size:22px;margin:9px 0 15px;letter-spacing:-.03em;font-weight:500;color:#e2eee9}.rescue-report-heading>strong{font-size:32px;font-variant-numeric:tabular-nums;color:#b6ead5}.rescue-report-heading strong small{font-size:10px;letter-spacing:.16em;color:#8caeaf}
+.rescue-report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;border:1px solid #86bfc22e;border-radius:13px;overflow:hidden;background:#86bfc219}.rescue-report-grid>div{background:#0a202bd9;padding:11px 13px;display:flex;flex-direction:column;gap:5px;min-width:0}.rescue-report-grid span{font-size:10px;color:#9cb8c2;letter-spacing:.045em}.rescue-report-grid b{font-size:15px;color:#dbede9;font-variant-numeric:tabular-nums}
+.rescue-records{display:flex;gap:7px;flex-wrap:wrap;padding:13px 0}.rescue-records span{font-size:10px;color:#ead69f;border:1px solid #a08b503b;background:#cbb8730d;padding:6px 8px;border-radius:6px}.rescue-progress{display:flex;flex-direction:column;gap:7px;margin:12px 0;font-size:11px;color:#a0bbc5}.rescue-progress span{display:flex;justify-content:space-between;gap:10px}.rescue-progress b{color:#c0dbd6}
+.rescue-section-title{font-size:12px;letter-spacing:.09em;margin:25px 0 12px}.rescue-section-title small{display:block;margin-top:5px;font-weight:400;font-size:9px;letter-spacing:.12em;color:#8ca5b1}
+.rescue-fleet{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:start;border:1px solid #7fbac824;border-radius:12px;padding:13px;margin-bottom:8px;background:#08192480}.rescue-fleet.is-home{border-color:#95d4b84d;background:#193a352e}.rescue-bot-symbol{font-size:25px;color:#a5c7c2}.rescue-fleet h3{font-size:13px;letter-spacing:.1em;margin:2px 0 7px;color:#dfebdf}.rescue-fleet h3 small{display:block;font-size:8px;letter-spacing:.08em;color:#829eae;margin-top:4px}.rescue-fleet p{font-size:11px;line-height:1.6;color:#a5bec9;margin:0}.rescue-fleet>b{font-size:8px;letter-spacing:.07em;color:#8ca5b1;margin-top:4px}.rescue-fleet.is-home>b{color:#b5e2bb}.rescue-explainer{font-size:11px;line-height:1.65;color:#91b0bd;margin:19px 0 0}
+.rescue-footer{flex-shrink:0;border-top:1px solid #9ec6c426;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:#07141cf2}.rescue-footer>span{font-size:9px;color:#88a5b2}.rescue-footer .primary-btn{font-size:11px;min-height:42px;padding:11px 17px}
+@media(max-width:480px){.rescue-body{padding:17px 15px}.rescue-dialog .explorer-header{padding:16px}.rescue-dialog h2{font-size:17px}.rescue-report-heading h3{font-size:20px}.rescue-report-grid b{font-size:13px}.rescue-report-grid>div{padding:10px}.rescue-fleet{grid-template-columns:24px minmax(0,1fr) auto;padding:11px;gap:8px}.rescue-footer{padding:12px 15px}.rescue-footer>span{max-width:105px}.rescue-arrival{padding:12px;gap:8px}.rescue-arrival strong{font-size:12px}.rescue-arrival button{font-size:9px;padding:8px}}
+@media(max-height:480px){.rescue-dialog{max-height:calc(100dvh - 14px)}.rescue-dialog .explorer-header{padding:9px 16px}.rescue-dialog h2{font-size:15px}.rescue-body{padding:12px 18px}.rescue-footer{padding:8px 16px}.rescue-report-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.rescue-report-heading{padding-bottom:10px}.rescue-report-heading h3{margin:7px 0}.rescue-report-heading>strong{font-size:25px}}
+
+/* Return summary precedes the scrolling catalogue without blocking departure. */
+.rescue-arrival{margin:0 0 14px}.rescue-pin{width:100%;margin:4px 0 15px;min-height:44px}

@@ -1,15 +1,15 @@
 # The Abyss Below
-## v0.21.0: Lifeline
+## v0.22.0: Deepwater Rescue
 
 A mobile-first, side-scrolling submarine exploration game built with HTML, CSS, Canvas and JavaScript. The same game supports desktop mouse/keyboard play and a touch-first installable web-app interface. This archive is the web/PWA source, not a signed native Android release.
 
-**Current update:** faster oxygen consumption, action-focused power costs, half-speed emergency propulsion, rare replenishing battery cells, and redesigned main/pause/dock command interfaces. See [the Lifeline guide](LIFELINE-v0.21.0.md) for exact settings and migration details.
+**Current update:** optional research-drone escorts, limited oxygen stations, occasional underwater encounters, and an honest expedition debrief with a persistent harbour fleet. See [the Deepwater Rescue guide](DEEPWATER-RESCUE-v0.22.0.md) for exact rules and migration details.
 
 ## Install and update
 
-Use the complete ZIP for a fresh repository. Apply the extracted update ZIP over **v0.20.0** at the repository root. Save and export a campaign backup first; banking cargo is a sensible precaution. Upload changed runtime files together. These files do not deploy themselves.
+Use the complete ZIP for a fresh repository. Apply the extracted update ZIP over **v0.21.0** at the repository root. Save and export a campaign backup first; banking cargo is a sensible precaution. Upload changed runtime files together. These files do not deploy themselves.
 
-Reopen your existing game address online after deployment and check for **v0.21.0 / Lifeline**. Do not clear site data, uninstall or start a new campaign to update. Keep the same browser profile and origin. The menu's version checker distinguishes verified, outdated, incomplete, local and offline states rather than assuming a deployment succeeded.
+Reopen your existing game address online after deployment and check for **v0.22.0 / Deepwater Rescue**. Do not clear site data, uninstall or start a new campaign to update. Keep the same browser profile and origin. The menu's version checker distinguishes verified, outdated, incomplete, local and offline states rather than assuming a deployment succeeded.
 
 ## Controls
 
@@ -26,13 +26,21 @@ The 30 achievements, dock contracts, twenty archived transmissions, optional Cat
 
 Continue restores a saved expedition paused after reopening. Export/import portable `.abyss.json` backups through the campaign menu. Local saves are not cloud saves. Death leaves unbanked resources, recorders and identification plates in a persistent recovery wreck and sets replacement ammunition to exactly 10 rail / 3 torpedoes / 3 mines. Normal ammunition purchases still respect fitted capacity; rescue mine stock can temporarily exceed the starter rack by one.
 
-## Lifeline resource settings
+## Existing Lifeline resource settings
 
 Standard air lasts approximately 5:33 uninterrupted active minutes; Air Recycler Mk I extends this to 8:40, with further marks providing more capacity and lower consumption. Pause and dock now show useful endurance estimates.
 
 Normal travel has much lower power draw than boost or sonar. At empty power, reserve thrust is half the fitted normal movement rating and boost cannot run. New rare golden battery cells restore up to 25 power and become eligible to return after eight active dive minutes, with a 90-second per-level stagger and no visible respawning. No offline, pause or dock-screen farming. Crystals still never regenerate.
 
-Existing upgrade prices, mine/gun ammunition costs, salvage regeneration, combat stats, flashlight marks, controls and music are unchanged in v0.21.0.
+Existing upgrade prices, mine/gun ammunition costs, salvage regeneration, combat stats, flashlight marks, controls and music are unchanged in v0.22.0.
+
+## Deepwater Rescue
+
+Explore to detect an optional distress signal, use sonar to locate it, then hold USE to restart the drone. Tap USE after release to switch FOLLOW / WAIT. Escort it to the harbour and physically dock for a one-time credit reward. One unique drone lives in each level. Unresolved rescues survive death and reloads.
+
+Hold USE at an air station for up to 25% of fitted oxygen capacity per station, replenished only after physically returning to that destination's harbour. Stations do not bank cargo, repair hull or protect against predators. No battery is required.
+
+The main and pause menus include a Rescue Log. The dock upgrade view starts with a compact recent-expedition summary and a View Report button. No automatic report modal interrupts arrival.
 
 ## Development
 
@@ -55,11 +63,11 @@ The offline worker and deployment verifier intentionally reject an incomplete or
 Current runner:
 
 ```sh
-python tests/run_v0210.py
+python tests/run_v0220.py
 ```
 
-See [current verification](VERIFICATION-v0.21.0.md), `verification/v0.21.0/` and [test reproduction](tests/README-v0.21.0.md). Earlier reports in the archive are historical, not evidence for this build. Browser tests use actual production code with isolated synthetic storage, never the user's live saves.
+See [current verification](VERIFICATION-v0.22.0.md), `verification/v0.22.0/` and [test reproduction](tests/README-v0.22.0.md). Earlier reports in the archive are historical, not evidence for this build. Browser tests use actual production code with isolated synthetic storage, never the user's live saves.
 
 ## Archive
 
-`CHANGELOG.md` and prior feature guides retain the development history. The current code and Lifeline guide take precedence over older feature descriptions, especially older free-ammunition, salvage and save rules.
+`CHANGELOG.md` and prior feature guides retain the development history. The current code, Deepwater Rescue guide and Lifeline resource settings take precedence over older feature descriptions, especially older free-ammunition, salvage and save rules.
