@@ -1,0 +1,168 @@
+{
+  "livePauseFade": [
+    {
+      "t": 0,
+      "gain": 0.055722977966070175
+    },
+    {
+      "t": 0.029024943310657636,
+      "gain": 0.05147014558315277
+    },
+    {
+      "t": 0.049342403628117926,
+      "gain": 0.04849080368876457
+    },
+    {
+      "t": 0.06965986394557833,
+      "gain": 0.04551146179437637
+    },
+    {
+      "t": 0.08997732426303862,
+      "gain": 0.04253212362527847
+    },
+    {
+      "t": 0.1102947845804989,
+      "gain": 0.039552781730890274
+    },
+    {
+      "t": 0.1277097505668935,
+      "gain": 0.036999061703681946
+    },
+    {
+      "t": 0.15963718820861683,
+      "gain": 0.03231724351644516
+    },
+    {
+      "t": 0.16834467120181407,
+      "gain": 0.03104034811258316
+    },
+    {
+      "t": 0.2002721088435374,
+      "gain": 0.026358500123023987
+    },
+    {
+      "t": 0.217687074829932,
+      "gain": 0.023804781958460808
+    },
+    {
+      "t": 0.23800453514739228,
+      "gain": 0.02082544006407261
+    },
+    {
+      "t": 0.2583219954648527,
+      "gain": 0.01784609816968441
+    },
+    {
+      "t": 0.290249433106576,
+      "gain": 0.013164305128157139
+    },
+    {
+      "t": 0.31927437641723366,
+      "gain": 0.008908105082809925
+    },
+    {
+      "t": 0.3279818594104309,
+      "gain": 0.007631240412592888
+    },
+    {
+      "t": 0.35990929705215424,
+      "gain": 0.0029494105838239193
+    },
+    {
+      "t": 0.38022675736961453,
+      "gain": 0
+    },
+    {
+      "t": 0.397641723356009,
+      "gain": 0
+    },
+    {
+      "t": 0.4179591836734695,
+      "gain": 0
+    },
+    {
+      "t": 0.4382766439909298,
+      "gain": 0
+    },
+    {
+      "t": 0.4585941043083901,
+      "gain": 0
+    },
+    {
+      "t": 0.4789115646258504,
+      "gain": 0
+    },
+    {
+      "t": 0.5079365079365079,
+      "gain": 0
+    }
+  ],
+  "backgroundSuspends": [
+    {
+      "time": 2.27265306122449,
+      "gain": 0
+    }
+  ],
+  "worker": {
+    "status": {
+      "buildId": "0.24.0-nereid-reforged-1",
+      "effects": 0.5,
+      "ambience": 0.35,
+      "music": 0.3,
+      "muted": false,
+      "available": true,
+      "unlocked": true,
+      "state": "running",
+      "blocked": false,
+      "suspendPending": false,
+      "worldMuted": true,
+      "worldGain": 0,
+      "outputGain": 1,
+      "voices": 0,
+      "active": false,
+      "eventCounts": {},
+      "maxVoices": 28,
+      "musicMode": "dock",
+      "musicPreparing": null,
+      "musicRenderMode": "worker",
+      "musicPlaying": true,
+      "musicNotes": 276,
+      "musicDuration": 21.818185941043083
+    },
+    "heartbeats": 294,
+    "initialLoopDurations": [
+      21.818185941043083
+    ]
+  },
+  "fallback": {
+    "status": {
+      "buildId": "0.24.0-nereid-reforged-1",
+      "effects": 0.5,
+      "ambience": 0.35,
+      "music": 0.3,
+      "muted": false,
+      "available": true,
+      "unlocked": true,
+      "state": "running",
+      "blocked": false,
+      "suspendPending": false,
+      "worldMuted": true,
+      "worldGain": 0,
+      "outputGain": 1,
+      "voices": 0,
+      "active": false,
+      "eventCounts": {},
+      "maxVoices": 28,
+      "musicMode": "dock",
+      "musicPreparing": null,
+      "musicRenderMode": "yielding-fallback",
+      "musicPlaying": true,
+      "musicNotes": 276,
+      "musicDuration": 21.818185941043083
+    },
+    "heartbeats": 303,
+    "initialLoopDurations": [
+      21.818185941043083
+    ]
+  }
+}
