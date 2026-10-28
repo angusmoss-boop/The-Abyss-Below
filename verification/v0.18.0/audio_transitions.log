@@ -1,0 +1,3 @@
+PASS real-time gradual pause fade, idempotent unlock, preview effects, rapid hide/show and zero-gain background suspension
+PASS worker and yielding fallback, asynchronous stale-scene suppression, mute/unmute and resume during generation
+PASS actual mobile UI pause/settings/resume, one global audio unlock per event, sliders and unchanged seven-button layout
