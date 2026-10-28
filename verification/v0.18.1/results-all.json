@@ -1,0 +1,158 @@
+{
+  "build": "0.18.1-guided-ordnance-1",
+  "completed_utc": "2026-10-28T03:01:17.914275+00:00",
+  "results": [
+    {
+      "suite": "guidance",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 20.23
+    },
+    {
+      "suite": "seeking_mines",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 9.37
+    },
+    {
+      "suite": "guidance_save",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 11.18
+    },
+    {
+      "suite": "weapons",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 20.66
+    },
+    {
+      "suite": "economy",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 25.77
+    },
+    {
+      "suite": "placement",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 80.05
+    },
+    {
+      "suite": "contracts",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 12.15
+    },
+    {
+      "suite": "backups",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 22.46
+    },
+    {
+      "suite": "warden",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 41.19
+    },
+    {
+      "suite": "journal",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 13.73
+    },
+    {
+      "suite": "signals_layout",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 71.98
+    },
+    {
+      "suite": "migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 8.45
+    },
+    {
+      "suite": "resume",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 38.24
+    },
+    {
+      "suite": "slots",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 22.81
+    },
+    {
+      "suite": "combat_touch",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 9.94
+    },
+    {
+      "suite": "stealth",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 24.71
+    },
+    {
+      "suite": "audio_transitions",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 17.09
+    },
+    {
+      "suite": "music",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 10.17
+    },
+    {
+      "suite": "branding_ui",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 34.82
+    },
+    {
+      "suite": "launch",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 19.82
+    },
+    {
+      "suite": "sync",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.52
+    },
+    {
+      "suite": "worker",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.21
+    }
+  ],
+  "runtime_hashes": {
+    "service-worker.js": "0cad6217e67ce85a043144b7de15f389dc22b8f526a9638fa15efb6a2dcf792c",
+    "index.html": "3256d4e47c1b97bcc03fed1a30efb878347eb3d961de6bacf00bc6207b5eca88",
+    "styles.css": "4568955b7314c40fd635c7a852c8301e5dc71f4c3a18ef95c6a000f565474d08",
+    "campaign-slots.js": "7bd468972b6785ae0f142a919798745776c89233ad8915eb9f899d5cb31cbd50",
+    "audio.js": "42b9281f1bd8bf5af5b5b78ace470d7a552ffa9e4e9d9557ac3f8daf20613446",
+    "lost-signals.js": "652c92bbcb449bc9e435212d49703e51fceada694abe5efa28356216398aca05",
+    "game.js": "a70c9d4b41724e9030dd7a05c5f883ca0dcb8acfc02ade8ddf3b1345e65ce5ab",
+    "version-sync.js": "8b6b566075c6d508a7f289b1c5205c09e3e66f9995144fda988fadc3e3b470e1",
+    "manifest.webmanifest": "6bad2124df5980353eea3964410dfb25bb48e2d58f6aa93b082ce9f603abb4e3",
+    "launch.js": "f0a4f2e939d0264eda85ccd7f0d31a742f81d8436048f8fc02da345cd3bf46d9",
+    "icon-192.png": "767c0d175f694f0acd47faac80fccea427e4437884a5583fe787e2d57293a4c0",
+    "icon-512.png": "8a88e9cc041b8dcdd5a69821793e8ce48e208234c1142e61141e72bb3426febe",
+    "icon-maskable-512.png": "8a88e9cc041b8dcdd5a69821793e8ce48e208234c1142e61141e72bb3426febe",
+    "apple-touch-icon.png": "3fb5123e1b7e4ed3d3907b4a45087a647b922772437cada61a6cfe06470cb8b0",
+    "favicon-32.png": "8472bb51a9d7fa34b4fd85670b0ecf80415664d1191f812f7c4c7de8a50941ca",
+    "favicon.ico": "49a27c92f8ed93ed60932ba84cbeb462e2955bf7e863d9728d3344dc73ffa2b2",
+    "launch-art.webp": "b15f58b3841c9c77b59f85a55b3810a26492d444de0bc64eb38fcb06928326ac"
+  },
+  "note": "Final per-suite results on identical runtime hashes. Guidance and guidance-save were rerun with expanded Warden checks and a corrected terrain-occlusion assertion in the synthetic save fixture. No runtime files changed between the main run and focused rerun."
+}
