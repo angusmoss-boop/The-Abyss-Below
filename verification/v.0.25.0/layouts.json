@@ -1,0 +1,134 @@
+[
+  {
+    "width": 320,
+    "height": 568,
+    "menu_bounds": {
+      "x": 10,
+      "y": 14,
+      "width": 300,
+      "height": 540
+    },
+    "horizontal_overflow": false,
+    "all_menu_controls_reachable": true
+  },
+  {
+    "width": 360,
+    "height": 640,
+    "menu_bounds": {
+      "x": 10,
+      "y": 14,
+      "width": 340,
+      "height": 612
+    },
+    "horizontal_overflow": false,
+    "all_menu_controls_reachable": true
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "menu_bounds": {
+      "x": 14,
+      "y": 14,
+      "width": 362,
+      "height": 816
+    },
+    "horizontal_overflow": false,
+    "all_menu_controls_reachable": true
+  },
+  {
+    "width": 430,
+    "height": 932,
+    "menu_bounds": {
+      "x": 14,
+      "y": 25.265625,
+      "width": 402,
+      "height": 881.46875
+    },
+    "horizontal_overflow": false,
+    "all_menu_controls_reachable": true
+  },
+  {
+    "width": 568,
+    "height": 320,
+    "menu_bounds": {
+      "x": 10,
+      "y": 10,
+      "width": 548,
+      "height": 300
+    },
+    "horizontal_overflow": false,
+    "all_menu_controls_reachable": true
+  },
+  {
+    "width": 640,
+    "height": 360,
+    "menu_bounds": {
+      "x": 10,
+      "y": 10,
+      "width": 620,
+      "height": 340
+    },
+    "horizontal_overflow": false,
+    "all_menu_controls_reachable": true
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "menu_bounds": {
+      "x": 10,
+      "y": 10,
+      "width": 824,
+      "height": 370
+    },
+    "horizontal_overflow": false,
+    "all_menu_controls_reachable": true
+  },
+  {
+    "width": 915,
+    "height": 412,
+    "menu_bounds": {
+      "x": 10,
+      "y": 10,
+      "width": 895,
+      "height": 392
+    },
+    "horizontal_overflow": false,
+    "all_menu_controls_reachable": true
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "menu_bounds": {
+      "x": 14,
+      "y": 123.203125,
+      "width": 740,
+      "height": 777.59375
+    },
+    "horizontal_overflow": false,
+    "all_menu_controls_reachable": true
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "menu_bounds": {
+      "x": 14,
+      "y": 16,
+      "width": 996,
+      "height": 736
+    },
+    "horizontal_overflow": false,
+    "all_menu_controls_reachable": true
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "menu_bounds": {
+      "x": 205,
+      "y": 61.203125,
+      "width": 1030,
+      "height": 777.59375
+    },
+    "horizontal_overflow": false,
+    "all_menu_controls_reachable": true
+  }
+]

@@ -1,0 +1,365 @@
+{
+  "build": "0.25.0-the-living-abyss-1",
+  "completed_utc": "2026-10-28T23:04:53.876822+00:00",
+  "results": [
+    {
+      "suite": "ecology",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 16.37
+    },
+    {
+      "suite": "ecology_routines",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 9.73
+    },
+    {
+      "suite": "photo",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 28.19
+    },
+    {
+      "suite": "living_migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 27.31
+    },
+    {
+      "suite": "living_ui",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 47.79
+    },
+    {
+      "suite": "reforged_pickups",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 20.41
+    },
+    {
+      "suite": "reforged_repair",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 12.57
+    },
+    {
+      "suite": "reforged_zoom",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 24.51
+    },
+    {
+      "suite": "reforged_migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 25.98
+    },
+    {
+      "suite": "reforged_world",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 8.44
+    },
+    {
+      "suite": "shipyard",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 34.68
+    },
+    {
+      "suite": "strongholds",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 60.21
+    },
+    {
+      "suite": "stronghold_hazards",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 16.58
+    },
+    {
+      "suite": "stronghold_migration",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 15.97
+    },
+    {
+      "suite": "rescue_mechanics",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 9.14
+    },
+    {
+      "suite": "air_stations",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 10.16
+    },
+    {
+      "suite": "rescue_navigation",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 53.95
+    },
+    {
+      "suite": "encounters",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 14.48
+    },
+    {
+      "suite": "rescue_ui",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 64.38
+    },
+    {
+      "suite": "rescue_audio",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 5.41
+    },
+    {
+      "suite": "rescue_visibility",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 10.55
+    },
+    {
+      "suite": "lifeline",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 12.72
+    },
+    {
+      "suite": "cells",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 51.66
+    },
+    {
+      "suite": "command_ui",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 107.01
+    },
+    {
+      "suite": "baseline_beam",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 8.7
+    },
+    {
+      "suite": "frontiers",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 40.08
+    },
+    {
+      "suite": "shoals",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 10.9
+    },
+    {
+      "suite": "achievements_extra",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 81.63
+    },
+    {
+      "suite": "regression",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 31.53
+    },
+    {
+      "suite": "world_achievements",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 44.87
+    },
+    {
+      "suite": "behaviours",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 7.1
+    },
+    {
+      "suite": "targeting",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 6.8
+    },
+    {
+      "suite": "recovery",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 48.7
+    },
+    {
+      "suite": "rescue_ammo",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 36.4
+    },
+    {
+      "suite": "recovery_levels",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 67.57
+    },
+    {
+      "suite": "guidance",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 31.49
+    },
+    {
+      "suite": "seeking_mines",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 10.54
+    },
+    {
+      "suite": "guidance_save",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 11.35
+    },
+    {
+      "suite": "weapons",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 25.64
+    },
+    {
+      "suite": "economy",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 32.28
+    },
+    {
+      "suite": "placement",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 74.75
+    },
+    {
+      "suite": "contracts",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 22.43
+    },
+    {
+      "suite": "backups",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 10.51
+    },
+    {
+      "suite": "warden",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 43.54
+    },
+    {
+      "suite": "journal",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 14.88
+    },
+    {
+      "suite": "signals_layout",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 66.73
+    },
+    {
+      "suite": "resume",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 31.25
+    },
+    {
+      "suite": "slots",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 25.73
+    },
+    {
+      "suite": "combat_touch",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 12.11
+    },
+    {
+      "suite": "stealth",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 34.61
+    },
+    {
+      "suite": "audio_transitions",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 20.94
+    },
+    {
+      "suite": "music",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 11.9
+    },
+    {
+      "suite": "branding_ui",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 25.28
+    },
+    {
+      "suite": "launch",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 19.12
+    },
+    {
+      "suite": "sync",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.69
+    },
+    {
+      "suite": "worker",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.25
+    }
+  ],
+  "runtime_hashes": {
+    "service-worker.js": "43181a325a6448894936059b61560e444b2bc7b2a47f856963b50cc2c64c289c",
+    "index.html": "3b65cafa1d30e509c5fef66126cf0b0fa5ba2bc0ca7eb8257eafd1dab045fda3",
+    "styles.css": "589429d12d4e1112fd3dfa6ff93ed18999bb5e8d3cae49ec953f765b8c1a46eb",
+    "campaign-slots.js": "aac021cf93afdd31b57848b490c606dbe801da502cf3c487f60c2af7018d3f16",
+    "audio.js": "6d1fff9957848569f1d6cb8d808fd0a71ae9b07c45fb77d3c1c4acca6e129e69",
+    "lost-signals.js": "cf20fb921da361ebab68fc81eef1e7f6b0a912a7eaa46d0e846dc3e45a6b4e67",
+    "forgotten-giants.js": "8384f092985bcfe6d647a1cfbb5c6fe58b17e97f279d0e311f455305accae90d",
+    "deepwater-rescue.js": "04c4c2af022602b94b85fcf8b47659c45f8e37c3e7d866a0efbf8e68aaa927d9",
+    "ship-systems.js": "ccf304f21b88f9cb4404d3862aa89c30e23bb7f05e5026e4eaff625034980ae7",
+    "living-abyss.js": "71c39d28b2d973c2337625bf9caec61905dc200a945b5aa3e98f4ecbc1662b5c",
+    "game.js": "0f7da129458c4027a27696c41f0fc721639757a1c8d96d51bd5b1090517d820e",
+    "version-sync.js": "3323dbf7b823753dcb987e4f70944b662dacc614f21249fde73d5012d1e08b9d",
+    "manifest.webmanifest": "c2942157b27602114ad4cb7cb5dd56d3f48a32d87a353c8ee8e225bc09f1cedb",
+    "launch.js": "09ae7d176c48029905105db9567f905fb907abb98c5e5917d8cc73e959c247e2",
+    "icon-192.png": "767c0d175f694f0acd47faac80fccea427e4437884a5583fe787e2d57293a4c0",
+    "icon-512.png": "8a88e9cc041b8dcdd5a69821793e8ce48e208234c1142e61141e72bb3426febe",
+    "icon-maskable-512.png": "8a88e9cc041b8dcdd5a69821793e8ce48e208234c1142e61141e72bb3426febe",
+    "apple-touch-icon.png": "3fb5123e1b7e4ed3d3907b4a45087a647b922772437cada61a6cfe06470cb8b0",
+    "favicon-32.png": "8472bb51a9d7fa34b4fd85670b0ecf80415664d1191f812f7c4c7de8a50941ca",
+    "favicon.ico": "49a27c92f8ed93ed60932ba84cbeb462e2955bf7e863d9728d3344dc73ffa2b2",
+    "launch-art.webp": "b15f58b3841c9c77b59f85a55b3810a26492d444de0bc64eb38fcb06928326ac"
+  }
+}

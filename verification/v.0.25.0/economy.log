@@ -1,0 +1,5 @@
+PASS all 59 paid increments: exact 25% rounded-up increase over prior prices, unchanged 464-crystal tree
+PASS base/4 magnet radii, production-frame auto pickups, contact crystals, manual recorders, full-health packs preserved, darkness/sonar, battery and rock guards
+PASS delayed/staggered/off-screen salvage restoration, no clock/offline/harbour exploit, original layout preserved, crystals finite, exact timers after reload and non-regressing first-survey progress
+PASS all visited levels in the active campaign age together; kill drops are excluded from regeneration
+PASS paid single/partial/full gun and mine purchases, no crystal spend, capacity/funds guards, no free installation/upgrade/docking/relaunch/reload stock

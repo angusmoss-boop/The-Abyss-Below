@@ -1,0 +1,3 @@
+PASS all 21 shell assets checksum-verified before install; current-version cache; scoped activation cleanup; worker build handshake
+PASS offline shell/navigation fallback; version checks bypass caches; origin/method guards; missing cached asset detected
+PASS partial upload / mismatching manifest abort installation without replacing the previous cache

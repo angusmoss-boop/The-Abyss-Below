@@ -1,0 +1,168 @@
+{
+  "livePauseFade": [
+    {
+      "t": 0,
+      "gain": 0.05541593208909035
+    },
+    {
+      "t": 0.0203174603174604,
+      "gain": 0.05245627835392952
+    },
+    {
+      "t": 0.03773242630385487,
+      "gain": 0.04991662874817848
+    },
+    {
+      "t": 0.05804988662131527,
+      "gain": 0.046953704208135605
+    },
+    {
+      "t": 0.07836734693877556,
+      "gain": 0.043990783393383026
+    },
+    {
+      "t": 0.09868480725623585,
+      "gain": 0.04102785885334015
+    },
+    {
+      "t": 0.11900226757369614,
+      "gain": 0.03806493431329727
+    },
+    {
+      "t": 0.13931972789115654,
+      "gain": 0.035102009773254395
+    },
+    {
+      "t": 0.15963718820861683,
+      "gain": 0.032139088958501816
+    },
+    {
+      "t": 0.18866213151927447,
+      "gain": 0.027906397357583046
+    },
+    {
+      "t": 0.20897959183673476,
+      "gain": 0.02494347281754017
+    },
+    {
+      "t": 0.22929705215419505,
+      "gain": 0.02198054827749729
+    },
+    {
+      "t": 0.24961451247165534,
+      "gain": 0.019017627462744713
+    },
+    {
+      "t": 0.26993197278911574,
+      "gain": 0.016054702922701836
+    },
+    {
+      "t": 0.290249433106576,
+      "gain": 0.013091749511659145
+    },
+    {
+      "t": 0.31927437641723366,
+      "gain": 0.008858996443450451
+    },
+    {
+      "t": 0.33959183673469395,
+      "gain": 0.00589608633890748
+    },
+    {
+      "t": 0.35990929705215424,
+      "gain": 0.0029331620316952467
+    },
+    {
+      "t": 0.38893424036281177,
+      "gain": 0
+    },
+    {
+      "t": 0.40925170068027206,
+      "gain": 0
+    },
+    {
+      "t": 0.42956916099773257,
+      "gain": 0
+    },
+    {
+      "t": 0.44988662131519286,
+      "gain": 0
+    },
+    {
+      "t": 0.4585941043083901,
+      "gain": 0
+    },
+    {
+      "t": 0.4876190476190476,
+      "gain": 0
+    }
+  ],
+  "backgroundSuspends": [
+    {
+      "time": 2.2523356009070294,
+      "gain": 0
+    }
+  ],
+  "worker": {
+    "status": {
+      "buildId": "0.25.0-the-living-abyss-1",
+      "effects": 0.5,
+      "ambience": 0.35,
+      "music": 0.3,
+      "muted": false,
+      "available": true,
+      "unlocked": true,
+      "state": "running",
+      "blocked": false,
+      "suspendPending": false,
+      "worldMuted": true,
+      "worldGain": 0,
+      "outputGain": 1,
+      "voices": 0,
+      "active": false,
+      "eventCounts": {},
+      "maxVoices": 28,
+      "musicMode": "dock",
+      "musicPreparing": null,
+      "musicRenderMode": "worker",
+      "musicPlaying": true,
+      "musicNotes": 276,
+      "musicDuration": 21.818185941043083
+    },
+    "heartbeats": 320,
+    "initialLoopDurations": [
+      21.818185941043083
+    ]
+  },
+  "fallback": {
+    "status": {
+      "buildId": "0.25.0-the-living-abyss-1",
+      "effects": 0.5,
+      "ambience": 0.35,
+      "music": 0.3,
+      "muted": false,
+      "available": true,
+      "unlocked": true,
+      "state": "running",
+      "blocked": false,
+      "suspendPending": false,
+      "worldMuted": true,
+      "worldGain": 0,
+      "outputGain": 1,
+      "voices": 0,
+      "active": false,
+      "eventCounts": {},
+      "maxVoices": 28,
+      "musicMode": "dock",
+      "musicPreparing": null,
+      "musicRenderMode": "yielding-fallback",
+      "musicPlaying": true,
+      "musicNotes": 276,
+      "musicDuration": 21.818185941043083
+    },
+    "heartbeats": 384,
+    "initialLoopDurations": [
+      21.818185941043083
+    ]
+  }
+}
