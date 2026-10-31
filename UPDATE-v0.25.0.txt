@@ -1,0 +1,40 @@
+THE ABYSS BELOW v0.25.0 / THE LIVING ABYSS
+Build: 0.25.0-the-living-abyss-1
+Base for update pack: v0.24.0 / NEREID Reforged
+
+Save your campaign and export a portable campaign backup before updating.
+Banking cargo and ending the active expedition is a sensible precaution.
+
+Extract the update ZIP and upload its CONTENTS at the same repository root,
+replacing matching files. Keep relative paths. Do not upload the ZIP itself
+as the website. Include the new living-abyss.js and all changed release files,
+including version.json and service-worker.js. Upload the changes together.
+
+The complete source ZIP is the alternative for a fresh checkout. You do not
+need both archives. This delivery does not itself publish anything to GitHub.
+
+After deployment, reopen the same game address online and check for:
+v0.25.0 / The Living Abyss
+Use the menu's version checker to inspect real deployment/cache status.
+A local test page is not a verified deployment. Do not clear browser/site data,
+change the game's origin, uninstall it or start New Game just to update.
+
+NEW FEATURES
+- Fish feeding, sheltering, travelling and curiosity routines.
+- Peaceful Sailfin Gliders and rare Driftbacks, separate from enemies.
+- Earned harbour drones with individual activity; moving service equipment.
+- Cosmetic surface daylight/weather on a saved twenty-active-minute cycle.
+- Wildlife journal: ten optional observations, no reward currency.
+- Photo mode: pause/telemetry, frozen visible frame, crop and PNG export.
+
+Shortcuts remain unchanged. J opens the journal on desktop. Use WILDLIFE
+inside the existing journal, or its dock Archive / telemetry shortcut.
+Photo mode closes back to the paused dive, not directly into action.
+
+Preserved: three campaign slots, upgrades, collision size, credits/crystals,
+resource placement and regeneration, ammo prices and respawn stock, recovery
+wrecks, contracts, achievements, bosses, repair charge and music.
+
+Read THE-LIVING-ABYSS-v0.25.0.md and VERIFICATION-v0.25.0.md for details.
+Physical-phone performance/listening and real hosted/offline update behaviour
+are not established by the automated browser checks.

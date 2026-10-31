@@ -1,9 +1,10 @@
 (() => {
   'use strict';
-  const BUILD = Object.freeze({version:'0.24.0',name:'NEREID Reforged',id:'0.24.0-nereid-reforged-1'});
+  const BUILD = Object.freeze({version:'0.25.0',name:'The Living Abyss',id:'0.25.0-the-living-abyss-1'});
   window.AbyssBuild=BUILD;
   const GIANTS=window.AbyssGiants;
-  let deepwater=null;
+  let deepwater=null,living=null;
+  let photoCapturing=false;
   let giantSite=null,giantWallCache=[],wreckGraceUntil=0;
   const $ = id => document.getElementById(id);
   const canvas = $('gameCanvas');
@@ -252,6 +253,7 @@
   const validLegacy=data=>Boolean(data?.schema===2&&data.profile&&validateField(data.levels?.['calypso-trench'])?.loot);
   let campaign=window.AbyssSlots.load(validCampaign);
   let giants=GIANTS.normalise(campaign?.giants);
+  let livingState=window.AbyssLiving.normalise(campaign?.living);
   storageRecovery=window.AbyssSlots.status().recovered;
   let campaignTitle=campaign?.title||window.AbyssSlots.title();
   if(validCampaign(campaign)){
@@ -309,7 +311,7 @@
     campaignLevels[LEVEL_ID]=field;
     if(buildingWorld)return true;
     const activeDive=running&&player&&player.hull>0?captureActiveDive():loadedActive;
-    const snapshot={schema:3,id:campaignId,title:campaignTitle,selectedLevel:LEVEL_ID,profile:saved,levels:campaignLevels,signals,giants,activeDive};
+    const snapshot={schema:3,id:campaignId,title:campaignTitle,selectedLevel:LEVEL_ID,profile:saved,levels:campaignLevels,signals,giants,living:livingState,activeDive};
     storageHealthy=window.AbyssSlots.save(snapshot,validCampaign);
     if(storageHealthy)lastSaveWall=Date.now();
     return storageHealthy;
@@ -514,7 +516,7 @@
   function populateWorld(){
     scene.items=[];scene.predators=[];scene.mines=[];scene.blasts=[];scene.projectiles=[];
     sonarWaves=[];sonarTerrainEchoes=[];
-    for(const kind of ['rocks','wrecks','vents','derelictMines','ventFields','schools','signals','giantObjects','rescueObjects'])for(const object of (scene[kind]||[]))object.revealUntil=0;
+    for(const kind of ['rocks','wrecks','vents','derelictMines','ventFields','schools','signals','giantObjects','rescueObjects','livingCreatures'])for(const object of (scene[kind]||[]))object.revealUntil=0;
     const looted=new Set(field.looted);
     for(const w of scene.wrecks){
       if(!saved.secured.includes(w.index)&&!recorderInRecovery(w.index))scene.items.push(makeItem(w.x,w.y,'recorder',{id:'recorder-'+w.index,index:w.index}));
@@ -590,7 +592,7 @@
       const y=r()*MAX_WORLD_Y;
       scene.dust.push({x:lerp(leftAt(y)-120,rightAt(y)+120,r()),y,phase:r()*TAU,size:.5+r()*1.7});
     }
-    populateWorld();buildEnvironment();hydrateSurvey();buildWildWaters();buildWarden();buildGiants();initialiseBatteryCells();deepwater?.build();initialisePredatorBehaviours(true);persistField();
+    populateWorld();buildEnvironment();hydrateSurvey();buildWildWaters();buildWarden();buildGiants();initialiseBatteryCells();deepwater?.build();living?.build();initialisePredatorBehaviours(true);persistField();
   }
   function refreshDockPopulation(){
     field.cycle++;field.health={};
@@ -860,7 +862,7 @@
       const d=distance(origin,object);
       if(d<=range+100)contacts.push({kind,object,previousDistance:d,hit:false});
     };
-    for(const kind of ['items','predators','rocks','wrecks','vents','mines','landmarks','derelictMines','ventFields','schools','signals','giantObjects','rescueObjects'])for(const object of (scene[kind]||[]))add(kind,object);
+    for(const kind of ['items','predators','rocks','wrecks','vents','mines','landmarks','derelictMines','ventFields','schools','signals','giantObjects','rescueObjects','livingCreatures'])for(const object of (scene[kind]||[]))add(kind,object);
     for(let y=Math.floor((camera.y-30)/24)*24;y<=camera.y+viewport.h+30;y+=24){
       if(y<120)continue;
       for(const side of [-1,1])add('wall',{x:side<0?leftAt(y):rightAt(y),y,side});
@@ -1172,7 +1174,7 @@
     bankGiantPlates();
     player.cargo={scrap:0,crystal:0,recorders:[],plates:[]};field.pendingCargo=null;
     player.repairReady=true;player.hull=maxHull();player.oxygen=maxOxygen();player.battery=maxBattery();player.noise=0;resetBoost();resetShield();resupplyMines();syncWeaponStock();player.trip={deepest:0,hullDamage:0};
-    settleSignalsAtDock(realReturn);deepwater?.dock(realReturn,rescueBaseline);
+    settleSignalsAtDock(realReturn);deepwater?.dock(realReturn,rescueBaseline);living?.dock(realReturn);
     if(delivered)addEvent('Recovered transmissions decrypted · read them in the Field Journal');
     if(realReturn){refreshDockPopulation();dockVisitActive=true;}
     checkAchievements();persist();updateUI();
@@ -1241,7 +1243,7 @@
   function showDock(tab='upgrades') {
     showingDock=true;dockTab=tab;syncWeaponStock();persist();
     openDialog('NEREID / SURFACE OPERATIONS','THE EXPEDITION HUB',
-      '<div class="dock-intro"><div class="dock-vessel-identity"><img class="dock-vessel-art" src="icon-192.png?v=0.24.0" alt="" width="54" height="54"><div><span class="dock-online"><i></i> VESSEL SECURED</span><p>Hull, air, power and emergency repair serviced.<br><span>Weapon ammunition is purchased separately.</span></p></div></div><div class="dock-wallet"><div class="dock-credit"><span>CREDITS</span><strong id="dockCredits">0</strong></div><div class="dock-credit crystal-wallet"><span>CRYSTALS</span><strong id="dockCrystals">0</strong></div></div></div><div id="dockBalance" class="dock-balance"></div><div class="dock-tabs" role="tablist" aria-label="Dock services"><button id="upgradesTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6ZM8 11l3 3 5-6"/></svg><span>Upgrades</span></button><button id="shipyardTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 12 9 6h9l4 6-4 6H9ZM6 9 2 6v12l4-3M13 8v8"/></svg><span>Shipyard</span></button><button id="ammunitionTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 4 8v12h6V8ZM17 4l-3 4v12h6V8ZM4 15h6M14 15h6"/></svg><span>Ammunition</span></button><button id="expeditionsTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2ZM9 3v16M15 5v16"/></svg><span>Expeditions</span></button><button id="contractsTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 2h6v4H9ZM8 11h8M8 15h8M8 18h5"/></svg><span>Contracts</span></button><button id="archiveTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h13a2 2 0 0 1 2 2v16H6a2 2 0 0 1-2-2ZM4 17h15M8 7h7M8 11h5"/></svg><span>Archive</span></button></div><div id="dockPanel" role="tabpanel"></div>',
+      '<div class="dock-intro"><div class="dock-vessel-identity"><img class="dock-vessel-art" src="icon-192.png?v=0.25.0" alt="" width="54" height="54"><div><span class="dock-online"><i></i> VESSEL SECURED</span><p>Hull, air, power and emergency repair serviced.<br><span>Weapon ammunition is purchased separately.</span></p></div></div><div class="dock-wallet"><div class="dock-credit"><span>CREDITS</span><strong id="dockCredits">0</strong></div><div class="dock-credit crystal-wallet"><span>CRYSTALS</span><strong id="dockCrystals">0</strong></div></div></div><div id="dockBalance" class="dock-balance"></div><div class="dock-tabs" role="tablist" aria-label="Dock services"><button id="upgradesTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6ZM8 11l3 3 5-6"/></svg><span>Upgrades</span></button><button id="shipyardTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 12 9 6h9l4 6-4 6H9ZM6 9 2 6v12l4-3M13 8v8"/></svg><span>Shipyard</span></button><button id="ammunitionTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 4 8v12h6V8ZM17 4l-3 4v12h6V8ZM4 15h6M14 15h6"/></svg><span>Ammunition</span></button><button id="expeditionsTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2ZM9 3v16M15 5v16"/></svg><span>Expeditions</span></button><button id="contractsTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 2h6v4H9ZM8 11h8M8 15h8M8 18h5"/></svg><span>Contracts</span></button><button id="archiveTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h13a2 2 0 0 1 2 2v16H6a2 2 0 0 1-2-2ZM4 17h15M8 7h7M8 11h5"/></svg><span>Archive</span></button></div><div id="dockPanel" role="tabpanel"></div>',
       '<div class="dock-departure"><span id="departureLevel">'+currentLevel().name+'<br>Seabed '+currentLevel().depth.toLocaleString('en-GB')+' m · bank all recorders to unlock the next level.</span><button class="primary-btn" id="launchAgain">UNDOCK <span aria-hidden="true">↗</span></button></div>');
     dialogReturnPause=false;
     for(const [id,tabName] of DOCK_TABS){
@@ -1563,7 +1565,7 @@
     // Hold USE with a second finger while steering: collect immediately on entering range.
     if(useHeld||keys.has('e')){useHoldTimer-=dt;if(useHoldTimer<=0){interact(true);useHoldTimer=.12;}}
     if(!running||paused)return;
-    deepwater?.update(dt);
+    deepwater?.update(dt);living?.update(dt);
     updateSalvageRegeneration(dt);updateBatteryCells(dt);autoCollectBatteryCells();autoCollectSalvage(dt);
     if(distance(player,HARBOUR)>=145&&!field.awaitingDock){dockVisitActive=false;field.awaitingDock=true;persist();}
     const energyDrain=dt*((ENERGY.idlePerSecond+(hasInput&&!player.airborne?(ENERGY.thrustPerSecond*Math.min(1,magnitude)):0))/(1+saved.upgrades.battery*.12)+(headlightsActive()?flashlightPowerRate():0));
@@ -1610,7 +1612,8 @@
         }
       }
       const chase=enemy.aggression>.13;
-      const intent=navigatePredator(enemy,wreckDefenderIntent(enemy,predatorIntent(enemy,dt,chase,tier),tier));
+      const baseIntent=predatorIntent(enemy,dt,chase,tier);
+      const intent=navigatePredator(enemy,wreckDefenderIntent(enemy,living?.idleIntent(enemy,baseIntent,chase)||baseIntent,tier));
       const tx=intent.x,ty=intent.y;
       const ed=Math.hypot(tx-enemy.x,ty-enemy.y)||1;
       const es=intent.speed;
@@ -1803,10 +1806,10 @@
     const bg=ctx.createRadialGradient(W*.52,H*.38,10,W*.52,H*.55,Math.max(W,H)*.75);
     bg.addColorStop(0,'#10405766');bg.addColorStop(1,'#00101b00');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
     ctx.save();ctx.translate(-camera.x,-camera.y);
-    drawSurfaceSky();
+    drawSurfaceSky();living?.drawWaterLight(ctx,camera,viewport);
     // Navigation lines and depth contours.
     const top=Math.max(200,Math.floor(camera.y/100)*100);
-    for(let y=top;y<camera.y+H+120;y+=100){
+    for(let y=top;!photoCapturing&&y<camera.y+H+120;y+=100){
       ctx.beginPath();ctx.moveTo(camera.x,y);ctx.lineTo(camera.x+W,y);
       ctx.strokeStyle='rgba(74,151,163,.065)';ctx.lineWidth=1;ctx.stroke();
       ctx.fillStyle='#4c819488';ctx.font='10px monospace';ctx.fillText(Math.max(0,depthOf(y))+'m',camera.x+W-47,y-7);
@@ -1830,13 +1833,13 @@
       gl.addColorStop(0,'#2ef1de60');gl.addColorStop(1,'#2ef1de00');ctx.fillStyle=gl;ctx.beginPath();ctx.arc(vent.x,vent.y,48,0,TAU);ctx.fill();
       for(let j=0;j<5;j++){const yy=vent.y-((clock*(17+j*3)+j*11+vent.phase*9)%110);const xx=vent.x+Math.sin(yy*.1+j)*10;ctx.beginPath();ctx.arc(xx,yy,1+j%2,0,TAU);ctx.fillStyle='#76dfd46a';ctx.fill();}
     }
-    drawWildLife();
+    living?.draw(ctx);drawWildLife();
     for(const rock of scene.rocks)if(onscreen(rock.x,rock.y,rock.radius+20))drawRock(rock);
     drawWildSeabed();
     for(const wreck of scene.wrecks)if(onscreen(wreck.x,wreck.y))drawWreck(wreck);
     drawGiants();
     if(headlightsActive())drawLightBeam();
-    drawSignalObjects();deepwater?.draw(ctx);if(onscreen(HARBOUR.x,HARBOUR.y,400))deepwater?.drawHarbour(ctx);
+    drawSignalObjects();deepwater?.draw(ctx);if(onscreen(HARBOUR.x,HARBOUR.y,400)){deepwater?.drawHarbour(ctx);living?.drawHarbour(ctx);}
     for(const item of scene.items)if(!item.collected&&onscreen(item.x,item.y)){
       const d=player?distance(player,item):0;
       const shown=d<(headlightsActive()?155:80)||item.revealUntil>clock||item.type==='recorder'&&d<225||beamIntersects(item.x,item.y,44)||saved.upgrades.magnet>0&&['scrap','crystal'].includes(item.type)&&d<magnetRange()&&ambientLightAt(item.y)>.08;
@@ -1856,7 +1859,7 @@
         ctx.strokeStyle='#8bcaff';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,0,43,25,0,0,TAU);ctx.stroke();ctx.restore();
       }
     }
-    drawSurfaceWater();
+    drawSurfaceWater();living?.drawWeather(ctx,camera,viewport);
     ctx.restore();
     const edge=ctx.createRadialGradient(W*.5,H*.48,Math.min(W,H)*.1,W*.5,H*.5,Math.max(W,H)*.77);
     edge.addColorStop(0,'#00132000');edge.addColorStop(.75,'#000e1c33');edge.addColorStop(1,'#00050dd1');ctx.fillStyle=edge;ctx.fillRect(0,0,W,H);
@@ -1865,13 +1868,10 @@
     // instrument echo layer: silhouettes only, never an ambient-light reset.
     applyDepthDarkness(ambient);
     drawSonarEchoes();drawWildEchoes();drawSignalObjects(true);drawGiantEchoes();
-    ctx.save();ctx.translate(-camera.x,-camera.y);deepwater?.draw(ctx,true);ctx.restore();
+    ctx.save();ctx.translate(-camera.x,-camera.y);deepwater?.draw(ctx,true);living?.drawEchoes(ctx);ctx.restore();
     if(environmentEnabled){ctx.save();ctx.translate(-camera.x,-camera.y);for(const l of environment.landmarks)if(l.revealUntil>clock&&onscreen(l.x,l.y,200)){ctx.globalAlpha=clamp((l.revealUntil-clock)/sonarEchoSeconds(),0,.9);drawLandmark(l,true);}ctx.restore();}
     if(player.damageFlashUntil>clock){ctx.save();ctx.translate(-camera.x,-camera.y);drawDamageFlash();ctx.restore();}
-    drawTargetIndicators();
-    drawPickupNotices();
-    drawMouseTarget();
-    drawEdgeArrows();
+    if(!photoCapturing){drawTargetIndicators();drawPickupNotices();drawMouseTarget();drawEdgeArrows();}
   }
   function applyDepthDarkness(ambient){
     if(ambient>=1)return;
@@ -1889,6 +1889,7 @@
     ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(darknessCanvas,0,0);ctx.restore();
   }
   function drawSurfaceSky(){
+    if(living){living.drawSky(ctx,camera,viewport);return;}
     if(camera.y>=SURFACE.y)return;
     const bottom=Math.min(SURFACE.y,camera.y+viewport.h);
     const sky=ctx.createLinearGradient(0,-550,0,SURFACE.y);
@@ -2095,6 +2096,7 @@
     ctx.restore();
   }
   function drawPredatorHealth(enemy,local=false){
+    if(photoCapturing)return;
     if(!predatorAlive(enemy))return;
     const tier=PREDATOR_TIERS[enemy.tier],w=46+tier.level*8;
     ctx.save();if(!local)ctx.translate(enemy.x,enemy.y);
@@ -2780,7 +2782,7 @@
     $('notification').classList.add('hidden');syncPauseButtons();updateUI();
   }
   function togglePause(){
-    if(document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open],#slotsDialog[open],#rescueDialog[open]'))return;
+    if(document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open],#slotsDialog[open],#rescueDialog[open],#photoDialog[open]'))return;
     if(!$('modalOverlay').classList.contains('hidden')){closeDialog();return;}
     if(!running||!$('menuOverlay').classList.contains('hidden'))return;
     if(paused)resumeDive();else showPause();
@@ -2875,7 +2877,7 @@
     $('pauseBtn').addEventListener('click',togglePause);
     $('dockBtn').addEventListener('click',()=>{if(running&&!paused&&nearestInteractable()?.type==='station')depositAndDock();});
     window.addEventListener('keydown',e=>{
-      if($('signalsDialog').open||$('surveyDialog').open||$('audioDialog').open||$('telemetryDialog').open)return;
+      if($('photoDialog').open||$('signalsDialog').open||$('surveyDialog').open||$('audioDialog').open||$('telemetryDialog').open)return;
       if($('achievementsDialog').open||$('slotsDialog').open)return;
       const k=e.key.toLowerCase();
       if($('upgradeDialog').open){if(k==='escape'){e.preventDefault();closeUpgradeDetails();}return;}
@@ -3017,8 +3019,8 @@
     // Only JSON-safe scalar state crosses the storage boundary. Sonar references
     // become stable collection indices, then are rebound after world generation.
     const waves=sonarWaves.map(({contacts,...wave})=>({...wave,contacts:contacts.map(c=>({kind:c.kind,hit:c.hit,previousDistance:c.previousDistance,
-      index:scene[c.kind]?.indexOf(c.object)??-1,objectId:['giantObjects','rescueObjects'].includes(c.kind)?c.object.id:undefined,object:['wall','floor'].includes(c.kind)?c.object:null}))}));
-    const terrain=[];for(const kind of ['rocks','wrecks','vents','landmarks','derelictMines','ventFields','schools','giantObjects','rescueObjects'])(scene[kind]||[]).forEach((o,i)=>{if(o.revealUntil>clock)terrain.push({kind,i,objectId:['giantObjects','rescueObjects'].includes(kind)?o.id:undefined,revealUntil:o.revealUntil,echoDuration:o.echoDuration});});
+      index:scene[c.kind]?.indexOf(c.object)??-1,objectId:['giantObjects','rescueObjects','livingCreatures'].includes(c.kind)?c.object.id:undefined,object:['wall','floor'].includes(c.kind)?c.object:null}))}));
+    const terrain=[];for(const kind of ['rocks','wrecks','vents','landmarks','derelictMines','ventFields','schools','giantObjects','rescueObjects','livingCreatures'])(scene[kind]||[]).forEach((o,i)=>{if(o.revealUntil>clock)terrain.push({kind,i,objectId:['giantObjects','rescueObjects','livingCreatures'].includes(kind)?o.id:undefined,revealUntil:o.revealUntil,echoDuration:o.echoDuration});});
     return {schema:1,build:BUILD.version,levelId:LEVEL_ID,seed:field.seed,cycle:field.cycle,clock,idCounter,dockVisitActive,
       player:{...player},projectiles:scene.projectiles||[],items:scene.items,predators:scene.predators,mines:scene.mines,blasts:scene.blasts,waves,echoes:sonarTerrainEchoes,terrain,
       events:eventLines.slice(0,3),signals:scene.signals,threatContacts:surveyThreats,surfaceEffects,wildlife:captureWildlife()};
@@ -3055,9 +3057,9 @@
       if(giantSolid(player.x,player.y,0))throw Error('Wreck migration could not find safe water.');
     }
     restoreWildlife(snapshot.wildlife);for(const m of scene.derelictMines||[])Object.assign(m,mineLocation(m));
-    for(const t of snapshot.terrain){const o=['giantObjects','rescueObjects'].includes(t.kind)&&t.objectId?scene[t.kind].find(o=>o.id===t.objectId):scene[t.kind]?.[t.i];if(o){o.revealUntil=t.revealUntil;o.echoDuration=t.echoDuration;}}
+    for(const t of snapshot.terrain){const o=['giantObjects','rescueObjects','livingCreatures'].includes(t.kind)&&t.objectId?scene[t.kind].find(o=>o.id===t.objectId):scene[t.kind]?.[t.i];if(o){o.revealUntil=t.revealUntil;o.echoDuration=t.echoDuration;}}
     sonarTerrainEchoes=JSON.parse(JSON.stringify(snapshot.echoes));
-    sonarWaves=snapshot.waves.map(w=>({...w,contacts:w.contacts.map(c=>({...c,object:['wall','floor'].includes(c.kind)?c.object:['giantObjects','rescueObjects'].includes(c.kind)&&c.objectId?scene[c.kind].find(o=>o.id===c.objectId):scene[c.kind]?.[c.index]})).filter(c=>c.object)}));
+    sonarWaves=snapshot.waves.map(w=>({...w,contacts:w.contacts.map(c=>({...c,object:['wall','floor'].includes(c.kind)?c.object:['giantObjects','rescueObjects','livingCreatures'].includes(c.kind)&&c.objectId?scene[c.kind].find(o=>o.id===c.objectId):scene[c.kind]?.[c.index]})).filter(c=>c.object)}));
     surfaceEffects=Array.isArray(snapshot.surfaceEffects)?snapshot.surfaceEffects:[];
     surveyThreats=Array.isArray(snapshot.threatContacts)?snapshot.threatContacts.filter(c=>Number.isFinite(c.until)&&c.until>clock):[];
     dockVisitActive=snapshot.dockVisitActive===true;eventLines=Array.isArray(snapshot.events)?snapshot.events.slice(0,3):[];
@@ -3077,7 +3079,7 @@
   function backgroundPause(){
     if(slotTransition)return;
     resetPilotInput();
-    const explorerOpen=document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open],#signalsDialog[open],#rescueDialog[open]');
+    const explorerOpen=document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open],#signalsDialog[open],#rescueDialog[open],#photoDialog[open]');
     if(explorerOpen){explorerReturnPause=true;if(running&&$('menuOverlay').classList.contains('hidden'))showPause();}
     if(running&&!paused&&$('menuOverlay').classList.contains('hidden'))showPause();
     else if(running)paused=true;
@@ -3327,7 +3329,7 @@
       g.fillStyle=wall.gate?'#bf935f':'#64818c';g.fillRect(a.x,a.y,Math.max(1,b.x-a.x),Math.max(1,b.y-a.y));
     }
   }
-  // NEREID Reforged: campaign-persistent security and local hazard simulation.
+  // The Living Abyss: campaign-persistent security and local hazard simulation.
   function nearestWreckWater(point,radius=28){
     if(wildClear(point.x,point.y,radius))return {x:point.x,y:point.y};
     for(let r=12;r<=550;r+=12)for(let i=0;i<32;i++){
@@ -4027,18 +4029,21 @@
       // The school centre follows its members. No indexed slots, rows or grids.
       const cx=fish.reduce((v,f)=>v+f.x,0)/fish.length,cy=fish.reduce((v,f)=>v+f.y,0)/fish.length;
       s.x=cx;s.y=cy;
+      const routine=living?.routine(s,dt,cx,cy)||{pace:1};
       const threats=scene.predators.filter(e=>predatorAlive(e)&&distance(e,s)<330);
       const predator=threats.sort((a,b)=>distance(a,s)-distance(b,s))[0];
-      const pd=distance(player,s),boatRadius=player.boosting?265:170;
+      const pd=distance(player,s),quietVisitor=Math.hypot(player.vx,player.vy)<12&&!player.boosting,boatRadius=player.boosting?265:quietVisitor?65:170;
       const boatFear=pd<boatRadius,sonarFear=s.sonarUntil>clock,predatorFear=Boolean(predator&&distance(predator,s)<245);
       const wasFrightened=s.fear>.4,targetFear=predatorFear||sonarFear||player.boosting&&boatFear?1:boatFear?.7:0;
-      s.fear=lerp(s.fear,targetFear,1-Math.exp(-dt*(targetFear>s.fear?4.5:.48)));
+      s.fear=lerp(s.fear,targetFear,1-Math.exp(-dt*(targetFear>s.fear?4.5:.36)));
       if(!wasFrightened&&s.fear>.4&&boatFear)wildSound('schoolRush',s,270,4);
       let desired=s.heading+Math.sin(clock*.23+s.phase)*.24+Math.sin(clock*.071+s.phase*2)*.13;
       let threat=null;
       if(predatorFear)threat=predator;
       else if(boatFear)threat=player;
       else if(sonarFear)threat={x:s.sonarX??player.x,y:s.sonarY??player.y};
+      if(Number.isFinite(routine.heading))desired=routine.heading;
+      s.activity=threat?'fleeing':routine.curious?'curious':routine.companion?'following giant':s.routine;
       if(threat)desired=Math.atan2(cy-threat.y,cx-threat.x);
       else if(Math.hypot(cx-s.homeX,cy-s.homeY)>330)desired=Math.atan2(s.homeY-cy,s.homeX-cx);
       const ahead={x:cx+Math.cos(desired)*70,y:cy+Math.sin(desired)*70};
@@ -4046,7 +4051,7 @@
         const a=desired+offset;if(wildClear(cx+Math.cos(a)*70,cy+Math.sin(a)*70,18)){desired=a;break;}
       }
       s.heading=lerpAngle(s.heading,desired,1-Math.exp(-dt*(s.fear>.3?1.8:.55)));
-      const hx=Math.cos(s.heading),hy=Math.sin(s.heading),water=currentAt(cx,cy),base=spec.speed*(1+s.fear*2.2);
+      const hx=Math.cos(s.heading),hy=Math.sin(s.heading),water=currentAt(cx,cy),base=spec.speed*(s.fear>.3?1:routine.pace)*(1+s.fear*2.2);
       // Snapshot positions/velocities: iteration order must not turn into a grid.
       const before=fish.map(f=>({x:f.x,y:f.y,vx:f.vx,vy:f.vy}));
       for(let i=0;i<fish.length;i++){
@@ -4209,6 +4214,8 @@
       const found=data.schools.find(v=>v?.id===s.id);
       const point=p=>p&&['x','y','vx','vy','angle','size','phase'].every(k=>Number.isFinite(p[k]))&&Math.abs(p.x)<3000&&p.y>70&&p.y<MAX_WORLD_Y&&p.size>0&&p.size<2;
       if(found&&['x','y','heading','fear'].every(k=>Number.isFinite(found[k]))&&Array.isArray(found.fish)&&found.fish.length<=14&&found.fish.every(point)){
+        if(['travelling','feeding','sheltering','startled','regrouping'].includes(found.routine))s.routine=found.routine;
+        for(const key of ['routineLeft','routineSerial','restX','restY'])if(Number.isFinite(found[key]))s[key]=found[key];
         for(const key of ['x','y','heading','fear','sonarUntil','sonarX','sonarY','revealUntil'])if(Number.isFinite(found[key]))s[key]=found[key];
         s.fish=found.fish.map(f=>({...f}));
       }
@@ -4260,7 +4267,7 @@
     markSurveyCell(player.x,Math.max(SURFACE.y,player.y));
     if(radius)chartArea(player.x,player.y,radius);
     if(headlightsActive())chartArea(player.x,player.y,flashlightSpec().length,(x,y)=>beamIntersects(x,y,0));
-    for(const kind of ['items','predators','wrecks','landmarks','derelictMines','ventFields','giantObjects','rescueObjects'])for(const object of (scene[kind]||[])){
+    for(const kind of ['items','predators','wrecks','landmarks','derelictMines','ventFields','giantObjects','rescueObjects','livingCreatures'])for(const object of (scene[kind]||[])){
       if(object.collected||object.dead||object.detonated)continue;
       const d=distance(player,object);
       const inBeam=headlightsActive()&&beamIntersects(object.x,object.y,0);
@@ -4274,7 +4281,7 @@
     chartArea(wave.x,wave.y,front,(x,y)=>Math.hypot(x-wave.x,y-wave.y)>=Math.max(0,previous-SURVEY.cell));
   }
   function openExplorerDialog(id){
-    if(document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open],#signalsDialog[open],#rescueDialog[open]'))return false;
+    if(document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open],#signalsDialog[open],#rescueDialog[open],#photoDialog[open]'))return false;
     explorerReturnPause=paused;explorerReturnFocus=document.activeElement;
     paused=true;resetPilotInput();deepwater?.pauseReset();persist();
     $(id).showModal();syncPauseButtons();audioFrame();return true;
@@ -4288,7 +4295,7 @@
     updateUI();persist();
   }
   function closeExplorationDialogs(){
-    for(const id of ['surveyDialog','audioDialog','telemetryDialog','signalsDialog'])if($(id)?.open)$(id).close();
+    for(const id of ['surveyDialog','audioDialog','telemetryDialog','signalsDialog','photoDialog'])if($(id)?.open)$(id).close();
     mapView.pointers.clear();mapView.drag=null;mapView.pinch=null;
   }
   function openSurvey(){
@@ -4457,8 +4464,82 @@
       else if(!e.shiftKey&&(document.activeElement===last||!overlay.contains(document.activeElement))){e.preventDefault();first.focus();}
     });
   }
+  // Photo mode crops a frozen production frame, never moves the world camera.
+  // This preserves darkness, occlusion and survey fog instead of becoming a cheat camera.
+  const photoView={source:null,zoom:1,x:0,y:0,pointers:new Map(),pinch:null,saving:false};
+  function openPhotoMode(){
+    if(!running||showingDock||!$('menuOverlay').classList.contains('hidden'))return false;
+    if($('telemetryDialog').open){explorerReturnPause=true;closeExplorerDialog('telemetryDialog');}
+    if(!openExplorerDialog('photoDialog'))return false;
+    photoCapturing=true;try{render();const src=document.createElement('canvas');src.width=canvas.width;src.height=canvas.height;src.getContext('2d').drawImage(canvas,0,0);photoView.source=src;}finally{photoCapturing=false;}
+    photoView.zoom=1;photoView.x=photoView.source.width/2;photoView.y=photoView.source.height/2;photoView.pointers.clear();photoView.pinch=null;
+    $('photoStatus').textContent='Drag or pinch to frame what you could already see. Lighting is unchanged. Closing returns to pause.';
+    drawPhoto();$('photoClose').focus({preventScroll:true});return true;
+  }
+  function drawPhoto(){
+    const src=photoView.source;if(!src||!$('photoDialog').open)return;
+    const output=$('photoCanvas'),stage=$('photoStage').getBoundingClientRect();
+    const fit=Math.min(Math.max(1,stage.width-12)/src.width,Math.max(1,stage.height-12)/src.height);
+    output.style.width=Math.floor(src.width*fit)+'px';output.style.height=Math.floor(src.height*fit)+'px';
+    const scale=Math.min(1,2048/Math.max(src.width,src.height)),w=Math.round(src.width*scale),h=Math.round(src.height*scale);
+    if(output.width!==w||output.height!==h){output.width=w;output.height=h;}
+    const sw=src.width/photoView.zoom,sh=src.height/photoView.zoom;
+    photoView.x=clamp(photoView.x,sw/2,src.width-sw/2);photoView.y=clamp(photoView.y,sh/2,src.height-sh/2);
+    const g=output.getContext('2d');g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.clearRect(0,0,w,h);
+    g.drawImage(src,photoView.x-sw/2,photoView.y-sh/2,sw,sh,0,0,w,h);
+    $('photoZoom').value=Math.round(photoView.zoom*100);$('photoZoomValue').textContent=Math.round(photoView.zoom*100)+'%';
+  }
+  function closePhotoMode(){
+    if(!$('photoDialog').open)return;
+    explorerReturnPause=true;photoView.pointers.clear();photoView.pinch=null;
+    closeExplorerDialog('photoDialog');photoView.source=null;showPause();
+  }
+  function setPhotoZoom(value){photoView.zoom=clamp(value,1,2.2);drawPhoto();}
+  function bindPhotoMode(){
+    $('pausePhotoBtn').addEventListener('click',openPhotoMode);
+    $('telemetryPhotoBtn').addEventListener('click',openPhotoMode);
+    $('telemetryWildlifeBtn').addEventListener('click',()=>{closeExplorerDialog('telemetryDialog');openJournal('observations');});
+    $('photoClose').addEventListener('click',closePhotoMode);
+    $('photoDialog').addEventListener('cancel',e=>{e.preventDefault();closePhotoMode();});
+    $('photoZoom').addEventListener('input',e=>setPhotoZoom(Number(e.target.value)/100));
+    $('photoReset').addEventListener('click',()=>{if(photoView.source){photoView.x=photoView.source.width/2;photoView.y=photoView.source.height/2;}setPhotoZoom(1);});
+    const view=$('photoCanvas');
+    view.addEventListener('wheel',e=>{e.preventDefault();setPhotoZoom(photoView.zoom*Math.exp(-e.deltaY*.0015));},{passive:false});
+    view.addEventListener('pointerdown',e=>{e.preventDefault();view.setPointerCapture(e.pointerId);photoView.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(photoView.pointers.size===2){const [a,b]=[...photoView.pointers.values()];photoView.pinch={distance:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y)),zoom:photoView.zoom};}});
+    view.addEventListener('pointermove',e=>{
+      const previous=photoView.pointers.get(e.pointerId);if(!previous||!photoView.source)return;e.preventDefault();
+      photoView.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(photoView.pointers.size>=2&&photoView.pinch){const [a,b]=[...photoView.pointers.values()];setPhotoZoom(photoView.pinch.zoom*Math.hypot(a.x-b.x,a.y-b.y)/photoView.pinch.distance);return;}
+      if(photoView.pinch)return;
+      const box=view.getBoundingClientRect();photoView.x-=(e.clientX-previous.x)*photoView.source.width/photoView.zoom/box.width;photoView.y-=(e.clientY-previous.y)*photoView.source.height/photoView.zoom/box.height;drawPhoto();
+    });
+    const release=e=>{photoView.pointers.delete(e.pointerId);if(!photoView.pointers.size)photoView.pinch=null;};
+    for(const type of ['pointerup','pointercancel','lostpointercapture'])view.addEventListener(type,release);
+    window.addEventListener('resize',()=>{if($('photoDialog').open)drawPhoto();});
+    document.addEventListener('keydown',e=>{
+      if(!$('photoDialog').open)return;
+      // Leave Tab and ordinary button activation to the native modal focus trap.
+      if(e.key==='Tab'||e.key==='Enter'||e.key===' '&&e.target?.tagName==='BUTTON')return;
+      e.stopImmediatePropagation();
+      if(e.key==='Escape'){e.preventDefault();closePhotoMode();}
+      if(e.key==='+'||e.key==='='){e.preventDefault();setPhotoZoom(photoView.zoom+.1);}
+      if(e.key==='-'){e.preventDefault();setPhotoZoom(photoView.zoom-.1);}
+      if(e.key.startsWith('Arrow')&&e.target?.type!=='range'){e.preventDefault();const step=photoView.source.width/photoView.zoom*.04;photoView.x+=(e.key==='ArrowRight'?step:e.key==='ArrowLeft'?-step:0);photoView.y+=(e.key==='ArrowDown'?step:e.key==='ArrowUp'?-step:0);drawPhoto();}
+    },true);
+    $('photoSave').addEventListener('click',()=>{
+      if(photoView.saving||!photoView.source)return;photoView.saving=true;$('photoSave').disabled=true;
+      try{$('photoCanvas').toBlob(blob=>{
+        photoView.saving=false;$('photoSave').disabled=false;
+        if(!blob){$('photoStatus').textContent='The browser could not create this photo. Try again or take a device screenshot.';return;}
+        const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Abyss-'+LEVEL_ID+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.png';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+        $('photoStatus').textContent='Photo prepared as a PNG. Your browser handles saving it; no campaign data is included.';
+      },'image/png');}catch(_){photoView.saving=false;$('photoSave').disabled=false;$('photoStatus').textContent='Photo export was blocked. A device screenshot still works.';}
+    });
+  }
+
   function bindLivingUI(){
     bindCommandFocus();
+    bindPhotoMode();
     bindSurvey();
     $('viewZoomControl').addEventListener('input',()=>{setViewZoom(Number($('viewZoomControl').value)/100);saveViewZoom();});
     $('viewZoomReset').addEventListener('click',()=>{setViewZoom(1);saveViewZoom();});
@@ -4642,6 +4723,7 @@
     document.querySelectorAll('[data-chapter]').forEach(b=>b.onclick=()=>{const records=signalData.records.filter(r=>r.levelId===LEVELS[+b.dataset.chapter].id);selectedRecord=records.find(bankedRecord)?.id||records[0].id;openJournal('transmissions');});
     $('wardenDossierBtn').onclick=()=>openJournal('warden');
     const discovery=document.createElement('button');discovery.id='discoveriesDockBtn';discovery.className='slot-primary';discovery.textContent='FORGOTTEN GIANTS / DISCOVERIES & HULL FINISHES';discovery.onclick=()=>openJournal('discoveries');$('dockPanel').append(discovery);
+    const wildlife=document.createElement('button');wildlife.className='alt-btn';wildlife.id='wildlifeDockBtn';wildlife.textContent='WILDLIFE / OBSERVATION JOURNAL';wildlife.onclick=()=>openJournal('observations');$('dockPanel').append(wildlife);
   }
   function openJournal(tab='transmissions'){
     journalTab=tab;if(!openExplorerDialog('signalsDialog'))return;renderJournal();$('signalsClose').focus({preventScroll:true});
@@ -4658,7 +4740,8 @@
       const c=signals.active;
       target.innerHTML='<div class="journal-page"><span class="menu-kicker">HARBOUR CONTRACTS</span><h3>'+(c?missionName(c):'Your next assignment awaits')+'</h3><p>'+(c?signalData.kinds[c.kind].verb:'Visit CONTRACTS at the dock to accept one optional assignment. There is no time limit, and rewards use credits only.')+'</p>'+(c?'<div class="assignment-readout"><strong>'+missionProgress(c)+'</strong><span>'+c.reward+' CR ON RETURN</span></div><p>'+signalEscape(LEVELS.find(l=>l.id===c.levelId).name)+'</p><p>'+signalData.kinds[c.kind].hint+'</p><button id="pinAssignment" class="slot-primary" '+(c.levelId!==LEVEL_ID||!running?'disabled':'')+'>PIN NEXT SEARCH AREA</button>':'')+'<p class="contract-note">A vessel loss or abandoned dive resets unfinished field work. Retry at the dock without a fee. Reopening menus does not reroll offers.</p></div>';
       if($('pinAssignment'))$('pinAssignment').onclick=()=>pinAssignment();
-    }else if(journalTab==='discoveries')renderDiscoveries(target);
+    }else if(journalTab==='observations')living.journal(target);
+    else if(journalTab==='discoveries')renderDiscoveries(target);
     else renderWardenDossier(target);
   }
   function pinAssignment(){
@@ -4856,7 +4939,16 @@
     audioFrame();render();paintShipPreviews(now);
     requestAnimationFrame(frame);
   }
+  living=window.AbyssLiving.create({
+    seed:()=>field.seed,levelId:()=>LEVEL_ID,levelIndex:()=>LEVELS.findIndex(l=>l.id===LEVEL_ID),levelDefinitions:()=>LEVELS,levels:()=>campaignLevels,
+    player:()=>player,profile:()=>saved,schools:()=>scene.schools||[],benthos:()=>scene.benthos||[],habitats:()=>[...scene.rocks,...scene.wrecks],setCreatures:objects=>{scene.livingCreatures=objects;},sceneCreatures:()=>scene.livingCreatures||[],
+    random:randGen,lane:laneAt,left:leftAt,right:rightAt,bottom:()=>MAX_WORLD_Y,harbour:()=>HARBOUR,clear:wildClear,line:guidanceLineClear,
+    onScreen:onscreen,ambient:ambientLightAt,inBeam:beamIntersects,viewRadius:()=>Math.hypot(viewport.w,viewport.h)/2,
+    depth:depthOf,clock:()=>clock,active:()=>Boolean(running&&!paused&&player),announce,event:addEvent,save:persist,
+    sound:(name,pan,intensity)=>window.AbyssAudio?.event(name,pan,intensity)
+  },livingState);
   deepwater=window.AbyssRescue.create({
+    harbourPose:(i,n,t)=>living.harbourPose(i,n,t),
     field:()=>field,levels:()=>campaignLevels,levelId:()=>LEVEL_ID,levelIndex:()=>LEVELS.findIndex(l=>l.id===LEVEL_ID),levelDefinitions:()=>LEVELS,
     player:()=>player,profile:()=>saved,signals:()=>signals,objects:()=>scene.rescueObjects||[],setObjects:o=>{scene.rescueObjects=o;},
     random:randGen,lane:laneAt,left:leftAt,right:rightAt,bottom:()=>MAX_WORLD_Y,harbour:()=>HARBOUR,inHarbour,depth:depthOf,
@@ -4891,6 +4983,14 @@
   // Tiny inspection hook for automated smoke tests.
   window.AbyssDiagnostics={state:()=>({repairReady:player.repairReady,viewZoom,pinching:Boolean(playPinch),pinchLocked,slot:window.AbyssSlots.active,campaignTitle,weaponAmmo:{...player.weaponAmmo},weaponCooldown:{...player.weaponCooldown},damageFlashing:player.damageFlashUntil>clock,projectiles:scene.projectiles?.length||0,airborne:Boolean(player.airborne),dockSafe:inHarbour(player),surfaceY:SURFACE.y,splashCount:surfaceEffects.length,version:BUILD.version,versionName:BUILD.name,buildId:BUILD.id,shield:player.shield,shieldCapacity:shieldCapacity(),shieldDelay:player.shieldDelay,magnetRange:magnetRange(),magnetPower:magnetPower(),disruptorMark:saved.upgrades.disruptor,scanPowerCost:scanPowerCost(),upgradeOpen:$('upgradeDialog').open,storageHealthy,campaignId,levelId:LEVEL_ID,levelName:currentLevel().name,crystals:saved.crystals,totalRecorders:totalRecorders(),achievements:ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length,recoveryPods:field.recoveries.length,levelComplete:levelComplete(LEVEL_ID),boostCapacity:boostCapacity(),boostUnlocked:boostUnlocked(),boostMultiplier:boostMultiplier(),boostSeconds:boostCapacity()/BOOST.drain,joystickVisible:$('mobileJoystick').classList.contains('engaged'),zoom:viewport.zoom,flashlightMark:saved.upgrades.flashlight,flashlightLength:flashlightSpec().length,flashlightAngle:flashlightSpec().halfAngle*360/Math.PI,flashlightPowerRate:flashlightPowerRate(),worldWidth:widthAt(player.y)*2,populationCycle:field.cycle,mineAmmo:player.mineAmmo,mineCapacity:mineCapacity(),minePower:saved.upgrades.minePower,mineCapacityMark:saved.upgrades.mineCapacity,mineDamage:mineDamage(),mineCooldown:player.mineCooldown,deployedMines:scene.mines.length,kills:player.kills,normalSpeed:normalSpeedAt(saved.upgrades.engine),maxNormalSpeed:normalSpeedAt(THRUST.maxMark),ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),inputMode:touchControls?'touch':'desktop',vesselLabel:vesselLabel(),boost:player.boost,boosting:player.boosting,boostLocked:player.boostLocked,boostNeedsRelease:player.boostNeedsRelease,boostRechargeDelay:player.boostRechargeDelay,boostPowerRate:boostPowerRate(),boostRechargeRate:boostRechargeRate(),scanCooldown:player.scanCooldown,sonarCost:sonarCost(),mouseHeld:mouseHelm.pointerId!==null,boostHeld,facing:player.facing,hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,hasSavedDive:Boolean(loadedActive),lastSaveWall,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier==='common').length,reaperCount:scene.predators.filter(e=>e.tier==='reaper').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,noise:player.noise})};
   if(location.search.includes('testmode=1')||window.ABYSS_TEST_MODE===true){
+    window.AbyssDiagnostics.ecology=()=>({state:living.state(),sky:living.sky(),creatures:JSON.parse(JSON.stringify(living.creatures())),rules:living.rules()});
+    window.AbyssDiagnostics.ecologyFixture=values=>{living.fixture(values);render();};
+    window.AbyssDiagnostics.ecologyPulse=(seconds)=>{const was=paused;paused=false;for(let t=0;t<seconds;t+=.05)living.update(Math.min(.05,seconds-t));paused=was;render();};
+    window.AbyssDiagnostics.ecologyClear=()=>living.creatures().map(c=>({id:c.id,clear:living.bodyClear(c,c.x,c.y)}));
+    window.AbyssDiagnostics.ecologyVisible=p=>living.visible(p);
+    window.AbyssDiagnostics.openWildlife=()=>openJournal('observations');
+    window.AbyssDiagnostics.photo=openPhotoMode;
+    window.AbyssDiagnostics.photoState=()=>({open:$('photoDialog').open,zoom:photoView.zoom,x:photoView.x,y:photoView.y,sourceWidth:photoView.source?.width||0,sourceHeight:photoView.source?.height||0});
     window.AbyssDiagnostics.rescue=()=>deepwater.state();
     window.AbyssDiagnostics.rescueSpawn=()=>deepwater.spawnDrone();
     window.AbyssDiagnostics.rescueEvent=kind=>deepwater.startEvent(kind);

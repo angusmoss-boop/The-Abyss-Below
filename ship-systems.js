@@ -1,10 +1,10 @@
-/* NEREID Reforged: one renderer shared by the live vessel and dock previews.
+/* The Living Abyss: one renderer shared by the live vessel and dock previews.
  * Visual geometry never changes the narrow collision capsule or weapon rules.
  * No game-state mutations, audio, networking or external assets in this module.
  */
 (() => {
   'use strict';
-  const buildId='0.24.0-nereid-reforged-1', TAU=Math.PI*2;
+  const buildId='0.25.0-the-living-abyss-1', TAU=Math.PI*2;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const ENGINES=Object.freeze([
     {color:'#8cbec9',edge:'#4b7d99',length:0,width:0,name:'STANDARD DRIVE'},

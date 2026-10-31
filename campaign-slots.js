@@ -98,7 +98,7 @@
     }catch(e){error=e.message||'Import failed. Existing campaigns are unchanged.';return false;}
   }
   window.AbyssSlots={active,key,title:()=>cleanName(index.titles[active-1],active),load,save,summaries,activate,remove,exportSlot,importSlot,token,
-    buildId:'0.24.0-nereid-reforged-1',status:()=>({active,key,error,recovered,disabled,corruptActive}),
+    buildId:'0.25.0-the-living-abyss-1',status:()=>({active,key,error,recovered,disabled,corruptActive}),
     // Only pre-v3 profiles may enter the old converter on a first-ever installation.
     allowLegacy:()=>active===1&&isEmpty(expected)&&!oldIndex&&!get(LEGACY)&&!get(LEGACY+'.backup')};
 })();

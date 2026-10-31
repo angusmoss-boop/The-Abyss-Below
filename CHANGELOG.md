@@ -1,3 +1,15 @@
+# v0.25.0: The Living Abyss
+
+- Add `living-abyss.js`: campaign-local, seeded peaceful ecology, kept separate from enemies, rewards and resources.
+- Give existing schools travelling, feeding, sheltering, curiosity, regrouping and gentle-giant-following routines while retaining independent fish movement and obstacle checks.
+- Add Gliders to all five levels and Driftbacks to the three deeper levels. Swept body, fin and tail checks preserve solid terrain; animals are non-blocking, harmless and excluded from weapons.
+- Let nearby idle ordinary predators briefly rest or investigate schools. Active pursuit, wreck guards and the Warden retain their combat behaviours.
+- Animate earned harbour drones, service equipment, cabin activity, warm lights and contextual return messages without delaying services.
+- Add a saved 20-active-minute sky cycle with cosmetic rain, ripples and upper-water tint. Deep lighting, physics, difficulty and economy remain unchanged.
+- Add ten optional Wildlife journal observations requiring about two seconds of actual lit, unobstructed sight. Sonar echoes do not grant a record, rewards or map-tracking contacts.
+- Add frozen-view Photo Mode through pause/telemetry, clean canvas capture, bounded 100–220% cropping, pointer/touch/pinch/wheel framing and PNG export; closing stays paused.
+- Extend campaign save/import validation, release checksums and scoped offline asset wiring. Preserve three-slot progress, equipment, repair charge, prices, ammo, maps and previous sound fixes.
+
 # v0.24.0: NEREID Reforged
 
 - Add `ship-systems.js`, a shared deterministic renderer for the actual ship and dock previews. Eight hull specifications, fitted weapon/propulsion/support details, graded boost exhaust, earned finishes and health-based wear preserve existing collision and combat stats.

@@ -2,7 +2,7 @@
    Start/resume only after user input. Settings persist independently of campaigns. */
 (() => {
   'use strict';
-  const KEY='abyss-audio-v1', BUILD='0.24.0-nereid-reforged-1';
+  const KEY='abyss-audio-v1', BUILD='0.25.0-the-living-abyss-1';
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   let settings={effects:.5,ambience:.35,music:.3,muted:false};
   try { const v=JSON.parse(localStorage.getItem(KEY)||'null'); if(v){
@@ -132,6 +132,12 @@
       case 'rescueLocated':play(620,780,.3,.045);play(930,930,.3,.03,pan,'sine',.18);break;
       case 'airTransfer':hiss(1.2,.035,1100,'bandpass');play(120,125,1.1,.012,pan);break;
       case 'rescueHome':[261.63,329.63,392,523.25].forEach((f,i)=>play(f,f,.7,.045,0,'sine',i*.17));break;
+      case 'driftbackCall':play(49,37,3.2,.048,pan,'sine',0,'ambience');play(74,62,2.6,.018,pan,'sine',.4,'ambience');break;
+      case 'gliderPass':hiss(.8,.024,580,'lowpass',0,'ambience');break;
+      case 'surfaceRain':hiss(3.8,.037,1700,'lowpass',0,'ambience');break;
+      case 'rainUnderwater':hiss(3.8,.023,340,'lowpass',0,'ambience');break;
+      case 'harbourLife':play(82,79,2,.018,pan,'sine',0,'ambience');hiss(.7,.012,860,'bandpass',.8,'ambience');break;
+      case 'observation':play(440,440,.38,.045,pan,'sine');play(660,660,.5,.035,pan,'sine',.18);break;
       case 'distantCall':play(52,39,3.6,.055,pan,'sine',0,'ambience');play(82,70,2.8,.018,pan,'sine',.5,'ambience');break;
       case 'siltLift':hiss(2,.035,650,'lowpass',0,'ambience');break;
       case 'radioOpen':hiss(.16,.025,1900,'bandpass');play(440,442,.25,.04);break;

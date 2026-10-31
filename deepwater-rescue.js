@@ -3,7 +3,7 @@
  */
 (() => {
   'use strict';
-  const buildId='0.24.0-nereid-reforged-1';
+  const buildId='0.25.0-the-living-abyss-1';
   const TAU=Math.PI*2;
   const NAMES=['PIP','MICA','FERN','ECHO','NOVA'];
   const REWARDS=[180,260,340,420,500];
@@ -291,7 +291,7 @@
       }
     }
     function drawHarbour(g){
-      let n=0;for(const [i,l] of api.levelDefinitions().entries())if(api.levels()[l.id]?.rescue?.done){const t=api.clock(),x=api.harbour().x-100+(n%3)*90+Math.sin(t*.4+i)*11,y=api.harbour().y+95+Math.floor(n/3)*38+Math.cos(t*.6+i)*7;n++;g.save();g.globalAlpha=.85;drawDrone(g,{x,y,heading:Math.sin(t*.25+i)*.5,status:'rescued'},false,false);g.restore();}
+      let n=0;for(const [i,l] of api.levelDefinitions().entries())if(api.levels()[l.id]?.rescue?.done){const t=api.clock(),x=api.harbour().x-100+(n%3)*90+Math.sin(t*.4+i)*11,y=api.harbour().y+95+Math.floor(n/3)*38+Math.cos(t*.6+i)*7;n++;g.save();g.globalAlpha=.85;drawDrone(g,api.harbourPose?.(i,n-1,t)||{x,y,heading:Math.sin(t*.25+i)*.5,status:'rescued'},false,false);g.restore();}
     }
     function drawEncounter(g){
       const e=state()?.event;if(!e)return;
