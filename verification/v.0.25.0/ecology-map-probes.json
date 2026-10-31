@@ -1,0 +1,122 @@
+[
+  {
+    "level": 0,
+    "seed": 117,
+    "creatures": 1,
+    "clear": true
+  },
+  {
+    "level": 0,
+    "seed": 991,
+    "creatures": 1,
+    "clear": true
+  },
+  {
+    "level": 0,
+    "seed": 64329,
+    "creatures": 1,
+    "clear": true
+  },
+  {
+    "level": 0,
+    "seed": 818231,
+    "creatures": 1,
+    "clear": true
+  },
+  {
+    "level": 1,
+    "seed": 117,
+    "creatures": 1,
+    "clear": true
+  },
+  {
+    "level": 1,
+    "seed": 991,
+    "creatures": 1,
+    "clear": true
+  },
+  {
+    "level": 1,
+    "seed": 64329,
+    "creatures": 1,
+    "clear": true
+  },
+  {
+    "level": 1,
+    "seed": 818231,
+    "creatures": 1,
+    "clear": true
+  },
+  {
+    "level": 2,
+    "seed": 117,
+    "creatures": 2,
+    "clear": true
+  },
+  {
+    "level": 2,
+    "seed": 991,
+    "creatures": 2,
+    "clear": true
+  },
+  {
+    "level": 2,
+    "seed": 64329,
+    "creatures": 2,
+    "clear": true
+  },
+  {
+    "level": 2,
+    "seed": 818231,
+    "creatures": 2,
+    "clear": true
+  },
+  {
+    "level": 3,
+    "seed": 117,
+    "creatures": 2,
+    "clear": true
+  },
+  {
+    "level": 3,
+    "seed": 991,
+    "creatures": 2,
+    "clear": true
+  },
+  {
+    "level": 3,
+    "seed": 64329,
+    "creatures": 2,
+    "clear": true
+  },
+  {
+    "level": 3,
+    "seed": 818231,
+    "creatures": 2,
+    "clear": true
+  },
+  {
+    "level": 4,
+    "seed": 117,
+    "creatures": 2,
+    "clear": true
+  },
+  {
+    "level": 4,
+    "seed": 991,
+    "creatures": 2,
+    "clear": true
+  },
+  {
+    "level": 4,
+    "seed": 64329,
+    "creatures": 2,
+    "clear": true
+  },
+  {
+    "level": 4,
+    "seed": 818231,
+    "creatures": 2,
+    "clear": true
+  }
+]

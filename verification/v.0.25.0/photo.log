@@ -1,0 +1,8 @@
+PHOTO SIZE 320 568
+PHOTO SIZE 390 844
+PHOTO SIZE 430 932
+PHOTO SIZE 568 320
+PHOTO SIZE 844 390
+PHOTO SIZE 1024 768
+PHOTO SIZE 1440 900
+PASS photo mode at 7 sizes: all controls within viewport, real pinch, pan/crop, PNG download, keys cannot fire, no time/resources/survey changes, return paused

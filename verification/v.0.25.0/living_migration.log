@@ -1,0 +1,1 @@
+PASS actual v0.24 migration in all 3 slots: exact geometry/cargo/health/ammo/spent repair/prices retained, inactive slots unchanged; new clock/animals/observations round-trip through saves and validated backups
