@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const root = document.documentElement;
-  const buildId = '0.25.0-the-living-abyss-1';
+  const buildId = '0.26.0-tactical-depths-1';
   let finished = false, reason = 'loading', ready = false, imageTimer, finishTimer;
   root.classList.add('abyss-launching');
   // A missing/corrupt game or an unavailable image must never trap the menu.

@@ -1,22 +1,22 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta name="abyss-build" content="0.25.0-the-living-abyss-1">
+  <meta name="abyss-build" content="0.26.0-tactical-depths-1">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#06121d" />
   <meta name="description" content="The Abyss Below: a submarine exploration and survival game." />
   <title>The Abyss Below | Deepwater Expedition</title>
-  <link rel="manifest" href="manifest.webmanifest?v=0.25.0" />
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.25.0" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=0.25.0" />
-  <link rel="shortcut icon" href="favicon.ico?v=0.25.0" />
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=0.25.0" />
-  <link rel="preload" as="image" href="launch-art.webp?v=0.25.0" fetchpriority="high" />
-  <script src="launch.js?v=0.25.0"></script>
+  <link rel="manifest" href="manifest.webmanifest?v=0.26.0" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.26.0" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=0.26.0" />
+  <link rel="shortcut icon" href="favicon.ico?v=0.26.0" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=0.26.0" />
+  <link rel="preload" as="image" href="launch-art.webp?v=0.26.0" fetchpriority="high" />
+  <script src="launch.js?v=0.26.0"></script>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="stylesheet" href="styles.css?v=0.25.0" />
+  <link rel="stylesheet" href="styles.css?v=0.26.0" />
   <style>
     /* Paint a branded start before the main stylesheet or game is ready. */
     #launchScreen{display:none;position:fixed;inset:0;z-index:1000;background:#061019;color:#e5f7ff;align-items:center;justify-content:center;text-align:center;font-family:system-ui,sans-serif;padding:24px;transition:opacity .24s ease;}
@@ -39,18 +39,18 @@
 <body>
   <div id="launchScreen" role="status" aria-live="polite" aria-label="Loading The Abyss Below" tabindex="-1">
     <div class="launch-content">
-      <img id="launchArt" class="launch-art" src="launch-art.webp?v=0.25.0" width="1024" height="1024" alt="NEREID descending into a blue cavern lined with violet crystals" fetchpriority="high" />
+      <img id="launchArt" class="launch-art" src="launch-art.webp?v=0.26.0" width="1024" height="1024" alt="NEREID descending into a blue cavern lined with violet crystals" fetchpriority="high" />
       <p class="launch-eyebrow">NEREID EXPLORATION PROGRAM</p>
       <h2 class="launch-title">THE ABYSS<br><span>BELOW</span></h2>
       <p class="launch-status">PREPARING YOUR EXPEDITION</p>
       <div class="launch-line" aria-hidden="true"></div>
-      <p class="launch-build">v0.25.0 · FLUID FRONTIERS</p>
+      <p class="launch-build">v0.26.0 · FLUID FRONTIERS</p>
     </div>
   </div>
   <noscript><div style="padding:20px;color:#bce9ee;background:#061019">Enable JavaScript to play The Abyss Below. Your saved campaigns have not been changed.</div></noscript>
   <div class="app">
     <header class="masthead">
-      <div class="brand"><img class="brand-app-icon" src="icon-192.png?v=0.25.0" width="44" height="44" alt="" /><div><div class="brand-eyebrow">NEREID EXPEDITION DIVISION</div><div class="brand-title">THE ABYSS <span>BELOW</span></div></div></div>
+      <div class="brand"><img class="brand-app-icon" src="icon-192.png?v=0.26.0" width="44" height="44" alt="" /><div><div class="brand-eyebrow">NEREID EXPEDITION DIVISION</div><div class="brand-title">THE ABYSS <span>BELOW</span></div></div></div>
       <div class="header-right"><span class="signal-dot"></span><span id="signalText">VESSEL ONLINE</span><button id="helpBtn" class="small-btn">? CONTROLS</button><button id="pauseBtn" class="small-btn">Ⅱ PAUSE</button></div>
     </header>
     <main class="layout">
@@ -83,6 +83,7 @@
             <div class="cockpit-context"><span id="coordsText">01 · SUNBREAK SHELF</span><span id="statusStat" class="status-safe">NOMINAL</span></div>
             <div id="waypointHint" class="waypoint-hint hidden"></div>
           </div>
+          <div id="trialBanner" class="trial-banner hidden" aria-live="off"></div>
           <div id="interactionPrompt" class="interaction-prompt hidden"></div>
           <div id="notification" class="notification hidden"></div>
           <div class="mobile-controls" id="mobileControls">
@@ -122,11 +123,11 @@
         <button id="dockBtn" class="dock-btn" disabled>◈ RETURN TO STATION TO UPGRADE</button>
       </aside>
     </main>
-    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.25.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
+    <footer><span>THE ABYSS BELOW <span class="muted">/ EXPEDITION BUILD v0.26.0</span></span><span>LOCAL AUTOSAVE ACTIVE <span class="footer-dot">●</span></span></footer>
   </div>
   <div class="overlay" id="menuOverlay" role="dialog" aria-modal="true" aria-label="Main menu"><div class="menu-card crystal-menu command-menu">
     <div class="menu-art-panel">
-      <img class="menu-launch-art" src="launch-art.webp?v=0.25.0" width="1024" height="1024" alt="The NEREID explores an underwater crystal cavern" fetchpriority="high" />
+      <img class="menu-launch-art" src="launch-art.webp?v=0.26.0" width="1024" height="1024" alt="The NEREID explores an underwater crystal cavern" fetchpriority="high" />
       <div class="menu-art-shade" aria-hidden="true"></div>
       <div class="menu-title-block"><div class="menu-kicker">NEREID EXPLORATION PROGRAM</div><h1>THE ABYSS<br><span>BELOW</span></h1><p class="menu-art-caption">A LIGHT IN THE UNKNOWN.</p><div class="menu-depth-lines" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
     </div>
@@ -142,7 +143,7 @@
             <button id="menuRescueBtn" class="alt-btn rescue-menu-button"><span aria-hidden="true">◈</span> RESCUE LOG</button><button id="newGameBtn" class="menu-secondary-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg><span class="nav-label">New campaign</span></button><button id="menuAudioBtn" class="menu-secondary-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 10H2v4h3l4 4V6ZM13 8a6 6 0 0 1 0 8M16 5a10 10 0 0 1 0 14"/></svg><span class="nav-label">Sound settings</span></button><button id="instructionsBtn" class="menu-secondary-btn"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 8a3 3 0 0 1 6 1c0 2-3 2-3 4M12 17v.1"/></svg><span class="nav-label">Pilot briefing</span></button>
       </div>
       <section class="version-card" aria-label="Game build and update status">
-  <div class="version-heading"><strong id="menuVersion">v0.25.0</strong><span id="menuVersionName">The Living Abyss</span></div>
+  <div class="version-heading"><strong id="menuVersion">v0.26.0</strong><span id="menuVersionName">Tactical Depths</span></div>
   <div class="sync-indicator" id="syncIndicator" data-state="checking"><span class="sync-dot" aria-hidden="true"></span><strong id="syncStatus" role="status">CHECKING DEPLOYMENT</strong></div>
   <p id="syncDetail">Checking the latest published build. Your campaign stays on this device.</p>
   <div class="version-actions"><button id="checkVersionBtn" class="version-btn">CHECK AGAIN</button><button id="updateVersionBtn" class="version-btn hidden">LOAD UPDATE</button></div>
@@ -234,14 +235,15 @@
     <footer class="photo-tools"><label for="photoZoom">CROP <output id="photoZoomValue">100%</output><input type="range" id="photoZoom" min="100" max="220" step="1" value="100"></label><button id="photoReset" class="alt-btn">RESET</button><button id="photoSave" class="primary-btn">SAVE PHOTO</button></footer>
     <p id="photoStatus" class="photo-status" role="status">Drag or pinch to frame what you could already see. Lighting is unchanged. Closing returns to pause.</p>
   </dialog>
-  <script src="campaign-slots.js?v=0.25.0" defer></script>
-  <script src="audio.js?v=0.25.0" defer></script>
-  <script src="lost-signals.js?v=0.25.0" defer></script>
-  <script src="forgotten-giants.js?v=0.25.0" defer></script>
-  <script src="deepwater-rescue.js?v=0.25.0" defer></script>
-  <script src="ship-systems.js?v=0.25.0" defer></script>
-  <script src="living-abyss.js?v=0.25.0" defer></script>
-  <script src="game.js?v=0.25.0" defer></script>
-  <script src="version-sync.js?v=0.25.0" defer></script>
+  <script src="campaign-slots.js?v=0.26.0" defer></script>
+  <script src="audio.js?v=0.26.0" defer></script>
+  <script src="lost-signals.js?v=0.26.0" defer></script>
+  <script src="forgotten-giants.js?v=0.26.0" defer></script>
+  <script src="deepwater-rescue.js?v=0.26.0" defer></script>
+  <script src="ship-systems.js?v=0.26.0" defer></script>
+  <script src="living-abyss.js?v=0.26.0" defer></script>
+  <script src="tactical-depths.js?v=0.26.0" defer></script>
+  <script src="game.js?v=0.26.0" defer></script>
+  <script src="version-sync.js?v=0.26.0" defer></script>
 </body>
 </html>

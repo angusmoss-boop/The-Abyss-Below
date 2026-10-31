@@ -2,7 +2,7 @@
    Backups are portable JSON, not encrypted, cloud-synchronised or cheat-proof. */
 (() => {
   'use strict';
-  const buildId='0.25.0-the-living-abyss-1';
+  const buildId='0.26.0-tactical-depths-1';
   const levels=['sunbreak-shelf','glassbone-rift','drowned-gardens','midnight-cathedral','calypso-abyss'];
   const lengths=[2,3,4,5,6];
   const chapters=['The wrong timestamp','Something in the walls','An ocean that remembers','The listening chamber','The other end of the call'];
@@ -79,6 +79,13 @@
     const p=data.profile,counts=['credits','crystals','xp','bestDepth','mineAmmo'];for(const k of counts)if(!Number.isInteger(p[k])||p[k]<0||p[k]>1e9)fail('Invalid campaign balance: '+k);
     const limits={hull:7,oxygen:5,battery:5,engine:4,sonar:4,quiet:4,minePower:4,mineCapacity:4,flashlight:4,magnet:4,shield:4,disruptor:4,railgun:4,torpedo:4};
     for(const [k,max]of Object.entries(limits))if(!Number.isInteger(p.upgrades?.[k])||p.upgrades[k]<(['flashlight','mineCapacity'].includes(k)?1:0)||p.upgrades[k]>max)fail('Invalid upgrade: '+k);
+    if(p.tactical!==undefined){
+      const t=p.tactical,ids=['pursuit','quiet','frame','survey','recovery'],accents=['standard','verdigris','solar','ion'];
+      const slots=s=>Array.isArray(s)&&s.length===2&&s.every(id=>id===null||ids.includes(id))&&(!s[0]||s[0]!==s[1]);
+      if(!t||t.version!==1||!slots(t.slots)||!accents.includes(t.accent)||!t.records||typeof t.records!=='object'||Array.isArray(t.records)||!Array.isArray(t.presets)||t.presets.length!==3)fail('Invalid ship tuning.');
+      for(const [id,r]of Object.entries(t.records))if(!['precision','weapons','survival'].includes(id)||!r||!Number.isInteger(r.score)||r.score<0||r.score>1000||!['complete','bronze','silver','gold'].includes(r.medal)||!Number.isFinite(r.seconds)||r.seconds<0||r.seconds>600||!Number.isInteger(r.attempts)||r.attempts<1||r.attempts>1e6||typeof r.date!=='string'||r.date.length>32)fail('Invalid training record.');
+      for(const v of t.presets)if(v!==null&&(!v||typeof v.name!=='string'||v.name.length>28||!slots(v.slots)||typeof v.finish!=='string'||v.finish.length>40||!accents.includes(v.accent)))fail('Invalid ship configuration.');
+    }
     if(!['railgun','torpedo'].every(k=>Number.isInteger(p.weaponAmmo?.[k])&&p.weaponAmmo[k]>=0&&p.weaponAmmo[k]<100))fail('Invalid weapon ammunition.');
     if(p.mineAmmo>Math.max(3,[0,2,4,6,8][p.upgrades.mineCapacity])||p.weaponAmmo.railgun>Math.max(10,[0,12,18,24,32][p.upgrades.railgun])||p.weaponAmmo.torpedo>Math.max(3,[0,3,4,6,8][p.upgrades.torpedo]))fail('Ammunition exceeds fitted capacity.');
     let fieldCount=0;for(const [id,f]of Object.entries(data.levels)){
@@ -137,7 +144,7 @@
     window.AbyssGiants?.validateBackup(data);window.AbyssRescue?.validateCampaign(data);window.AbyssLiving?.validateCampaign(data);
     return true;
   }
-  function pack(payload,version='0.25.0'){
+  function pack(payload,version='0.26.0'){
     validateCampaign(payload);const text=JSON.stringify(payload);
     return JSON.stringify({format:'the-abyss-below/campaign',formatVersion:1,gameVersion:version,exportedAt:new Date().toISOString(),integrity:{algorithm:'fnv1a32',value:checksum(text)},payload},null,2);
   }

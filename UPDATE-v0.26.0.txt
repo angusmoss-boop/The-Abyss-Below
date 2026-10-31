@@ -1,0 +1,17 @@
+THE ABYSS BELOW v0.26.0 / TACTICAL DEPTHS
+Base: v0.25.0 / The Living Abyss
+
+Save and export a campaign before updating. Extract and upload these files into
+existing repository root, replacing matching files. Do not upload just the ZIP.
+Include tactical-depths.js, all changed runtime files, version.json and the worker.
+Keep the same website address and do not clear browser/site data.
+
+New: two passive tuning slots, three named configurations, four proving-ground
+modes, cosmetic medal accents, combat feedback and presentation settings.
+No new story, currencies, upgrade prices or campaign ammunition grants.
+
+The simulator is separate from campaign resources. Closing the app ends an
+exercise. Return to the dock from the results screen to save a completed score.
+
+Details: TACTICAL-DEPTHS-v0.26.0.md
+Verification and limitations: VERIFICATION-v0.26.0.md

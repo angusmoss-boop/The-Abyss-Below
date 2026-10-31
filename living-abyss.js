@@ -1,10 +1,10 @@
-/* The Living Abyss. Additive, campaign-local ecology; no rewards, damage or loot.
+/* Tactical Depths. Additive, campaign-local ecology; no rewards, damage or loot.
  * World units are 10 per metre. Large animals are deliberately not combat actors.
  * All movement is bounded and swept through the same solid-water test as fish.
  */
 (() => {
   'use strict';
-  const buildId='0.25.0-the-living-abyss-1',TAU=Math.PI*2,DAY=1200;
+  const buildId='0.26.0-tactical-depths-1',TAU=Math.PI*2,DAY=1200;
   const LEVELS=['sunbreak-shelf','glassbone-rift','drowned-gardens','midnight-cathedral','calypso-abyss'];
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const mix=(a,b,t)=>a+(b-a)*t,angle=(a,b,t)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t;

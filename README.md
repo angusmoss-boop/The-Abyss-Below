@@ -1,15 +1,31 @@
-# The Abyss Below
-## v0.25.0: The Living Abyss
+# The Abyss Below · v0.26.0 Tactical Depths
+
+Mobile-first underwater exploration game, with two passive ship-tuning slots,
+three named configurations, an isolated proving ground and clearer combat feedback.
+
+See [Tactical Depths](TACTICAL-DEPTHS-v0.26.0.md) for exact unlocks, tuning trade-offs,
+trial equipment, scores and save behaviour. See [current verification](VERIFICATION-v0.26.0.md)
+for test results and limits. Prior reports below describe older releases only.
+
+## Game overview
 
 A mobile-first, side-scrolling submarine exploration game built with HTML, CSS, Canvas and JavaScript. The same game supports desktop mouse/keyboard play and a touch-first installable web-app interface. This archive is the web/PWA source, not a signed native Android release.
 
-**Current update:** curious, feeding and sheltering fish; peaceful Gliders and Driftbacks; an inhabited harbour; a cosmetic twenty-active-minute surface cycle and weather; a ten-entry observation journal; and frozen-view photo mode with PNG export. See [The Living Abyss guide](THE-LIVING-ABYSS-v0.25.0.md). Modular vessels, Sunken Strongholds, Deepwater Rescue and all earlier campaign systems remain intact.
+**Existing ecology:** curious, feeding and sheltering fish; peaceful Gliders and Driftbacks; an inhabited harbour; a cosmetic twenty-active-minute surface cycle and weather; a ten-entry observation journal; and frozen-view photo mode with PNG export. See [The Living Abyss guide](THE-LIVING-ABYSS-v0.25.0.md). Modular vessels, Sunken Strongholds, Deepwater Rescue and all earlier campaign systems remain intact.
 
 ## Install and update
 
-Use the complete ZIP for a fresh repository. Apply the extracted update ZIP over **v0.24.0** at the repository root. Save and export a campaign backup first; banking cargo is a sensible precaution. Upload changed runtime files together. These files do not deploy themselves.
+Use the complete ZIP for a fresh repository. Apply the extracted update ZIP over **v0.25.0** at the repository root. Save and export a campaign backup first; banking cargo is a sensible precaution. Upload changed runtime files together. These files do not deploy themselves.
 
-Reopen your existing game address online after deployment and check for **v0.25.0 / The Living Abyss**. Do not clear site data, uninstall or start a new campaign to update. Keep the same browser profile and origin. The menu's version checker distinguishes verified, outdated, incomplete, local and offline states rather than assuming a deployment succeeded.
+Reopen your existing game address online after deployment and check for **v0.26.0 / Tactical Depths**. Do not clear site data, uninstall or start a new campaign to update. Keep the same browser profile and origin. The menu's version checker distinguishes verified, outdated, incomplete, local and offline states rather than assuming a deployment succeeded.
+
+## Tactical Depths
+
+Shipyard now offers two passive tuning slots and three named configurations. Physical-dock refitting is free once the associated existing equipment grades are owned. Before/after values make trade-offs visible.
+
+Dock > Trials opens three scored, fixed-equipment simulations and an unscored current-build practice pool. Loaned inventory and trial damage never persist into the campaign. Personal bests and cosmetic gold accents are saved when returning to dock; closing the app ends an unfinished exercise.
+
+Telemetry includes optional damage numbers, camera impulse and decoration density. The seven-button mobile layout remains unchanged. Full settings, scoring and limitations are in the current feature guide.
 
 ## Controls
 
@@ -40,7 +56,7 @@ Standard air lasts approximately 5:33 uninterrupted active minutes; Air Recycler
 
 Normal travel has much lower power draw than boost or sonar. At empty power, reserve thrust is half the fitted normal movement rating and boost cannot run. New rare golden battery cells restore up to 25 power and become eligible to return after eight active dive minutes, with a 90-second per-level stagger and no visible respawning. No offline, pause or dock-screen farming. Crystals still never regenerate.
 
-Existing upgrade prices, mine/gun ammunition costs, salvage regeneration, combat stats, flashlight marks, controls and music are unchanged in v0.25.0.
+Existing upgrade prices, mine/gun ammunition costs, salvage regeneration, combat stats, flashlight marks, controls and music are unchanged in v0.26.0. Optional tuning applies its explicitly listed trade-offs to the equipped vessel.
 
 ## Deepwater Rescue
 
@@ -70,18 +86,18 @@ After **every runtime edit**, rebuild release checksums:
 python tests/build_release.py
 ```
 
-The offline worker and deployment verifier intentionally reject an incomplete or checksum-mismatched release. `version.json` covers 21 runtime assets. Do not update only one script and expect the verifier to show a consistent release.
+The offline worker and deployment verifier intentionally reject an incomplete or checksum-mismatched release. `version.json` covers 22 runtime assets. Do not update only one script and expect the verifier to show a consistent release.
 
 ## Verification
 
 Current runner:
 
 ```sh
-python tests/run_v0250.py
+python tests/run_v0260.py
 ```
 
-See [current verification](VERIFICATION-v0.25.0.md), `verification/v0.25.0/` and [test reproduction](tests/README-v0.25.0.md). Earlier reports in the archive are historical, not evidence for this build. Browser tests use actual production code with isolated synthetic storage, never the user's live saves.
+See [current verification](VERIFICATION-v0.26.0.md), `verification/v0.26.0/` and [test reproduction](tests/README-v0.26.0.md). Earlier reports in the archive are historical, not evidence for this build. Browser tests use actual production code with isolated synthetic storage, never the user's live saves.
 
 ## Archive
 
-`CHANGELOG.md` and prior feature guides retain the development history. The current code and The Living Abyss guide take precedence over older feature descriptions, especially older free-ammunition, salvage and save rules.
+`CHANGELOG.md` and prior feature guides retain the development history. The current code and Tactical Depths guide take precedence over older feature descriptions, especially older free-ammunition, salvage and save rules.

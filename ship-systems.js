@@ -1,10 +1,10 @@
-/* The Living Abyss: one renderer shared by the live vessel and dock previews.
+/* Tactical Depths: one renderer shared by the live vessel and dock previews.
  * Visual geometry never changes the narrow collision capsule or weapon rules.
  * No game-state mutations, audio, networking or external assets in this module.
  */
 (() => {
   'use strict';
-  const buildId='0.25.0-the-living-abyss-1', TAU=Math.PI*2;
+  const buildId='0.26.0-tactical-depths-1', TAU=Math.PI*2;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const ENGINES=Object.freeze([
     {color:'#8cbec9',edge:'#4b7d99',length:0,width:0,name:'STANDARD DRIVE'},
@@ -31,7 +31,8 @@
     const t=Number.isFinite(opts.time)?opts.time:0,thrust=clamp(opts.thrust||0,0,1),boost=engine?clamp(opts.boost||0,0,1):0;
     const health=clamp(opts.health??1,0,1),wear=1-health;
     const palette=opts.palette||['#d4eef2','#73a5b7','#204b63','#90e8e1'];
-    const trim=palette[3],accent=eng.color;
+    const trim=opts.accent||palette[3],accent=eng.color;
+    const shotAge=kind=>Math.max(0,t-(opts.shots?.[kind]??-100));
     c.save();
     // Exhaust is drawn on the same darkened world layer, never on the light mask.
     if(!opts.airborne&&(boost>.005||thrust>.04)){
@@ -61,11 +62,12 @@
       for(let j=0;j<engine+1;j++)line(c,[[-25+j*2.7,engine>=2?7.7:4.3],[-24+j*2.7,engine>=2?11.6:7.7]],j<engine?accent:'#6d96a5',.65);
       rect(c,-32,engine>=2?8:4.3,3,3.5,1,thrust>.08?accent:'#44647c');
       if(u.torpedo>0){
+        c.save();const age=shotAge('torpedo');if(age<.3)c.translate(-Math.sin(age/.3*Math.PI)*1.8,0);
         const m=clamp(u.torpedo,1,4),yy=9.8;
         path(c,[[-10,yy],[-8,yy+4.2],[10+m,yy+4.2],[16+m*.5,yy+1.3],[10,yy-1]],'#173449',trim,.6);
         rect(c,7,yy+.15,7+m*.7,2.3,1,'#081b2e','#d6a775');
         for(let j=0;j<m;j++)line(c,[[-6+j*3.5,yy+.3],[-5+j*3.5,yy+3.6]],'#cf9f72',.65);
-        lamp(c,14+m*.4,yy+1.4,.85,'#ffcc8e');
+        lamp(c,14+m*.4,yy+1.4,.85,'#ffcc8e');if(age<.25){line(c,[[17,yy],[22,yy+1.5]],'#ffc785',1);lamp(c,20,yy+1.5,2*(1-age/.25),'#ffe4b7');}c.restore();
       }
       c.restore();
     }
@@ -86,14 +88,14 @@
     if(u.battery>0){rect(c,-16,3,12,3.3,1,'#061e31','#6997a5');for(let i=0;i<Math.min(5,u.battery);i++)rect(c,-14+i*2.1,3.8,1.1,1.5,.2,'#9bd9c2');}
     if(u.quiet>0){line(c,[[-25,-5],[-19,-3],[-14,-3]],'#4b788b',.4+u.quiet*.15);}
     // Rail accelerator along the port shoulder, visible only when installed.
-    if(u.railgun>0){const m=clamp(u.railgun,1,4);
+    if(u.railgun>0){c.save();const age=shotAge('railgun');if(age<.2)c.translate(-Math.sin(age/.2*Math.PI)*2.6,0);const m=clamp(u.railgun,1,4);
       rect(c,-9,-9.8,25+m*2.3,3.4,1,'#0a263b','#9bc6d6');
       rect(c,13,-9.1,8+m*2.2,1.8,.6,'#7bb7c7');
       for(let i=0;i<m+1;i++)rect(c,-5+i*4,-10.4,1.4,4.4,.4,'#72e9ee');
-      lamp(c,20+m*2,-8.2,.8,'#e2ffff');
+      lamp(c,20+m*2,-8.2,.8,'#e2ffff');if(age<.11){line(c,[[22+m*2,-8.2],[30+m*2,-8.2]],'#e7ffff',2*(1-age/.11));}c.restore();
     }
     if(u.minePower>0){
-      rect(c,-26,-3.5,7,7,1.7,'#10263a','#ba9784');
+      rect(c,-26,-3.5,7,7,1.7,'#10263a','#ba9784');const age=shotAge('mine');if(age<.4){line(c,[[-28,-4],[-31,-6]],'#f0bb8d',1);line(c,[[-28,4],[-31,6]],'#f0bb8d',1);}
       line(c,[[-25,-2.3],[-21,2.3]],'#e2ad84',.6);line(c,[[-25,2.3],[-21,-2.3]],'#e2ad84',.6);
       for(let i=0;i<Math.min(4,u.minePower);i++)line(c,[[-25+i*1.5,-2.2],[-25+i*1.5,2.2]],'#bb8f79',.35);
       for(let i=0;i<Math.min(4,u.mineCapacity||1);i++)lamp(c,-27+i*2,5.7,.65,'#d2a47e');
@@ -123,6 +125,12 @@
       const yy=(i-(lights-1)/2)*2.6;lamp(c,lights>=3?27.6:25.7,yy,lights>2?.75:1.1,'#ffe2a1');
     }
     lamp(c,-21,-6,.65,'#e69a7f');lamp(c,-21,6,.65,'#91e9c1');
+    // Passive modifications add detail without enlarging collision geometry.
+    if(opts.tuning?.includes('frame'))for(const y of [-9,9])line(c,[[-20,y],[-6,y],[0,y*.8]],'#d7e4ec',1.3);
+    if(opts.tuning?.includes('survey')){c.strokeStyle='#c5b1ee';c.lineWidth=.6;c.beginPath();c.arc(-3,0,7,-1,1);c.stroke();}
+    if(opts.tuning?.includes('pursuit'))for(const y of [-6,6])lamp(c,-26,y,.9,'#af99ff');
+    if(opts.tuning?.includes('quiet'))for(const y of [-7,7])line(c,[[-24,y],[-19,y*.8]],'#a0d5ca',1.2);
+    if(opts.tuning?.includes('recovery'))line(c,[[-3,9],[0,11],[3,9]],'#9ff1be',1.2);
     // Deterministic wear: rendering consumes no RNG that could affect the world.
     if(wear>.12){
       const scratches=[[-20,-4,-16,-2],[-12,6,-6,5],[-7,-7,-3,-5],[17,7,21,4],[-22,3,-18,5],[23,-5,26,-3]];

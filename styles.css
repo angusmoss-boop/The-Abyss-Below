@@ -1,5 +1,5 @@
 /* Shell, dock and menu skin. */
-:root{--abyss-build:"0.25.0-the-living-abyss-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
+:root{--abyss-build:"0.26.0-tactical-depths-1";color-scheme:dark;--bg:#061019;--panel:#0a1924;--line:#254052;--muted:#7091a5;--ink:#d9eaf1;--bright:#f3fbff;--teal:#78e4d5;--blue:#65b5ea;--red:#ff736d;--amber:#f6be79}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
 body{background:radial-gradient(ellipse at 40% -20%,#12344a 0%,#061019 65%)}
@@ -713,7 +713,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 }
 @media(prefers-reduced-motion:reduce){body.touch-ui .action-circle,body.touch-ui .ring-value,body.touch-ui .stock-value{transition:none}}
 
-/* v0.25.0 / Lost Signals: approved artwork, unchanged cockpit and controls. */
+/* v0.26.0 / Lost Signals: approved artwork, unchanged cockpit and controls. */
 .brand-app-icon{width:44px;height:44px;object-fit:cover;border-radius:12px;box-shadow:0 0 20px #48bcdf22;border:1px solid #4a8c9b66;flex:none}
 #menuOverlay{background:radial-gradient(ellipse at 25% 30%,#123c4be8,#030c15f5 70%);padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
 #menuOverlay .crystal-menu{display:grid;grid-template-columns:43% minmax(0,1fr);width:min(950px,100%);max-height:calc(100dvh - 36px);padding:0;overflow:auto;border:1px solid #38657399;border-radius:22px;background:#071923;box-shadow:0 30px 110px #000b;text-align:left;scrollbar-width:thin;scrollbar-color:#3c6470 #071923}
@@ -781,7 +781,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 }
 @media(prefers-reduced-motion:reduce){#menuOverlay button{transition:none}}
 
-/* v0.25.0 Lost Signals: the archive and dispatch desk share the existing cockpit palette. */
+/* v0.26.0 Lost Signals: the archive and dispatch desk share the existing cockpit palette. */
 .dock-tabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:thin;flex-shrink:0;padding-bottom:5px;}
 .dock-tabs>[role=tab]{flex:1 0 auto;min-width:82px;padding:11px 10px;font-size:10px;white-space:nowrap;}
 .signals-intro{padding:8px 0 18px;border-bottom:1px solid #24444e;margin-bottom:16px;}
@@ -870,7 +870,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 .rescue-loadout{border:1px solid #75cfbb42;border-radius:12px;background:#102b2c88;padding:13px 15px;margin-top:15px;display:grid;gap:7px}
 .rescue-loadout span{font-size:9px;letter-spacing:1.5px;color:#8cb5ad}.rescue-loadout strong{font-size:13px;color:#b3f2db}.rescue-loadout small{font-size:11px;line-height:1.5;color:#9bb5b9}
 @media(max-height:500px){.recovery-manifest{margin:9px 0}.recovery-manifest span{padding:6px}.recovery-manifest b{font-size:19px}.rescue-loadout{padding:9px 12px;margin-top:9px}}
-/* v0.25.0 / Forgotten Giants. Discovery cards share the existing journal;
+/* v0.26.0 / Forgotten Giants. Discovery cards share the existing journal;
    no new gameplay controls and no new modal nesting. */
 .journal-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
 .journal-tabs button{min-width:0;padding:12px 5px;font-size:10px;letter-spacing:.045em}
@@ -901,7 +901,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 @media(max-width:600px){.discovery-intro{padding:16px}.discovery-intro h3{font-size:22px}.discovery-summary{align-items:flex-start;flex-direction:column;gap:12px}.discovery-summary label{width:100%;justify-content:space-between}.discovery-summary select{max-width:70%;min-height:42px}.discovery-grid{grid-template-columns:1fr;padding:14px;gap:14px}.journal-tabs button{font-size:8px;letter-spacing:0;padding:12px 2px}.discovery-card h4{font-size:19px}.discovery-pin{min-height:42px}}
 @media(max-height:480px) and (min-width:601px){.discovery-grid{padding:12px;gap:12px}.discovery-intro{padding:12px 18px}.discovery-intro h3{font-size:20px}.wreck-silhouette{height:70px}}
 
-/* v0.25.0: circular, live desktop action reference. This is an instrument panel,
+/* v0.26.0: circular, live desktop action reference. This is an instrument panel,
    not a clickable overlay: clicks pass through to the mouse helm. */
 .desktop-ui .desktop-keybinds{left:12px;right:12px;bottom:12px;max-width:1030px;gap:14px;flex-wrap:nowrap;align-items:center;padding:9px 14px 10px;border-radius:23px;border:1px solid #729eab32;background:linear-gradient(180deg,#07172138,#06131cd9);box-shadow:0 8px 30px #0005;pointer-events:none;backdrop-filter:blur(3px)}
 .desktop-pilot-hint{display:flex;align-items:center;gap:8px;flex:0 0 112px;color:#90afbb}
@@ -929,7 +929,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 @media(max-width:370px){.desktop-action-bank{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px 2px}.desktop-action-orb{width:40px;height:40px}.desktop-action-name{font-size:6px}.desktop-readout{font-size:8px}.desktop-action-orb kbd{font-size:7px;padding:1px 3px}}
 .touch-ui .desktop-keybinds{display:none!important}
 
-/* v0.25.0 / Lifeline: a coherent command deck, not another layer of HUD cards. */
+/* v0.26.0 / Lifeline: a coherent command deck, not another layer of HUD cards. */
 #menuOverlay,.pause-overlay,.dock-overlay{background:radial-gradient(ellipse at 20% 0%,#16354155,transparent 65%),#020c13bd;backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
 .nav-glyph{width:21px;height:21px;flex:0 0 21px;opacity:.88}.nav-label{flex:1;min-width:0}.nav-count{font:600 9px ui-monospace,monospace;white-space:nowrap;color:#9cbdc3}
 .command-eyebrow{display:flex;align-items:center;gap:8px;color:#8bcbc8;font:650 9px/1.5 ui-monospace,monospace;letter-spacing:1.7px}
@@ -1044,7 +1044,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 
 /* Return summary precedes the scrolling catalogue without blocking departure. */
 .rescue-arrival{margin:0 0 14px}.rescue-pin{width:100%;margin:4px 0 15px;min-height:44px}
-/* v0.24 / The Living Abyss. The world zoom never scales these controls. */
+/* v0.24 / Tactical Depths. The world zoom never scales these controls. */
 .view-zoom-badge{position:absolute;top:calc(var(--hud-bottom,100px) + 10px);right:16px;z-index:6;pointer-events:none;padding:7px 10px;border:1px solid #83dacc55;border-radius:12px;background:#051925c9;color:#c1efe5;font:600 10px ui-monospace,monospace;letter-spacing:1px;opacity:0;transform:translateY(-3px);transition:opacity .18s,transform .18s;}
 .view-zoom-badge.visible{opacity:1;transform:translateY(0);}
 .view-zoom-settings{margin:0 18px 14px;padding:14px;border:1px solid #83c3d42c;border-radius:12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 12px;align-items:center;background:#0a243055;}
@@ -1091,7 +1091,7 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 .dock-balance{display:grid;gap:11px 8px;}
 .dock-balance>span{min-width:0;border:0;padding:0;}
 
-/* The Living Abyss: field-guide cards and a safe, frozen-frame camera. */
+/* Tactical Depths: field-guide cards and a safe, frozen-frame camera. */
 .journal-tabs {overflow-x:auto;scrollbar-width:thin;grid-auto-flow:column;grid-auto-columns:minmax(116px,1fr);grid-template-columns:repeat(5,minmax(110px,1fr));}
 .field-guide{padding:clamp(16px,3vw,28px);color:#dcecf0;}
 .field-guide-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding-bottom:18px;}
@@ -1118,3 +1118,75 @@ body.touch-ui .action-circle:focus-visible{outline:2px solid #d1fff0;outline-off
 .photo-tools label{display:grid;grid-template-columns:1fr auto;flex:1;gap:7px;font-size:10px;letter-spacing:.13em;color:#b0cbc9;max-width:450px;}.photo-tools input{grid-column:1/-1;width:100%;accent-color:#8edacb;}.photo-tools button{min-height:44px;white-space:nowrap;font-size:10px;padding:10px 15px;}.photo-status{font-size:10px;line-height:1.5;color:#76959f;padding:0 16px max(12px,env(safe-area-inset-bottom));margin:0;flex:none;}
 @media(max-width:560px){.field-guide{padding:14px;}.field-guide-grid{grid-template-columns:1fr;}.field-guide-intro{gap:10px;}.field-guide-intro h3{font-size:23px;}.field-guide-count{padding:10px;}.field-guide-weather{flex-wrap:wrap;gap:8px;}.field-guide-weather small{flex-basis:100%;margin:0;}.photo-tools{gap:8px;}.photo-tools button{padding:10px 11px;}}
 @media(max-height:460px) and (orientation:landscape){.photo-header{padding:7px 14px;}.photo-header h2{font-size:17px;display:inline;margin-left:10px;}.photo-header .menu-kicker{display:inline;font-size:8px;}.photo-header .close-btn{min-width:36px;min-height:36px;}.photo-tools{padding:6px 12px;}.photo-status{font-size:9px;padding:0 12px 6px;}.field-guide-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* v0.26.0 Tactical Depths: dock configuration, no additional combat controls. */
+.tactical-panel{margin-top:20px;border-top:1px solid #6fcbb52b;padding-top:20px;color:#d6e9e9}
+.tactical-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.tactical-heading h3{font:650 clamp(16px,2vw,22px) system-ui;margin:6px 0 0;letter-spacing:.04em;color:#e6fff4}
+.tactical-tag{border:1px solid #76d9c04a;border-radius:6px;color:#a3eed5;background:#78d8b90b;padding:7px 9px;font:600 9px monospace;letter-spacing:.1em;white-space:nowrap}
+.tactical-copy,.tactical-footnote{font:12px/1.65 system-ui;color:#9bb8c4;margin:10px 0 14px}
+.tactical-footnote{font-size:11px;color:#8aa5b4}
+.tuning-slots{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.tuning-slots label,.tuning-accent{font:600 10px monospace;letter-spacing:.08em;color:#91cdbf;display:block}
+.tuning-slots select,.tuning-accent select,.presentation-settings select{display:block;width:100%;max-width:100%;min-width:0;border:1px solid #5a9da649;border-radius:7px;background:#071f2e;color:#d4ece8;margin-top:7px;padding:11px 9px;font:12px system-ui;min-height:44px}
+.tuning-slots select:focus-visible,.tuning-accent select:focus-visible{outline:2px solid #9ce6d1;outline-offset:2px}
+.tuning-modules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tuning-module{padding:12px;border:1px solid #3a59695c;background:linear-gradient(135deg,#12334570,#091e2a75);border-radius:9px;min-width:0}
+.tuning-module.is-selected{border-color:#88dec29c;box-shadow:inset 2px 0 #8ee3c6;background:linear-gradient(135deg,#17473d80,#0a2434)}
+.tuning-module.is-locked{opacity:.5}
+.tuning-module>div>span{font:8px monospace;letter-spacing:.12em;color:#8ca8b5;display:block;margin-bottom:6px}
+.tuning-module b{font:650 13px system-ui;color:#edf8f8}
+.tuning-module p{font:11px/1.45 system-ui;margin:7px 0 0}
+.tuning-benefit{color:#a9e7c9}.tuning-cost{color:#e3b898}
+.tuning-module small{display:block;font:8px/1.5 monospace;color:#9fb9bf;margin-top:10px}
+.tuning-compare{border:1px solid #486b7b50;border-radius:9px;margin:15px 0 10px;overflow:hidden;background:#071e2b}
+.compare-label{padding:12px;display:flex;justify-content:space-between;font:9px monospace;background:#102c38;color:#9dc4c4;gap:10px}
+.tuning-stat{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:9px 12px;border-top:1px solid #25424e5c;font:11px/1.4 system-ui;align-items:center}
+.tuning-stat span{color:#93b1bf}.tuning-stat b{font-weight:400;color:#b1c9cf}.tuning-stat em{font-style:normal;text-align:right;color:#b1c9cf}
+.tuning-stat.is-changed em{color:#c0ffdf;font-weight:600}
+.tactical-buttons{display:flex;gap:8px;margin:12px 0 20px;flex-wrap:wrap}
+.tactical-buttons button{flex:1;min-height:44px;font-size:11px;white-space:normal}
+.tuning-accent{margin:12px 0 24px}.preset-heading{padding-top:8px;border-top:1px solid #57798a30}
+.tuning-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.tuning-presets article{min-width:0;background:#0a2331;border:1px solid #4e768846;border-radius:9px;padding:12px}
+.preset-index{font:600 12px monospace;color:#84b5c4;display:block;margin-bottom:10px}
+.tuning-presets input{box-sizing:border-box;width:100%;min-width:0;min-height:44px;background:#071a26;border:1px solid #42616f;color:#e7f3f4;border-radius:5px;padding:8px;font:12px system-ui}
+.tuning-presets small{font:10px/1.5 system-ui;color:#99b7c4;display:block;min-height:34px;margin:10px 0}
+.tuning-presets article>div{display:flex;gap:7px;flex-wrap:wrap}.tuning-presets button{font-size:9px;flex:1;min-height:44px;padding:8px 5px}
+.tactical-message{font:12px/1.6 system-ui;color:#ace8d1;min-height:1em}
+.tuning-summary{padding:9px 11px;border:1px solid #609d9b3b;border-radius:7px;margin-top:12px;background:#1033373d;font:10px/1.6 monospace;color:#abd8cd}
+.trials-board{max-width:940px;margin:auto;padding:5px 0 18px}
+.trial-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.trial-card{position:relative;padding:20px;border:1px solid #436b7b66;border-radius:12px;background:radial-gradient(ellipse at top right,#257c7759,transparent 70%),#0b2331;display:flex;flex-direction:column;min-width:0}
+.trial-card:nth-child(2){background:radial-gradient(ellipse at top right,#94653844,transparent 70%),#0b2331}
+.trial-card:nth-child(3){background:radial-gradient(ellipse at top right,#6f5b9a55,transparent 70%),#0b2331}
+.trial-card>span{font:10px monospace;letter-spacing:.12em;color:#9fbec5}
+.trial-card h3{font:600 22px system-ui;margin:12px 0 6px;color:#e8fff6}
+.trial-card p{font:12px/1.65 system-ui;color:#aec5cf;flex:1;margin:0 0 16px}
+.trial-best{border-top:1px solid #809eaa30;padding:12px 0 16px;display:grid;gap:5px}
+.trial-best b{font:12px monospace;color:#bcebd9}.trial-best small{font:11px system-ui;color:#a1b7bf}
+.trial-card .primary-btn{font-size:11px;min-height:44px}
+.trial-rules{margin-top:18px;border:1px solid #4b72834a;border-radius:8px;padding:12px;color:#a6c2cb;font:12px/1.65 system-ui}
+.trial-rules summary{cursor:pointer;font-weight:600;color:#b9e0d5;min-height:32px}
+.trial-banner{position:absolute;top:calc(env(safe-area-inset-top,0px) + 100px);left:50%;transform:translateX(-50%);max-width:calc(100% - 20px);background:#071d2bea;color:#b9f4da;border:1px solid #78bbaa60;border-radius:6px;padding:7px 12px;text-align:center;font:10px/1.5 monospace;z-index:9;pointer-events:none;white-space:normal;width:max-content}
+.trial-result{text-align:center;padding:12px 0;color:#c9dfdf}.trial-result h3{font:500 22px system-ui;margin:12px}
+.trial-medal{margin:auto;display:inline-block;border:1px solid #81aebd;border-radius:999px;padding:10px 20px;font:600 12px monospace;color:#b0d0dc}
+.trial-medal.gold{border-color:#e5c689;color:#ffe0a1;background:#82632926}.trial-medal.silver{color:#e1edf5;border-color:#d1dde6}.trial-medal.bronze{color:#e5b389;border-color:#bb8961}
+.trial-result>strong{font:600 52px system-ui;color:#e4fff2}.trial-result>strong small{font-size:13px;color:#8babb9}
+.trial-result-stats{display:flex;justify-content:center;gap:12px;margin:20px 0}.trial-result-stats span{flex:1;max-width:130px;background:#0b2837;padding:12px;border-radius:7px;font:600 18px system-ui}
+.trial-result-stats small{display:block;font:8px monospace;letter-spacing:.08em;margin-top:8px;color:#a1b7bf}
+.trial-result p{font:12px/1.7 system-ui;color:#a7bdc8;max-width:470px;margin:12px auto}
+.presentation-settings{border:1px solid #597e8e40;border-radius:9px;padding:16px;margin-top:15px;color:#a2bfca}
+.presentation-settings>label{display:block;font:10px monospace;margin:16px 0}.presentation-settings input[type=range]{display:block;width:100%;margin-top:12px;accent-color:#9ee5cc;min-height:32px}
+.presentation-settings .setting-check{display:flex;align-items:center;gap:10px;font:13px system-ui;min-height:32px}
+.setting-check input{accent-color:#9ee5cc;width:18px;height:18px}
+.presentation-settings p,.presentation-settings>span:last-child{font:11px/1.6 system-ui;color:#91adbb}
+.presentation-settings strong{float:right;color:#bae5d5}
+.action-circle.dry-fire{animation:dryFlash .25s ease-out}@keyframes dryFlash{0%{box-shadow:0 0 0 3px #f19a8488;color:#ffc6b3}100%{box-shadow:none}}
+.trial-active #pauseSlotsBtn,.trial-active #pauseJournalBtn,.trial-active #pauseAchievementsBtn,.trial-active #pausePhotoBtn,.trial-active #pauseRescueBtn{display:none!important}
+@media(max-width:600px){.tuning-presets{grid-template-columns:1fr}.tuning-presets article{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px}.preset-index{grid-row:1/3}.tuning-presets small{grid-column:2;margin:0;min-height:0}.tuning-presets article>div{grid-column:2}.tuning-stat{font-size:10px;padding:8px;gap:5px}.trial-cards{gap:9px}.trial-card{padding:13px}.trial-card h3{font-size:18px}.trial-card p{font-size:11px}.tactical-heading h3{font-size:17px}.trial-best{min-height:60px}.trial-card .primary-btn{font-size:9px;padding:10px 6px}.tuning-slots{grid-template-columns:1fr}.trial-banner{top:calc(env(safe-area-inset-top,0px) + 108px);font-size:9px}}
+@media(max-width:350px){.trial-cards{grid-template-columns:1fr}.tuning-modules{grid-template-columns:1fr}.tactical-tag{font-size:8px;padding:6px}}
+@media(max-height:480px) and (orientation:landscape){.trial-banner{top:67px;font-size:9px;padding:4px 9px}.trial-card{padding:12px}.trial-card h3{font-size:17px}.tactical-panel{margin-top:12px}}
+
+body.trial-active #pauseMapBtn,body.trial-active #pauseCargo {display:none!important}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}

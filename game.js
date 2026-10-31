@@ -1,9 +1,13 @@
 (() => {
   'use strict';
-  const BUILD = Object.freeze({version:'0.25.0',name:'The Living Abyss',id:'0.25.0-the-living-abyss-1'});
+  const BUILD = Object.freeze({version:'0.26.0',name:'Tactical Depths',id:'0.26.0-tactical-depths-1'});
   window.AbyssBuild=BUILD;
   const GIANTS=window.AbyssGiants;
   let deepwater=null,living=null;
+  const TACTICAL=window.AbyssTactical;
+  let trial=null;
+  const combatFeedback=TACTICAL.feedback();
+  let lastDryFire=-100;
   let photoCapturing=false;
   let giantSite=null,giantWallCache=[],wreckGraceUntil=0;
   const $ = id => document.getElementById(id);
@@ -24,7 +28,7 @@
   // Surface and harbour rules are shared by rendering, physics and AI.
   const SURFACE = Object.freeze({y:70,breachSpeed:100,gravity:260,airDrag:.18,reentryDrag:.62});
   const HARBOUR = Object.freeze({x:600,y:160,safeRadius:260,exclusionRadius:330,dockRadius:128});
-  const inHarbour = object => Boolean(object && Math.hypot(object.x-HARBOUR.x,object.y-HARBOUR.y)<=HARBOUR.safeRadius);
+  const inHarbour = object => Boolean(!trial && object && Math.hypot(object.x-HARBOUR.x,object.y-HARBOUR.y)<=HARBOUR.safeRadius);
   let surfaceEffects=[];
   // Lifeline: oxygen limits trip duration; propulsion has an unpowered reserve.
   const LIFE_SUPPORT = Object.freeze({oxygenPerSecond:.30,oxygenEfficiency:.20});
@@ -283,6 +287,7 @@
   saved.stats=saved.stats&&typeof saved.stats==='object'?Object.fromEntries(Object.entries(saved.stats).filter(([k,v])=>/^[a-zA-Z]+$/.test(k)&&Number.isFinite(v)&&v>=0)):{};
   saved.achievements=saved.achievements&&typeof saved.achievements==='object'?Object.fromEntries(Object.entries(saved.achievements).filter(([k,v])=>typeof v==='string'&&/^\d{4}-/.test(v))):{};
   saved.mineAmmo=Math.min(saved.mineAmmo,ammoStorageLimit('mine',saved.upgrades));
+  saved.tactical=TACTICAL.normalise(saved.tactical,saved.upgrades);
   saved.weaponAmmo=Object.fromEntries(['railgun','torpedo'].map(id=>[id,Math.min(cleanCount(saved.weaponAmmo?.[id]),ammoStorageLimit(id,saved.upgrades))]));
   function levelComplete(id){const l=LEVELS.find(x=>x.id===id);return Boolean(l&&campaignLevels[id]?.secured.length===l.recorders.length);}
   function levelUnlocked(index){return index===0||LEVELS.slice(0,index).every(l=>levelComplete(l.id));}
@@ -304,6 +309,7 @@
   }
   applyLevelGeometry();
   function persist(){
+    if(trial)return true; // Loaned equipment and trial state never cross the save boundary.
     if(slotTransition)return true;
     if(simulationStepping){saveRequested=true;return storageHealthy;}
     field.secured=saved.secured;
@@ -325,8 +331,8 @@
   const centerAt = y => 600 + Math.sin(y*.0017)*94 + Math.sin(y*.0051)*39;
   const widthAt = y => WORLD.widthMultiplier*(320 + Math.sin(y*.0031+1)*41 + Math.sin(y*.0072)*22);
   const baseLeftAt=y=>centerAt(y)-widthAt(y),baseRightAt=y=>centerAt(y)+widthAt(y);
-  const leftAt=y=>giantBoundary(y,-1);
-  const rightAt=y=>giantBoundary(y,1);
+  const leftAt=y=>trial?trial.bounds.left:giantBoundary(y,-1);
+  const rightAt=y=>trial?trial.bounds.right:giantBoundary(y,1);
   const depthOf = y => Math.max(0,Math.round((y-120)/10));
   // Use fractional metres for a continuous fade, not the rounded HUD depth.
   const ambientLightAt = y => Math.pow(1-clamp((y-120)/(10*LIGHTING.blackoutDepth),0,1),LIGHTING.fadeExponent);
@@ -371,7 +377,9 @@
   const zoneFor = depth => {let z=ZONES[0];for(const v of ZONES)if(depth>=v.start)z=v;return z;};
   const levelOf = xp => 1 + Math.floor(Math.sqrt(xp/90));
   const rankName = level => level < 3?'DECKHAND':level<5?'PATHFINDER':level<8?'TRENCH DIVER':'ABYSS VETERAN';
-  const maxHull = () => 100 + saved.upgrades.hull*28;
+  const tuning=()=>TACTICAL.modifiers(saved.tactical?.slots,saved.upgrades);
+  const cruiseSpeed=()=>normalSpeedAt(saved.upgrades.engine)*tuning().speed;
+  const maxHull = () => Math.round((100 + saved.upgrades.hull*28)*tuning().health);
   const maxOxygen = () => 100 + saved.upgrades.oxygen*30;
   const maxBattery = () => 100 + saved.upgrades.battery*30;
   const oxygenRateAt = mark => LIFE_SUPPORT.oxygenPerSecond/(1+mark*LIFE_SUPPORT.oxygenEfficiency);
@@ -382,16 +390,16 @@
   const safeDepth = () => HULL_DEPTHS[saved.upgrades.hull];
   const sonarRange = () => 230 + saved.upgrades.sonar*55;
   const sonarCost = () => Math.max(4,12-saved.upgrades.sonar*2);
-  const sonarCooldown = () => SONAR.cooldown-saved.upgrades.sonar*.35;
-  const sonarEchoSeconds = () => SONAR.echoSeconds+saved.upgrades.sonar*.45;
+  const sonarCooldown = () => (SONAR.cooldown-saved.upgrades.sonar*.35)*tuning().sonarCooldown;
+  const sonarEchoSeconds = () => (SONAR.echoSeconds+saved.upgrades.sonar*.45)*tuning().echo;
   const boostCapacity = () => BOOST.capacities[saved.upgrades.engine]||0;
   const boostMultiplier = () => BOOST.multipliers[saved.upgrades.engine]||1;
   const boostUnlocked = () => saved.upgrades.engine>0;
-  const boostPowerRate = () => BOOST.powerPerSecond/(1+saved.upgrades.battery*.12);
-  const boostRechargeRate = () => BOOST.recharge*(1+saved.upgrades.battery*.10);
+  const boostPowerRate = () => BOOST.powerPerSecond/(1+saved.upgrades.battery*.12)*tuning().boostPower;
+  const boostRechargeRate = () => BOOST.recharge*(1+saved.upgrades.battery*.10)*tuning().recharge;
   const shieldCapacity = () => SHIELD.capacity[saved.upgrades.shield];
-  const magnetRange = () => MAGNET.range[saved.upgrades.magnet];
-  const magnetPower = () => MAGNET.power[saved.upgrades.magnet];
+  const magnetRange = () => MAGNET.range[saved.upgrades.magnet]*tuning().magnetRange;
+  const magnetPower = () => MAGNET.power[saved.upgrades.magnet]*tuning().magnetPower;
   const disruptorReady = () => saved.upgrades.disruptor>0 && player.battery>=sonarCost()+DISRUPTOR.power[saved.upgrades.disruptor];
   const scanPowerCost = () => sonarCost()+(disruptorReady()?DISRUPTOR.power[saved.upgrades.disruptor]:0);
   const mineCapacity = () => MINES.capacity[saved.upgrades.mineCapacity];
@@ -720,6 +728,8 @@
     if(closest&&collectItem(closest,true))player.autoSalvageCooldown=SALVAGE_REGEN.pickupInterval;
   }
   function newDive() {
+    if(trial)return;
+    combatFeedback.reset();
     pickupNotices=[];boostVisual=0;
     // A new launch is distinct from restoring the existing expedition.
     loadedActive=null;running=false;buildingWorld=true;createWorld();buildingWorld=false;dockVisitActive=!field.awaitingDock;
@@ -799,6 +809,7 @@
     return candidate||nearestGiantObject();
   }
   function interact(silentMiss=false) {
+    if(trial){if(trial.id==='practice'&&distance(player,trial.service)<95)servicePractice();return;}
     if(!running||paused)return;
     const item=nearestInteractable();
     if(!item) {if(!silentMiss)announce('NOTHING IN SALVAGE RANGE',1.25);return;}
@@ -872,7 +883,7 @@
     }
     const duration=range/SONAR.waveSpeed;
     const disruption=disruptorReady()?saved.upgrades.disruptor:0;
-    player.battery-=sonarCost()+(disruption?DISRUPTOR.power[disruption]:0);player.scanCooldown=Math.max(sonarCooldown(),duration+.4);
+    player.battery-=sonarCost()+(disruption?DISRUPTOR.power[disruption]:0);player.scanCooldown=Math.max(sonarCooldown(),(duration+.4)*tuning().sonarCooldown);
     player.scanDuration=player.scanCooldown; // UI ring uses the actual screen-sized scan duration.
     player.noise=Math.min(100,player.noise+27);addStat('sonarPings',1);checkAchievements();window.AbyssAudio?.event('sonar');
     sonarWaves.push({...origin,disruption,birth:clock,radius:range,front:0,duration,echoSeconds:sonarEchoSeconds(),contacts});
@@ -929,7 +940,7 @@
   function deployMine(){
     if(!running||paused)return false;
     if(saved.upgrades.minePower<1){announce('BUY MK I SEA MINES AT THE DOCK',1.8);return false;}
-    if(player.mineAmmo<=0){announce('MINES EMPTY · BUY AMMO AT THE DOCK',1.8);return false;}
+    if(player.mineAmmo<=0){dryFire('mine');announce('MINES EMPTY · BUY AMMO AT THE DOCK',1.8);return false;}
     if(player.mineCooldown>0){announce('MINE LAUNCHER CYCLING',.8);return false;}
     if(distance(player,{x:600,y:160})<128){announce('DOCK SAFETY · MOVE AWAY TO DEPLOY',1.5);return false;}
     let drop=null;
@@ -941,7 +952,7 @@
     scene.mines.push({...drop,id:idCounter++,mark:saved.upgrades.minePower,damage:mineDamage(),
       birth:clock,armedAt:clock+MINES.armDelay,detonated:false,revealUntil:0,
       originX:drop.x,originY:drop.y,vx:0,vy:0,heading:player.facing+Math.PI,targetId:null});
-    window.AbyssAudio?.event('mine');
+    window.AbyssAudio?.event('mine');combatFeedback.shot('mine',clock);if(trial)trial.shots++;
     player.mineAmmo--;saved.mineAmmo=player.mineAmmo;player.mineCooldown=MINES.deployCooldown;persist();
     addEvent('Mk '+roman(saved.upgrades.minePower)+' mine deployed · '+player.mineAmmo+' remaining');
     updateUI();return true;
@@ -964,7 +975,10 @@
   }
   function damagePredator(enemy,amount,credited=true,source=null){
     if(!predatorAlive(enemy)||!Number.isFinite(amount)||amount<=0)return;
+    const incoming=amount;
     if(enemy.tier==='warden')amount=damageWarden(enemy,amount,source);
+    if(credited){combatFeedback.impact(enemy.x,enemy.y,clock,Math.min(enemy.health,amount),amount<incoming);enemy.visualHitAt=clock;if(amount<incoming)window.AbyssAudio?.event('armourHit',clamp((enemy.x-player.x)/300,-1,1));}
+    if(trial){damageTrialTarget(enemy,amount,source);return;}
     enemy.health=Math.max(0,enemy.health-amount);enemy.lastDamaged=clock;
     if(enemy.tier==='warden'){signals.warden.health=enemy.health;if(enemy.health===0)wardenDefeated(enemy);else enemy.alertUntil=clock+5;persist();return;}
     if(enemy.wreckId&&enemy.guardId)giantSiteState(enemy.wreckId).guardHealth[enemy.guardId]=enemy.health;
@@ -1027,7 +1041,7 @@
     if(player.hull>=maxHull()-.001){announce('HULL ALREADY INTACT · REPAIR SAVED',1.2);return false;}
     if(!player.repairReady){announce('EMERGENCY REPAIR SPENT · SERVICE AT DOCK',1.6);return false;}
     const restored=Math.min(maxHull()*.5,maxHull()-player.hull);
-    player.repairReady=false;player.lastRepair=clock;player.hull+=restored;
+    player.repairReady=false;player.lastRepair=clock;player.hull+=restored;if(trial)trial.repairs++;
     pickupNotice('hull',restored);window.AbyssAudio?.event('pickup');
     announce('EMERGENCY REPAIR · +'+Math.round(restored)+' HP',2);
     addEvent('Emergency repair used · service at the physical dock');persist();updateUI();return true;
@@ -1065,7 +1079,7 @@
     {id:'dolphin-pilot',name:'Dolphin Pilot',description:'Breach the surface ten times under your own momentum.',target:10,kind:'stat',stat:'surfaceBreaches',icon:'29'},
     {id:'heavy-haul',name:'Heavy Haul',description:'Bank at least 40 scrap units in one return to the harbour.',target:40,kind:'stat',stat:'bestScrapHaul',icon:'30'}
   ]);
-  const addStat=(key,amount)=>{saved.stats[key]=(saved.stats[key]||0)+Math.max(0,amount);};
+  const addStat=(key,amount)=>{if(trial)return;saved.stats[key]=(saved.stats[key]||0)+Math.max(0,amount);};
   const totalRecorders=()=>LEVELS.reduce((n,l)=>n+(campaignLevels[l.id]?.secured.length||0),0);
   function resourceProgress(id){
     const l=LEVELS.find(x=>x.id===id),f=campaignLevels[id],nodes=f?.loot?.filter(n=>['scrap','crystal'].includes(n.type));
@@ -1090,6 +1104,7 @@
   }
   let achievementTimer=0,achievementReturnPause=false;
   function checkAchievements(silent=false){
+    if(trial)return 0;
     const newly=[];
     for(const a of ACHIEVEMENTS)if(!saved.achievements[a.id]&&achievementProgress(a)>=a.target){saved.achievements[a.id]=new Date().toISOString();newly.push(a);}
     if(newly.length&&!silent){
@@ -1099,6 +1114,7 @@
     return newly.length;
   }
   function showAchievements(){
+    if(trial){announce('TRAINING SESSION · END THE EXERCISE TO RETURN TO CAMPAIGN',2);return;}
     if($('upgradeDialog').open)return;
     checkAchievements();persist();achievementReturnPause=paused;paused=true;resetPilotInput();
     const earned=ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length;
@@ -1198,6 +1214,7 @@
     $('modalOverlay').classList.remove('hidden');syncPauseButtons();
   }
   function closeDialog() {
+    if(trial?.done){leaveTrial();return;}
     closeUpgradeDetails(false);$('modalOverlay').classList.remove('dock-overlay');
     $('modalOverlay').classList.add('hidden');showingDock=false;
     paused=running?dialogReturnPause:false;
@@ -1222,35 +1239,38 @@
   };
   function upgradeStats(id,mark){
     const n=v=>Number(v.toFixed(2)).toLocaleString('en-GB');
+    const tm=TACTICAL.modifiers(saved.tactical?.slots||[],{...saved.upgrades,[id]:mark});
     switch(id){
       case 'railgun':case 'torpedo':return [['Damage',WEAPONS[id].damage[mark]+' HP'],['Magazine capacity',WEAPONS[id].capacity[mark]+' rounds'],['Firing interval',WEAPONS[id].cooldown+' sec'],['Range',WEAPONS[id].range/10+' m'],['Price per round',WEAPON_AMMO_PRICES[id]+' CR'],['Guidance',id==='railgun'?'Gentle / 32° each side':'Strong / 65° each side']];
-      case 'hull':return [['Safe depth',HULL_DEPTHS[mark].toLocaleString('en-GB')+' m'],['Maximum hull health',(100+mark*28)+' HP'],['Emergency repair',((100+mark*28)*.5)+' HP']];
+      case 'hull':return [['Safe depth',HULL_DEPTHS[mark].toLocaleString('en-GB')+' m'],['Maximum hull health',Math.round((100+mark*28)*tm.health)+' HP'],['Emergency repair',(Math.round((100+mark*28)*tm.health)*.5)+' HP']];
       case 'oxygen':return [['Oxygen capacity',(100+mark*30)+' units'],['Consumption',n(oxygenRateAt(mark)*60)+'/min'],['Full-tank endurance',enduranceText((100+mark*30)/oxygenRateAt(mark))+' min:sec']];
-      case 'battery':return [['Battery capacity',(100+mark*30)+' power'],['Boost power use',n(BOOST.powerPerSecond/(1+mark*.12))+'/sec'],['Boost recharge',n(BOOST.recharge*(1+mark*.1))+'/sec']];
-      case 'engine':return [['Normal speed',n(normalSpeedAt(mark)/10)+' m/s'],['Boost speed',mark?n(normalSpeedAt(mark)*BOOST.multipliers[mark]/10)+' m/s':'Locked'],['Boost endurance',mark?BOOST.capacities[mark]/BOOST.drain+' sec':'None']];
+      case 'battery':return [['Battery capacity',(100+mark*30)+' power'],['Boost power use',n(BOOST.powerPerSecond/(1+mark*.12)*tm.boostPower)+'/sec'],['Boost recharge',n(BOOST.recharge*(1+mark*.1)*tm.recharge)+'/sec']];
+      case 'engine':return [['Normal speed',n(normalSpeedAt(mark)*tm.speed/10)+' m/s'],['Boost speed',mark?n(normalSpeedAt(mark)*BOOST.multipliers[mark]/10)+' m/s':'Locked'],['Boost endurance',mark?BOOST.capacities[mark]/BOOST.drain+' sec':'None']];
       case 'flashlight':return [['Maximum reach',FLASHLIGHT[mark].length/10+' m'],['Beam angle',Math.round(FLASHLIGHT[mark].halfAngle*360/Math.PI)+'°'],['Base power draw',n(FLASHLIGHT[mark].power*60)+'/min']];
-      case 'sonar':return [['Base cooldown',n(SONAR.cooldown-mark*.35)+' sec'],['Scan power',Math.max(4,12-mark*2)+' power'],['Echo duration',n(SONAR.echoSeconds+mark*.45)+' sec']];
+      case 'sonar':return [['Base cooldown',n((SONAR.cooldown-mark*.35)*tm.sonarCooldown)+' sec'],['Scan power',Math.max(4,12-mark*2)+' power'],['Echo duration',n((SONAR.echoSeconds+mark*.45)*tm.echo)+' sec']];
       case 'quiet':return [['Normal noise reduction',Math.round((1-1/(1+mark*.32))*100)+'%'],['Base idle noise','0%']];
       case 'minePower':return [['Mine damage',MINES.damage[mark]+' HP'],['Blast radius',MINES.blastRadius/10+' m'],['Launcher',mark?'Online':'Not fitted'],['Seeker reach',GUIDANCE.mine.range/10+' m'],['Seeking speed',GUIDANCE.mine.speed/10+' m/s']];
       case 'mineCapacity':return [['Ammunition slots',MINES.capacity[mark]+' rounds'],['New rounds included','None']];
-      case 'magnet':return [['Resource reach',MAGNET.range[mark]/10+' m'],['Remote pickup cost',mark?MAGNET.power[mark]+' power':'Not fitted'],['Close pickup cost','Free'],['Scrap collection','Automatic'],['Crystals / repair packs','Direct contact'],['Recorders / ID plates','USE required']];
+      case 'magnet':return [['Resource reach',n(MAGNET.range[mark]*tm.magnetRange/10)+' m'],['Remote pickup cost',mark?n(MAGNET.power[mark]*tm.magnetPower)+' power':'Not fitted'],['Close pickup cost','Free'],['Scrap collection','Automatic'],['Crystals / repair packs','Direct contact'],['Recorders / ID plates','USE required']];
       case 'shield':return [['Shield capacity',SHIELD.capacity[mark]+' HP'],['Recharge rate',SHIELD.recharge[mark]+' HP/sec'],['Recharge delay',mark?SHIELD.delay+' sec':'Not fitted']];
       case 'disruptor':return [['Disruption radius',DISRUPTOR.range[mark]/10+' m'],['Drifter stun',DISRUPTOR.seconds[mark]+' sec'],['Reaper stun',n(DISRUPTOR.seconds[mark]*.6)+' sec'],['Extra scan cost',DISRUPTOR.power[mark]+' power']];
       default:return [];
     }
   }
-  const DOCK_TABS=[['upgradesTab','upgrades'],['shipyardTab','shipyard'],['ammunitionTab','ammunition'],['expeditionsTab','expeditions'],['contractsTab','contracts'],['archiveTab','archive']];
+  const DOCK_TABS=[['upgradesTab','upgrades'],['shipyardTab','shipyard'],['ammunitionTab','ammunition'],['expeditionsTab','expeditions'],['contractsTab','contracts'],['archiveTab','archive'],['trialsTab','trials']];
   function showDock(tab='upgrades') {
+    if(trial){leaveTrial();return;}
     showingDock=true;dockTab=tab;syncWeaponStock();persist();
     openDialog('NEREID / SURFACE OPERATIONS','THE EXPEDITION HUB',
-      '<div class="dock-intro"><div class="dock-vessel-identity"><img class="dock-vessel-art" src="icon-192.png?v=0.25.0" alt="" width="54" height="54"><div><span class="dock-online"><i></i> VESSEL SECURED</span><p>Hull, air, power and emergency repair serviced.<br><span>Weapon ammunition is purchased separately.</span></p></div></div><div class="dock-wallet"><div class="dock-credit"><span>CREDITS</span><strong id="dockCredits">0</strong></div><div class="dock-credit crystal-wallet"><span>CRYSTALS</span><strong id="dockCrystals">0</strong></div></div></div><div id="dockBalance" class="dock-balance"></div><div class="dock-tabs" role="tablist" aria-label="Dock services"><button id="upgradesTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6ZM8 11l3 3 5-6"/></svg><span>Upgrades</span></button><button id="shipyardTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 12 9 6h9l4 6-4 6H9ZM6 9 2 6v12l4-3M13 8v8"/></svg><span>Shipyard</span></button><button id="ammunitionTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 4 8v12h6V8ZM17 4l-3 4v12h6V8ZM4 15h6M14 15h6"/></svg><span>Ammunition</span></button><button id="expeditionsTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2ZM9 3v16M15 5v16"/></svg><span>Expeditions</span></button><button id="contractsTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 2h6v4H9ZM8 11h8M8 15h8M8 18h5"/></svg><span>Contracts</span></button><button id="archiveTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h13a2 2 0 0 1 2 2v16H6a2 2 0 0 1-2-2ZM4 17h15M8 7h7M8 11h5"/></svg><span>Archive</span></button></div><div id="dockPanel" role="tabpanel"></div>',
+      '<div class="dock-intro"><div class="dock-vessel-identity"><img class="dock-vessel-art" src="icon-192.png?v=0.26.0" alt="" width="54" height="54"><div><span class="dock-online"><i></i> VESSEL SECURED</span><p>Hull, air, power and emergency repair serviced.<br><span>Weapon ammunition is purchased separately.</span></p></div></div><div class="dock-wallet"><div class="dock-credit"><span>CREDITS</span><strong id="dockCredits">0</strong></div><div class="dock-credit crystal-wallet"><span>CRYSTALS</span><strong id="dockCrystals">0</strong></div></div></div><div id="dockBalance" class="dock-balance"></div><div class="dock-tabs" role="tablist" aria-label="Dock services"><button id="upgradesTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6ZM8 11l3 3 5-6"/></svg><span>Upgrades</span></button><button id="shipyardTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 12 9 6h9l4 6-4 6H9ZM6 9 2 6v12l4-3M13 8v8"/></svg><span>Shipyard</span></button><button id="ammunitionTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 4 8v12h6V8ZM17 4l-3 4v12h6V8ZM4 15h6M14 15h6"/></svg><span>Ammunition</span></button><button id="expeditionsTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2ZM9 3v16M15 5v16"/></svg><span>Expeditions</span></button><button id="contractsTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 2h6v4H9ZM8 11h8M8 15h8M8 18h5"/></svg><span>Contracts</span></button><button id="archiveTab" role="tab" aria-controls="dockPanel"><svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h13a2 2 0 0 1 2 2v16H6a2 2 0 0 1-2-2ZM4 17h15M8 7h7M8 11h5"/></svg><span>Archive</span></button></div><div id="dockPanel" role="tabpanel"></div>',
       '<div class="dock-departure"><span id="departureLevel">'+currentLevel().name+'<br>Seabed '+currentLevel().depth.toLocaleString('en-GB')+' m · bank all recorders to unlock the next level.</span><button class="primary-btn" id="launchAgain">UNDOCK <span aria-hidden="true">↗</span></button></div>');
     dialogReturnPause=false;
+    const trialsTab=document.createElement('button');trialsTab.id='trialsTab';trialsTab.setAttribute('role','tab');trialsTab.setAttribute('aria-controls','dockPanel');trialsTab.innerHTML='<svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v5m0 12v5M1 12h5m12 0h5"/></svg><span>Trials</span>';document.querySelector('.dock-tabs').append(trialsTab);
     for(const [id,tabName] of DOCK_TABS){
-      $(id).addEventListener('click',()=>{dockTab=tabName;drawDockPanel();});
+      $(id).addEventListener('click',()=>{dockTab=tabName;drawDockPanel();$('dockPanel').scrollTop=0;});
       $(id).addEventListener('keydown',e=>{
         if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();
-        let i=DOCK_TABS.findIndex(t=>t[1]===dockTab);i=e.key==='Home'?0:e.key==='End'?DOCK_TABS.length-1:(i+(e.key==='ArrowRight'?1:DOCK_TABS.length-1))%DOCK_TABS.length;dockTab=DOCK_TABS[i][1];drawDockPanel();$(DOCK_TABS[i][0]).focus();$(DOCK_TABS[i][0]).scrollIntoView({block:'nearest',inline:'nearest'});
+        let i=DOCK_TABS.findIndex(t=>t[1]===dockTab);i=e.key==='Home'?0:e.key==='End'?DOCK_TABS.length-1:(i+(e.key==='ArrowRight'?1:DOCK_TABS.length-1))%DOCK_TABS.length;dockTab=DOCK_TABS[i][1];drawDockPanel();$('dockPanel').scrollTop=0;$(DOCK_TABS[i][0]).focus();$(DOCK_TABS[i][0]).scrollIntoView({block:'nearest',inline:'nearest'});
       });
     }
     window.AbyssAudio?.unlock();window.AbyssAudio?.setScene('dock');
@@ -1267,7 +1287,7 @@
     for(const [id,tab] of DOCK_TABS){$(id).setAttribute('aria-selected',String(dockTab===tab));$(id).tabIndex=dockTab===tab?0:-1;}
     $('dockPanel').setAttribute('aria-labelledby',DOCK_TABS.find(t=>t[1]===dockTab)[0]);
     if(dockTab==='upgrades'){$('dockPanel').innerHTML='<div class="dock-grid-caption"><span>SHIP SYSTEMS <small> / TAP TO INSPECT</small></span><span>CREDITS + CRYSTALS</span></div><div class="upgrade-grid" id="upgradeList"></div>';drawUpgrades();}
-    else if(dockTab==='shipyard')drawShipyard();else if(dockTab==='ammunition')drawAmmunition();else if(dockTab==='contracts')drawContracts();else if(dockTab==='archive')drawArchiveDock();else drawExpeditions();
+    else if(dockTab==='trials')drawTrialsDock();else if(dockTab==='shipyard')drawShipyard();else if(dockTab==='ammunition')drawAmmunition();else if(dockTab==='contracts')drawContracts();else if(dockTab==='archive')drawArchiveDock();else drawExpeditions();
     if(deepwater&&dockTab==='upgrades'){$('dockPanel').insertAdjacentHTML('afterbegin',deepwater.dockHTML());deepwater.bindDock();}
   }
   function drawExpeditions(){
@@ -1378,6 +1398,7 @@
     dialogReturnPause=false;$('victoryClose').addEventListener('click',()=>{paused=false;showDock('expeditions');});
   }
   function defeat(reason) {
+    if(trial){finishTrial(false,'SIMULATED VESSEL LOST');return true;}
     if(!running)return false; // Several impacts in one frame are still one death.
     deepwater?.loss();loadedActive=null;const node=stashCargo('wreck');rescueLoadout();running=false;paused=true;
     player.hull=Math.max(0,player.hull);checkAchievements();persist();
@@ -1385,8 +1406,10 @@
     openDialog('SIGNAL LOST // RESCUE PROTOCOL','VESSEL LOST',`<div class="briefing"><p>${reason}</p>${manifest}<p>Recorders stay with lost cargo, not at their original wrecks. Earlier losses remain recoverable. Banked currencies and upgrades are safe.</p><div class="rescue-loadout"><span>REPLACEMENT VESSEL / FIXED LOADOUT</span><strong>10 RAIL · 3 TORPEDOES · 3 MINES</strong><small>This replaces your previous ammunition. Unfitted launchers stay locked.</small></div></div>`, '<div class="dialog-actions"><button class="primary-btn" id="retryBtn">LAUNCH RESCUE VESSEL <span>→</span></button><button class="alt-btn" id="defeatMenuBtn">MAIN MENU</button></div>');
     $('retryBtn').addEventListener('click',newDive);$('defeatMenuBtn').addEventListener('click',()=>returnToMenu(false));return true;
   }
-  function takeDamage(amount,reason='Hull breach',independentImpact=false) {
+  function takeDamage(amount,reason='Hull breach',independentImpact=false,source=null) {
     if(!running||player.damageCooldown>0&&!independentImpact)return;
+    combatFeedback.incoming(player,source,clock);combatFeedback.shake(clock,Math.min(2,amount/20));
+    if(trial&&reason==='Rock impact')trial.collisions++;
     const absorbed=Math.min(player.shield||0,amount);
     player.shield=Math.max(0,(player.shield||0)-absorbed);
     if(shieldCapacity()>0){player.shieldDelay=SHIELD.delay;player.shieldFlashUntil=clock+.45;}
@@ -1531,12 +1554,12 @@
     const boostFraction=updateBoost(dt,hasInput&&!player.airborne);
     boostVisual=lerp(boostVisual,player.boosting&&!player.airborne?1:0,1-Math.exp(-dt*9));
     // Stealth follows actual speed, not a latched silent mode or a modifier key.
-    const maxSpeed=normalSpeedAt(saved.upgrades.engine)*propulsionMultiplier()*lerp(1,boostMultiplier(),boostFraction);
+    const maxSpeed=normalSpeedAt(saved.upgrades.engine)*propulsionMultiplier()*lerp(tuning().speed,boostMultiplier(),boostFraction);
     const thrustPower=hasInput?1:0;
     const divisor=Math.max(1,magnitude);
     const water=currentAt(player.x,player.y);
     const desiredX=x/divisor*maxSpeed*thrustPower+water.x,desiredY=y/divisor*maxSpeed*thrustPower+ventFlowAt(player.x,player.y);
-    const factor=1-Math.exp(-(3.5+saved.upgrades.engine*.2)*dt);
+    const factor=1-Math.exp(-(3.5+saved.upgrades.engine*.2)*tuning().response*dt);
     if(player.airborne){
       // Momentum carries the leap. Neither held steering nor boost can make the sub fly.
       player.vx*=Math.exp(-SURFACE.airDrag*dt);player.vy+=SURFACE.gravity*dt;
@@ -1548,7 +1571,7 @@
       player.facing=lerpAngle(player.facing,Math.atan2(player.vy,player.vx),Math.min(1,dt*5));
     }
     const speed=Math.hypot(player.vx,player.vy);
-    const noise=movementNoiseAt(player.airborne?0:speed,saved.upgrades.quiet,player.boosting);
+    const noise=movementNoiseAt(player.airborne?0:speed,saved.upgrades.quiet,player.boosting)*(player.boosting?1:tuning().noise);
     // Acoustic transients from weapons fade naturally; coasting remains audible until it slows.
     player.noise=lerp(player.noise,noise,1-Math.exp(-dt*2.8));
     const steps=Math.max(1,Math.ceil(speed*dt/7));
@@ -1562,6 +1585,7 @@
       autoCollectContactItems();
     }
     if(impactSpeed>43)takeDamage(Math.min(7,1+impactSpeed*.025),'Rock impact');
+    if(trial){updateTrial(dt);return;}
     // Hold USE with a second finger while steering: collect immediately on entering range.
     if(useHeld||keys.has('e')){useHoldTimer-=dt;if(useHoldTimer<=0){interact(true);useHoldTimer=.12;}}
     if(!running||paused)return;
@@ -1637,7 +1661,7 @@
       const tier=PREDATOR_TIERS[enemy.tier];
       if(!inHarbour(player)&&!player.airborne&&predatorAlive(enemy)&&(enemy.tier!=='warden'||enemy.wardenPhase==='charge')&&enemy.biteAllowed!==false&&guidanceLineClear(enemy,player,0)&&(enemy.stunnedUntil||0)<=clock&&enemy.aggression>.13&&distance(player,enemy)<tier.reach&&clock-enemy.lastHit>tier.cooldown){
         enemy.lastHit=clock;
-        takeDamage(Math.round(tier.damage*currentLevel().damage),tier.name+' attack');
+        takeDamage(Math.round(tier.damage*currentLevel().damage),tier.name+' attack',false,enemy);
         if(!running)return;
         player.vx+=(player.x-enemy.x)*2;player.vy+=(player.y-enemy.y)*2;
       }
@@ -1742,7 +1766,7 @@
       <div class="shipyard-stage"><canvas id="shipyardCanvas" role="img" aria-label="Animated preview of your fitted submarine and equipment"></canvas><div class="shipyard-stage-label"><span id="shipyardModelName">${window.AbyssShip.hullNames[future.hull]}</span><small>PHYSICAL FOOTPRINT UNCHANGED</small></div></div>
       <div class="shipyard-toolbar"><button id="shipyardCurrent" class="alt-btn ${shipyardNext?'':'selected'}" aria-pressed="${!shipyardNext}">FITTED</button><button id="shipyardNext" class="alt-btn ${shipyardNext?'selected':''}" aria-pressed="${shipyardNext}" ${canPreview?'':'disabled'}>NEXT MARK</button><button id="shipyardThrust" class="alt-btn ${shipyardThrust?'selected':''}" aria-pressed="${shipyardThrust}">THRUSTER TEST</button></div>
       <div class="shipyard-selectors"><label>INSPECT SYSTEM<select id="shipyardSystem">${UPGRADES.map(x=>`<option value="${x.id}" ${x.id===u.id?'selected':''}>${x.name} / ${saved.upgrades[x.id]?'MK '+roman(saved.upgrades[x.id]):'BASE'}</option>`).join('')}</select></label><label>EARNED HULL FINISH<select id="shipyardFinish"><option value="standard" ${finish==='standard'?'selected':''}>NEREID / STANDARD</option>${signals.warden.claimed?`<option value="hunter" ${finish==='hunter'?'selected':''}>WARDEN HUNTER</option>`:''}${GIANTS.vessels.filter(v=>giants.banked.includes(v.id)).map(v=>`<option value="${v.id}" ${finish===v.id?'selected':''}>${v.finish||v.name}</option>`).join('')}</select></label></div>
-      <div class="shipyard-specs"><span><small>HULL HEALTH</small><b>${100+future.hull*28} HP</b></span><span><small>PRESSURE LIMIT</small><b>${HULL_DEPTHS[future.hull].toLocaleString('en-GB')} m</b></span><span><small>PROPULSION</small><b>${future.engine?'MK '+roman(future.engine):'STANDARD'}</b></span><span><small>EMERGENCY REPAIR</small><b>${(100+future.hull*28)/2} HP / charge</b></span></div>
+      <div class="shipyard-specs"><span><small>HULL HEALTH</small><b>${Math.round((100+future.hull*28)*tuning().health)} HP</b></span><span><small>PRESSURE LIMIT</small><b>${HULL_DEPTHS[future.hull].toLocaleString('en-GB')} m</b></span><span><small>PROPULSION</small><b>${future.engine?'MK '+roman(future.engine):'STANDARD'}</b></span><span><small>EMERGENCY REPAIR</small><b>${Math.round((100+future.hull*28)*tuning().health)/2} HP / charge</b></span></div>
       <div class="shipyard-purchase"><div><strong>${u.name} ${tier?'MK '+roman(tier):'BASE'}</strong><p>${shipyardNext?'Appearance preview only. Nothing is installed or charged.':canPreview?'Preview the next mark before buying.': 'Maximum specification fitted.'}</p></div><button id="shipyardInspect" class="primary-btn">${canPreview?'INSPECT UPGRADE':'VIEW SYSTEM'}</button></div>
       <p class="shipyard-note">Finishes are earned from wreck discoveries and the Warden. Colours are cosmetic. Installed weapons, armour, propulsion and support systems change the real vessel model.</p></section>`;
     $('shipyardSystem').onchange=e=>{shipyardSystem=e.target.value;drawShipyard();};
@@ -1751,6 +1775,7 @@
     $('shipyardThrust').onclick=()=>{shipyardThrust=!shipyardThrust;$('shipyardThrust').classList.toggle('selected',shipyardThrust);$('shipyardThrust').setAttribute('aria-pressed',String(shipyardThrust));paintShipPreviews(performance.now(),true);};
     $('shipyardFinish').onchange=e=>{if(applyShipyardFinish(e.target.value))paintShipPreviews(performance.now(),true);};
     $('shipyardInspect').onclick=()=>openUpgradeDetails(shipyardSystem);
+    drawTuningPanel();
     paintShipPreviews(performance.now(),true);
   }
   function renderUpgradePreview(id,mark,next){
@@ -1772,7 +1797,7 @@
     const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,tt=reduced?1:t;
     const scale=small?Math.min(w/100,h/42):Math.min(w/175,h/59,5.7);
     g.save();g.translate(w*(small?.52:.64),h*(small?.52:.48)+(reduced?0:Math.sin(tt*.9)*1.5));g.rotate(small?-.10:-.14);g.scale(scale,scale);
-    window.AbyssShip.draw(g,{upgrades,palette:vesselPalette(),time:tt,health:1,thrust:boost?1:.06,boost:boost&&upgrades.engine?1:0});g.restore();
+    window.AbyssShip.draw(g,{upgrades,palette:vesselPalette(),tuning:saved.tactical?.slots,accent:TACTICAL.accents[saved.tactical?.accent]?.color,time:tt,health:1,thrust:boost?1:.06,boost:boost&&upgrades.engine?1:0});g.restore();
   }
   function paintShipPreviews(now,force=false){
     if(!showingDock||!Number.isFinite(now))return;
@@ -1795,8 +1820,9 @@
   }
   const onscreen=(x,y,pad=140)=>x>=camera.x-pad&&x<=camera.x+viewport.w+pad&&y>=camera.y-pad&&y<=camera.y+viewport.h+pad;
   function render() {
+    if(trial){renderTrial();return;}
     const W=viewport.w,H=viewport.h;if(!W||!H)return;
-    ctx.clearRect(0,0,W,H);
+    ctx.clearRect(0,0,W,H);ctx.save();const impulse=paused||photoCapturing?{x:0,y:0}:combatFeedback.offset(clock);ctx.translate(impulse.x,impulse.y);
     const ambient=player?ambientLightAt(player.y):1;
     if(ambient!==lastAmbient){canvas.parentElement.style.setProperty('--ambient-light',String(ambient));lastAmbient=ambient;}
     // Water colour also blends continuously; no sudden colour jumps between zones.
@@ -1824,7 +1850,7 @@
     if(onscreen(HARBOUR.x,HARBOUR.y,410))drawStation();
     deepwater?.drawEncounter(ctx);
     drawTrench();drawSeabed();drawEnvironment();
-    for(const particle of scene.dust)if(onscreen(particle.x,particle.y)){
+    for(let i=0;i<scene.dust.length;i++){const particle=scene.dust[i];if(i%Math.round(1/TACTICAL.density())!==0||!onscreen(particle.x,particle.y))continue;
       const x=particle.x+Math.sin(clock*.28+particle.phase)*17,y=particle.y+Math.cos(clock*.37+particle.phase)*7;
       ctx.beginPath();ctx.arc(x,y,particle.size,0,TAU);ctx.fillStyle='#83dfe12a';ctx.fill();
     }
@@ -1859,6 +1885,7 @@
         ctx.strokeStyle='#8bcaff';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,0,43,25,0,0,TAU);ctx.stroke();ctx.restore();
       }
     }
+    combatFeedback.drawWorld(ctx,clock);
     drawSurfaceWater();living?.drawWeather(ctx,camera,viewport);
     ctx.restore();
     const edge=ctx.createRadialGradient(W*.5,H*.48,Math.min(W,H)*.1,W*.5,H*.5,Math.max(W,H)*.77);
@@ -1871,7 +1898,8 @@
     ctx.save();ctx.translate(-camera.x,-camera.y);deepwater?.draw(ctx,true);living?.drawEchoes(ctx);ctx.restore();
     if(environmentEnabled){ctx.save();ctx.translate(-camera.x,-camera.y);for(const l of environment.landmarks)if(l.revealUntil>clock&&onscreen(l.x,l.y,200)){ctx.globalAlpha=clamp((l.revealUntil-clock)/sonarEchoSeconds(),0,.9);drawLandmark(l,true);}ctx.restore();}
     if(player.damageFlashUntil>clock){ctx.save();ctx.translate(-camera.x,-camera.y);drawDamageFlash();ctx.restore();}
-    if(!photoCapturing){drawTargetIndicators();drawPickupNotices();drawMouseTarget();drawEdgeArrows();}
+    if(!photoCapturing){drawTargetIndicators();drawPickupNotices();drawMouseTarget();drawEdgeArrows();drawCombatInstruments();}
+    ctx.restore();
   }
   function applyDepthDarkness(ambient){
     if(ambient>=1)return;
@@ -2092,7 +2120,7 @@
     const g=ctx.createRadialGradient(0,0,0,0,0,r);g.addColorStop(0,blast.derelict?'#ffe4caaa':'#fff0bca0');g.addColorStop(.35,blast.derelict?'#c9806666':'#ffc67458');g.addColorStop(1,'#ef815800');
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.fill();
     ctx.strokeStyle='#ffe1a4';ctx.lineWidth=2*(1-age)+.5;ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.stroke();
-    for(let i=0;i<10;i++){const a=i*TAU/10;ctx.fillStyle=blast.derelict?'#d3aa83':'#a7e3df';ctx.beginPath();ctx.arc(Math.cos(a)*r*.7,Math.sin(a)*r*.7,2*(1-age)+.5,0,TAU);ctx.fill();}
+    for(let i=0;i<Math.ceil(10*TACTICAL.density());i++){const a=i*TAU/Math.ceil(10*TACTICAL.density());ctx.fillStyle=blast.derelict?'#d3aa83':'#a7e3df';ctx.beginPath();ctx.arc(Math.cos(a)*r*.7,Math.sin(a)*r*.7,2*(1-age)+.5,0,TAU);ctx.fill();}
     ctx.restore();
   }
   function drawPredatorHealth(enemy,local=false){
@@ -2138,7 +2166,7 @@
     ctx.lineTo(12,12);ctx.lineTo(18,7);ctx.closePath();
   }
   function drawReaper(enemy){
-    ctx.save();ctx.translate(enemy.x,enemy.y);ctx.rotate(Math.atan2(enemy.vy,enemy.vx));
+    ctx.save();ctx.translate(enemy.x,enemy.y);ctx.rotate(Math.atan2(enemy.vy,enemy.vx));const hitAge=clock-(enemy.visualHitAt??-100);if(hitAge>=0&&hitAge<.18)ctx.translate(-Math.sin(hitAge*70)*2*(1-hitAge/.18),0);
     const glow=ctx.createRadialGradient(0,0,1,0,0,63);
     glow.addColorStop(0,enemy.aggression>.13?'#ff453b66':'#b532402e');glow.addColorStop(1,'#00000000');
     ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,0,63,0,TAU);ctx.fill();
@@ -2168,7 +2196,8 @@
   function drawPlayer(){
     ctx.save();ctx.translate(player.x,player.y);ctx.rotate(player.facing);
     window.AbyssShip.draw(ctx,{upgrades:saved.upgrades,palette:vesselPalette(),time:clock,
-      thrust:clamp(Math.hypot(player.vx,player.vy)/normalSpeedAt(saved.upgrades.engine),0,1),boost:boostVisual,
+      tuning:saved.tactical?.slots,accent:TACTICAL.accents[saved.tactical?.accent]?.color,shots:combatFeedback.shots(),
+      thrust:clamp(Math.hypot(player.vx,player.vy)/cruiseSpeed(),0,1),boost:boostVisual,
       health:player.hull/maxHull(),airborne:player.airborne});ctx.restore();
   }
   function drawWave(w){
@@ -2272,6 +2301,7 @@
   let slotsReturnPause=false;
   const escapeHTML=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function openSlots(newCampaign=false){
+    if(trial){announce('TRAINING SESSION · END THE EXERCISE TO RETURN TO CAMPAIGN',2);return;}
     slotsReturnPause=paused;paused=true;resetPilotInput();importPreview=null;importToken=null;$('importPreview').innerHTML='';
     const ok=persist();renderSlots();
     $('slotsMessage').textContent=ok?(newCampaign?'Choose an empty slot to start a separate campaign. Existing campaigns are never overwritten.':'Autosaves stay in the selected slot. Loading another slot first saves your current expedition.'):(window.AbyssSlots.status().error||'Save unavailable. Switching is blocked to protect your current dive.');
@@ -2453,7 +2483,7 @@
     const spec=WEAPONS[kind];if(!spec||!running||paused||slotTransition)return false;
     const say=text=>{if(!quiet)announce(text,1.5);return false;};
     if(!saved.upgrades[kind])return say('FIT '+spec.name+' MK I AT THE DOCK');
-    if(player.weaponAmmo[kind]<=0)return say('MAGAZINE EMPTY · BUY ROUNDS AT DOCK');
+    if(player.weaponAmmo[kind]<=0){dryFire(kind);return say('MAGAZINE EMPTY · BUY ROUNDS AT DOCK');}
     if(player.weaponCooldown[kind]>0)return false;
     if(inHarbour(player))return say('HARBOUR SAFETY · WEAPONS LOCKED');
     if(player.airborne||player.y<SURFACE.y+35)return say('SUBMERGE TO FIRE');
@@ -2464,6 +2494,7 @@
     player.weaponAmmo[kind]--;saved.weaponAmmo[kind]=player.weaponAmmo[kind];player.weaponCooldown[kind]=spec.cooldown;
     player.noise=Math.min(100,player.noise+(kind==='torpedo'?32:18));
     for(const enemy of scene.predators)if(predatorAlive(enemy)&&distance(player,enemy)<(kind==='torpedo'?420:290)){enemy.alertUntil=clock+3;enemy.forgetUntil=0;}
+    combatFeedback.shot(kind,clock);if(trial)trial.shots++;
     window.AbyssAudio?.event(kind);persist();updateWeaponUI();return true;
   }
   function projectileSolid(x,y,radius=0){
@@ -2489,6 +2520,7 @@
   }
   function projectileBlast(p){
     const radius=WEAPONS[p.kind].blast;
+    if(radius&&distance(p,player)<300)combatFeedback.shake(clock,.9*(1-distance(p,player)/300));
     scene.blasts.push({x:p.x,y:p.y,birth:clock,radius:radius||28,weapon:p.kind});
     if(!radius)return;
     window.AbyssAudio?.event('torpedoHit',clamp((p.x-player.x)/300,-1,1));
@@ -2519,6 +2551,7 @@
         else if(target!=='terrain'&&p.kind==='railgun'){damagePredator(target,p.damage,true,p);window.AbyssAudio?.event('railHit',clamp((p.x-player.x)/300,-1,1));}
         projectileBlast(p);continue;
       }
+      if(p.kind==='torpedo'){p.trail=(p.trail||[]).filter(n=>clock-n.birth<.65).slice(-15);p.trail.push({x:p.x,y:p.y,birth:clock});}
       p.x=b.x;p.y=b.y;p.remaining-=distanceThisFrame;
       if(p.remaining>0)kept.push(p);else projectileBlast(p);
     }
@@ -2526,7 +2559,7 @@
   }
   function drawProjectiles(){
     for(const p of scene.projectiles||[])if(onscreen(p.x,p.y,40)){
-      const spec=WEAPONS[p.kind];ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.atan2(p.vy,p.vx));
+      const spec=WEAPONS[p.kind];if(p.kind==='torpedo'){ctx.save();ctx.strokeStyle='#b6e6e9';for(let i=0;i<(p.trail||[]).length;i++){if(i%Math.round(1/TACTICAL.density()))continue;const n=p.trail[i],age=clock-n.birth;ctx.globalAlpha=Math.max(0,.22-age*.3);ctx.beginPath();ctx.arc(n.x,n.y,1+age*4,0,TAU);ctx.stroke();}ctx.restore();}ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.atan2(p.vy,p.vx));
       ctx.strokeStyle=spec.color;ctx.fillStyle=spec.color;ctx.shadowColor=spec.color;ctx.shadowBlur=9;
       if(p.kind==='railgun'){ctx.lineWidth=2.8;ctx.beginPath();ctx.moveTo(-21,0);ctx.lineTo(5,0);ctx.stroke();}
       else{ctx.beginPath();ctx.ellipse(0,0,12,4,0,0,TAU);ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=.4;ctx.beginPath();ctx.moveTo(-12,-3);ctx.lineTo(-34,0);ctx.lineTo(-12,3);ctx.fill();}
@@ -2701,7 +2734,7 @@
     $('mobileRepair').setAttribute('aria-label','Emergency repair, '+(player.repairReady?'1 charge ready, restores up to '+(maxHull()*.5)+' hull health.':'spent, service at dock.'));
     $('mobileRepair').title=$('mobileRepair').getAttribute('aria-label');
     refreshFlashlightControl();
-    updateLivingHUD();updateDesktopActions();drawRadar();
+    updateLivingHUD();updateDesktopActions();drawRadar();if(trial)updateTrialBanner();
   }
   let focusMode=false;
   function setFocusMode(on){
@@ -2742,14 +2775,17 @@
   }
   function updatePauseOverview(){
     if(!player)return;
+    document.body.classList.toggle('trial-active',Boolean(trial));
     const gauges=[['HULL',Math.max(0,player.hull),maxHull(),'#95ddcb'],['OXYGEN',player.oxygen,maxOxygen(),'#8acfe4'],['POWER',player.battery,maxBattery(),'#efce90'],['SHIELD',player.shield,shieldCapacity(),'#b7b3ec']];
-    $('pauseTelemetry').innerHTML='<div class="pause-gauges">'+gauges.map(([label,value,max,color])=>'<div class="pause-gauge '+(max&&value/max<.2?'is-low':'')+'" style="--meter-color:'+color+'"><span>'+label+'</span><strong>'+(max?Math.round(value/max*100)+'<small>%</small>':'<small>UNFITTED</small>')+'</strong><i><b style="width:'+(max?clamp(value/max*100,0,100):0)+'%"></b></i></div>').join('')+'</div><div class="endurance-line"><div><span>AIR REMAINING</span><strong>'+enduranceText(player.oxygen/oxygenRate())+'<small> min:sec</small></strong></div><div><span>PROPULSION</span><strong>'+(reserveDrive()?'RESERVE · 50%':(normalSpeedAt(saved.upgrades.engine)/10).toFixed(1)+' m/s')+'</strong></div></div>';
+    $('pauseTelemetry').innerHTML='<div class="pause-gauges">'+gauges.map(([label,value,max,color])=>'<div class="pause-gauge '+(max&&value/max<.2?'is-low':'')+'" style="--meter-color:'+color+'"><span>'+label+'</span><strong>'+(max?Math.round(value/max*100)+'<small>%</small>':'<small>UNFITTED</small>')+'</strong><i><b style="width:'+(max?clamp(value/max*100,0,100):0)+'%"></b></i></div>').join('')+'</div><div class="endurance-line"><div><span>AIR REMAINING</span><strong>'+enduranceText(player.oxygen/oxygenRate())+'<small> min:sec</small></strong></div><div><span>PROPULSION</span><strong>'+(reserveDrive()?'RESERVE · 50%':(cruiseSpeed()/10).toFixed(1)+' m/s')+'</strong></div></div>';
     const c=player.cargo;
     $('pauseCargo').innerHTML='<span class="section-overline">UNBANKED CARGO</span><div><b>'+c.scrap+'<small>SCRAP</small></b><b>'+c.crystal+'<small>CRYSTALS</small></b><b>'+c.recorders.length+'<small>RECORDERS</small></b><b>'+(c.plates?.length||0)+'<small>ID PLATES</small></b></div>';
     const active=signals.active;
     $('pauseObjective').innerHTML='<span class="section-overline">'+(active?'ACTIVE ASSIGNMENT':'CURRENT OBJECTIVE')+'</span><strong>'+escapeHTML(active?missionName(active):currentLevel().name)+'</strong><p>'+escapeHTML(active?missionProgress(active):saved.secured.length+' / '+RECORDERS_TOTAL+' recorders banked. '+(player.cargo.recorders.length?'Return safely to secure the recorders aboard.':'Recover every recorder to unlock the next depth.'))+'</p>';
     $('pauseSaveStatus').textContent=storageHealthy?'CHECKPOINT SAVED ON THIS DEVICE':'SAVE FAILED · KEEP THIS SESSION OPEN';
     $('pauseSaveStatus').classList.toggle('save-warning',!storageHealthy);
+    updateTrialLabels();$('pauseTuning')?.remove();const note=document.createElement('div');note.id='pauseTuning';note.className='tuning-summary';note.textContent=trial?'TRAINING ONLY · Campaign safe. Closing the app ends this run.':tuningSummary();$('pauseTelemetry').append(note);
+    if(trial){$('pauseTitle').textContent='EXERCISE PAUSED';$('pauseStats').textContent=TACTICAL.courses[trial.id].name+' · '+enduranceText(trial.elapsed);$('pauseSaveStatus').textContent='CAMPAIGN CHECKPOINT KEPT AT DOCK';$('pauseObjective').textContent=TACTICAL.courses[trial.id].description;}
   }
   function updateMainMenu(){
     updateCommandOverview();
@@ -2764,6 +2800,7 @@
       existing?'CAMPAIGN · '+totalRecorders()+'/20 RECORDERS · '+saved.crystals+' CRYSTALS · '+currentLevel().name:'NEW CAPTAIN · LEVEL 1 / SUNBREAK SHELF';
   }
   function returnToMenu(preserveDive){
+    if(trial){leaveTrial();return;}
     closeUpgradeDetails(false);
     resetPilotInput();
     $('modalOverlay').classList.add('hidden');$('pauseOverlay').classList.add('hidden');
@@ -2775,7 +2812,7 @@
   function showPause(){
     if(!running||!$('menuOverlay').classList.contains('hidden'))return;
     $('pauseTitle').textContent='EXPEDITION PAUSED';
-    paused=true;resetPilotInput();deepwater?.pauseReset();persist();window.AbyssAudio?.setScene('pause');
+    paused=true;resetPilotInput();if(!trial)deepwater?.pauseReset();persist();window.AbyssAudio?.setScene('pause');
     $('pauseStats').textContent=currentLevel().name+' · '+depthOf(player.y)+' m / '+safeDepth().toLocaleString('en-GB')+' m LIMIT';
     updatePauseOverview();
     $('pauseOverlay').classList.remove('hidden');
@@ -2788,13 +2825,15 @@
     if(paused)resumeDive();else showPause();
   }
   function quitDiveConfirmation(){
+    if(trial){openDialog('PROVING GROUND / EXIT','END THIS EXERCISE?','<p class="dialog-info">Your campaign is untouched. An unfinished drill earns no record or reward.</p>','<div class="dialog-actions"><button class="alt-btn" id="keepTrial">KEEP PRACTISING</button><button class="primary-btn" id="leaveTrial">RETURN TO DOCK</button></div>');$('keepTrial').onclick=closeDialog;$('leaveTrial').onclick=()=>leaveTrial();return;}
     openDialog('MISSION CONTROL // ABORT','ABANDON THIS DIVE?',
       '<p class="dialog-info">All unbanked scrap, crystals and recorders will be left in a persistent recovery pod at your position. Quitting does not grant the defeat rescue ammunition. Banked currencies, upgrades and achievements remain saved.</p>',
       '<div class="dialog-actions"><button id="cancelQuitBtn" class="alt-btn">GO BACK</button><button id="confirmQuitBtn" class="danger-btn">QUIT DIVE</button></div>');
     $('cancelQuitBtn').addEventListener('click',closeDialog);
     $('confirmQuitBtn').addEventListener('click',()=>returnToMenu(false));
   }
-  function newGameConfirmation(){openSlots(true);}
+  function newGameConfirmation(){
+    if(trial){announce('TRAINING SESSION · END THE EXERCISE TO RETURN TO CAMPAIGN',2);return;}openSlots(true);}
   function launchDive(){newDive();enterMobileCockpit();}
   function enterMobileCockpit(){
     if(touchControls){
@@ -3329,7 +3368,7 @@
       g.fillStyle=wall.gate?'#bf935f':'#64818c';g.fillRect(a.x,a.y,Math.max(1,b.x-a.x),Math.max(1,b.y-a.y));
     }
   }
-  // The Living Abyss: campaign-persistent security and local hazard simulation.
+  // Tactical Depths: campaign-persistent security and local hazard simulation.
   function nearestWreckWater(point,radius=28){
     if(wildClear(point.x,point.y,radius))return {x:point.x,y:point.y};
     for(let r=12;r<=550;r+=12)for(let i=0;i<32;i++){
@@ -3741,6 +3780,7 @@
     }
   }
   function currentAt(x,y,time=clock){
+    if(trial)return {x:0,y:0,strength:0};
     if(!environmentEnabled||y<SURFACE.y+400||y>MAX_WORLD_Y-140||Math.hypot(x-HARBOUR.x,y-HARBOUR.y)<HARBOUR.exclusionRadius+90)return {x:0,y:0,strength:0};
     // A quiet central route and the harbour remain sheltered. Even the strongest
     // current is weaker than an unmodified quiet-running engine (68 units/s).
@@ -4191,11 +4231,11 @@
   }
   function drawWildLife(){
     if(!wildEnabled)return;
-    for(const s of scene.schools||[])if(onscreen(s.x,s.y,160))for(const f of s.fish)if(onscreen(f.x,f.y,25))drawFish(s,f);
+    for(const s of scene.schools||[])if(onscreen(s.x,s.y,160))for(let i=0;i<s.fish.length;i++){const f=s.fish[i];if(distance(f,player)>420&&i%Math.round(1/TACTICAL.density()))continue;if(onscreen(f.x,f.y,25))drawFish(s,f);}
   }
   function drawWildSeabed(){
     if(!wildEnabled)return;
-    for(const b of scene.benthos||[])if(onscreen(b.x,b.y,65))drawBenthos(b);
+    for(let i=0;i<(scene.benthos||[]).length;i++){const b=scene.benthos[i];if(distance(b,player)>420&&i%Math.round(1/TACTICAL.density()))continue;if(onscreen(b.x,b.y,65))drawBenthos(b);}
     for(const v of scene.ventFields||[])if(onscreen(v.x,v.y,v.height))drawVentField(v);
     for(const m of scene.derelictMines||[])if(onscreen(m.anchorX,m.anchorY,m.tether+40))drawDerelict(m);
   }
@@ -4283,7 +4323,7 @@
   function openExplorerDialog(id){
     if(document.querySelector('#surveyDialog[open],#audioDialog[open],#telemetryDialog[open],#signalsDialog[open],#rescueDialog[open],#photoDialog[open]'))return false;
     explorerReturnPause=paused;explorerReturnFocus=document.activeElement;
-    paused=true;resetPilotInput();deepwater?.pauseReset();persist();
+    paused=true;resetPilotInput();if(!trial)deepwater?.pauseReset();persist();
     $(id).showModal();syncPauseButtons();audioFrame();return true;
   }
   function closeExplorerDialog(id){
@@ -4299,6 +4339,7 @@
     mapView.pointers.clear();mapView.drag=null;mapView.pinch=null;
   }
   function openSurvey(){
+    if(trial){announce('TRAINING SESSION · END THE EXERCISE TO RETURN TO CAMPAIGN',2);return;}
     if(!running||$('upgradeDialog').open||$('achievementsDialog').open)return;
     if(!openExplorerDialog('surveyDialog'))return;
     mapView.x=player.x;mapView.y=Math.max(100,player.y);mapView.scale=Math.min(.45,Math.max(.12,window.innerWidth/2100));
@@ -4432,14 +4473,14 @@
   function openTelemetry(){
     if(!running||!openExplorerDialog('telemetryDialog'))return;
     const rows=[['PRESSURE LIMIT',safeDepth().toLocaleString('en-GB')+' m'],['CURRENT DEPTH',depthOf(player.y).toLocaleString('en-GB')+' m'],
-      ['HULL',Math.ceil(player.hull)+' / '+maxHull()+' HP'],['EMERGENCY REPAIR',player.repairReady?'READY · +50% MAX HULL':'SPENT · SERVICE AT DOCK'],['OXYGEN',Math.ceil(player.oxygen)+' / '+maxOxygen()],['AIR REMAINING',enduranceText(player.oxygen/oxygenRate())+' min:sec'],['PROPULSION',reserveDrive()?'RESERVE · 50% SPEED':(normalSpeedAt(saved.upgrades.engine)/10).toFixed(1)+' m/s CRUISE'],['POWER',Math.ceil(player.battery)+' / '+maxBattery()],
+      ['HULL',Math.ceil(player.hull)+' / '+maxHull()+' HP'],['EMERGENCY REPAIR',player.repairReady?'READY · +50% MAX HULL':'SPENT · SERVICE AT DOCK'],['OXYGEN',Math.ceil(player.oxygen)+' / '+maxOxygen()],['AIR REMAINING',enduranceText(player.oxygen/oxygenRate())+' min:sec'],['PROPULSION',reserveDrive()?'RESERVE · 50% SPEED':(cruiseSpeed()/10).toFixed(1)+' m/s CRUISE'],['POWER',Math.ceil(player.battery)+' / '+maxBattery()],
       ['NOISE',Math.round(player.noise)+'%'],['SHIELD',shieldCapacity()?Math.ceil(player.shield)+' / '+shieldCapacity()+' HP':'NOT FITTED'],
       ['BOOST',boostUnlocked()?Math.round(player.boost/boostCapacity()*100)+'% · '+(boostCapacity()/BOOST.drain)+'s CAPACITY':'MK I THRUSTERS REQUIRED'],
       ['SONAR',player.scanCooldown>0?Math.ceil(player.scanCooldown)+'s COOLDOWN':'READY · '+scanPowerCost()+' POWER'],
       ['RAILGUN',saved.upgrades.railgun?player.weaponAmmo.railgun+' / '+WEAPONS.railgun.capacity[saved.upgrades.railgun]:'NOT FITTED'],['TORPEDOES',saved.upgrades.torpedo?player.weaponAmmo.torpedo+' / '+WEAPONS.torpedo.capacity[saved.upgrades.torpedo]:'NOT FITTED'],['MINE AMMUNITION',player.mineAmmo+' / '+mineCapacity()],['CARGO',player.cargo.scrap+' SCRAP · '+player.cargo.crystal+' CRYSTALS'+(player.cargo.plates?.length?' · '+player.cargo.plates.length+' ID PLATE':'')],
       ['RECORDERS',player.cargo.recorders.length+' ABOARD · '+saved.secured.length+'/'+RECORDERS_TOTAL+' BANKED']];
     $('telemetryBody').innerHTML='<div class="telemetry-grid">'+rows.map(([label,value])=>'<div><span>'+label+'</span><strong>'+value+'</strong></div>').join('')+'</div><p class="telemetry-target">'+$('targetInfo').textContent+'</p><p class="telemetry-save">'+(storageHealthy?'ACTIVE DIVE SAVED · RESUMES PAUSED':'STORAGE WARNING · THIS DIVE COULD NOT BE SAVED')+'</p>';
-    refreshFlashlightControl();refreshViewControl();$('telemetryClose').focus({preventScroll:true});
+    drawPresentationSettings();refreshFlashlightControl();refreshViewControl();$('telemetryClose').focus({preventScroll:true});
   }
   function refreshAudioSettings(){
     const audio=window.AbyssAudio,settings=audio?.settings()||{effects:.5,ambience:.35,muted:true};
@@ -4468,6 +4509,7 @@
   // This preserves darkness, occlusion and survey fog instead of becoming a cheat camera.
   const photoView={source:null,zoom:1,x:0,y:0,pointers:new Map(),pinch:null,saving:false};
   function openPhotoMode(){
+    if(trial){announce('TRAINING SESSION · END THE EXERCISE TO RETURN TO CAMPAIGN',2);return;}
     if(!running||showingDock||!$('menuOverlay').classList.contains('hidden'))return false;
     if($('telemetryDialog').open){explorerReturnPause=true;closeExplorerDialog('telemetryDialog');}
     if(!openExplorerDialog('photoDialog'))return false;
@@ -4726,6 +4768,7 @@
     const wildlife=document.createElement('button');wildlife.className='alt-btn';wildlife.id='wildlifeDockBtn';wildlife.textContent='WILDLIFE / OBSERVATION JOURNAL';wildlife.onclick=()=>openJournal('observations');$('dockPanel').append(wildlife);
   }
   function openJournal(tab='transmissions'){
+    if(trial){announce('TRAINING SESSION · END THE EXERCISE TO RETURN TO CAMPAIGN',2);return;}
     journalTab=tab;if(!openExplorerDialog('signalsDialog'))return;renderJournal();$('signalsClose').focus({preventScroll:true});
   }
   function renderJournal(){
@@ -4918,6 +4961,238 @@
     $('chooseImport').onclick=()=>$('importFile').click();
   }
 
+  // === Tactical Depths: dock-only configuration and isolated training sessions ===
+  let tuningDraft=null;
+  function tuningSummary(){return 'TUNING · '+(saved.tactical?.slots||[]).map(id=>TACTICAL.mods.find(m=>m.id===id)?.name.toUpperCase()||'EMPTY').join(' / ');}
+  function canTacticalRefit(){return !trial&&running&&paused&&showingDock&&distance(player,HARBOUR)<=HARBOUR.dockRadius;}
+  function tacticalValues(slots){
+    const m=TACTICAL.modifiers(slots,saved.upgrades),u=saved.upgrades;
+    return [
+      ['Hull capacity',Math.round((100+u.hull*28)*m.health)+' HP'],
+      ['Cruising speed',(normalSpeedAt(u.engine)*m.speed/10).toFixed(2)+' m/s'],
+      ['Handling response',Math.round(m.response*100)+'%'],
+      ['Cruising noise',Math.round(m.noise*100)+'% of insulated baseline'],
+      ['Boost recharge',u.engine?(BOOST.recharge*(1+u.battery*.10)*m.recharge).toFixed(2)+' charge/s':'Not fitted'],
+      ['Boost draw',u.engine?(BOOST.powerPerSecond/(1+u.battery*.12)*m.boostPower).toFixed(2)+' power/s':'Not fitted'],
+      ['Sonar echo',( (SONAR.echoSeconds+u.sonar*.45)*m.echo).toFixed(2)+' s'],
+      ['Minimum sonar cooldown',((SONAR.cooldown-u.sonar*.35)*m.sonarCooldown).toFixed(2)+' s'],
+      ['Scrap reach',(MAGNET.range[u.magnet]*m.magnetRange/10).toFixed(1)+' m'],
+      ['Remote pickup',u.magnet?(MAGNET.power[u.magnet]*m.magnetPower).toFixed(2)+' power':'Close collection only']
+    ];
+  }
+  function applyTuning(slots,accent=saved.tactical.accent){
+    if(!canTacticalRefit())return false;
+    const clean=TACTICAL.cleanSlots(slots,saved.upgrades);
+    if(JSON.stringify(clean)!==JSON.stringify(slots))return false;
+    const a=TACTICAL.accents[accent];if(!a||a.course&&saved.tactical.records[a.course]?.medal!=='gold')return false;
+    const healthFraction=player.hull/maxHull();
+    saved.tactical.slots=[...clean];saved.tactical.accent=accent;player.hull=Math.min(maxHull(),maxHull()*healthFraction);
+    combatFeedback.reset();tuningDraft=[...clean];persist();updateUI();const dockHull=$('dockBalance')?.querySelector('span:first-child b');if(dockHull)dockHull.innerHTML=Math.ceil(player.hull)+' / '+maxHull()+' <em>HP</em>';paintShipPreviews(performance.now(),true);return true;
+  }
+  function drawTuningPanel(keepDraft=false){
+    const host=document.querySelector('.shipyard');if(!host)return;
+    if(!keepDraft||!tuningDraft)tuningDraft=[...saved.tactical.slots];
+    $('tuningPanel')?.remove();
+    const options=i=>'<option value="">EMPTY / NO MODIFICATION</option>'+TACTICAL.mods.map(m=>{
+      const unlocked=TACTICAL.unlocked(m,saved.upgrades),other=tuningDraft[1-i]===m.id;
+      return `<option value="${m.id}" ${tuningDraft[i]===m.id?'selected':''} ${!unlocked||other?'disabled':''}>${m.name}${unlocked?'':' / '+UPGRADES.find(u=>u.id===m.system).name+' MK '+roman(m.mark)}</option>`;
+    }).join('');
+    const current=tacticalValues(saved.tactical.slots),future=tacticalValues(tuningDraft);
+    const dirty=JSON.stringify(saved.tactical.slots)!==JSON.stringify(tuningDraft);
+    const section=document.createElement('section');section.id='tuningPanel';section.className='tactical-panel';
+    section.innerHTML=`<header class="tactical-heading"><div><span class="shipyard-eyebrow">TWO SLOTS / REAL TRADE-OFFS</span><h3>SHIP TUNING</h3></div><span class="tactical-tag">FREE REFIT</span></header>
+      <p class="tactical-copy">Unlocked by your existing upgrades. Preview two different modifications, then fit them at the physical dock. No crystals, new purchases or extra controls.</p>
+      <div class="tuning-slots">${[0,1].map(i=>`<label>SLOT ${i+1}<select id="tuningSlot${i}">${options(i)}</select></label>`).join('')}</div>
+      <div class="tuning-modules">${TACTICAL.mods.map(m=>`<article class="tuning-module ${TACTICAL.unlocked(m,saved.upgrades)?'':'is-locked'} ${tuningDraft.includes(m.id)?'is-selected':''}"><div><span>${m.tag}</span><b>${m.name}</b></div><p class="tuning-benefit">${m.benefit}</p><p class="tuning-cost">${m.cost}</p><small>${TACTICAL.unlocked(m,saved.upgrades)?'AVAILABLE':UPGRADES.find(u=>u.id===m.system).name+' MK '+roman(m.mark)+' REQUIRED'}</small></article>`).join('')}</div>
+      <div class="tuning-compare"><div class="compare-label"><span>FITTED / PREVIEW</span><b>ACTUAL VESSEL VALUES</b></div>${current.map(([key,value],i)=>`<div class="tuning-stat ${value!==future[i][1]?'is-changed':''}"><span>${key}</span><b>${value}</b><em>${future[i][1]}</em></div>`).join('')}</div>
+      <p class="tactical-footnote">Actual scan cooldown also accounts for screen coverage. Survey Processor multiplies that complete cooldown. Quiet Propulsion does not quiet or slow boost. Crystals are never magnetised.</p>
+      <div class="tactical-buttons"><button id="applyTuning" class="primary-btn" ${dirty?'':'disabled'}>FIT CONFIGURATION</button><button id="resetTuning" class="alt-btn">CLEAR PREVIEW</button></div>
+      <label class="tuning-accent">EARNED ACCENT<select id="tacticalAccent">${Object.entries(TACTICAL.accents).map(([id,a])=>`<option value="${id}" ${saved.tactical.accent===id?'selected':''} ${a.course&&saved.tactical.records[a.course]?.medal!=='gold'?'disabled':''}>${a.name}${a.course&&saved.tactical.records[a.course]?.medal!=='gold'?' / GOLD '+TACTICAL.courses[a.course].name.toUpperCase():''}</option>`).join('')}</select></label>
+      <header class="tactical-heading preset-heading"><div><span class="shipyard-eyebrow">TUNING + FINISH + ACCENT</span><h3>THREE CONFIGURATIONS</h3></div></header>
+      <p class="tactical-copy">Save the currently fitted configuration, not an unconfirmed preview. Loading changes no ammunition or campaign slot.</p>
+      <div class="tuning-presets">${[0,1,2].map(i=>{const p=saved.tactical.presets[i];return `<article><span class="preset-index">0${i+1}</span><label class="sr-only" for="presetName${i}">Configuration ${i+1} name</label><input id="presetName${i}" maxlength="28" value="${escapeHTML(p?.name||'')}" placeholder="Name your configuration"><small>${p?p.slots.map(id=>TACTICAL.mods.find(m=>m.id===id)?.name||'Empty').join(' / '):'No configuration saved'}</small><div><button class="alt-btn" data-save-preset="${i}">${p?'REPLACE':'SAVE FITTED'}</button><button class="alt-btn" data-load-preset="${i}" ${p?'':'disabled'}>LOAD</button></div></article>`;}).join('')}</div><p id="tuningMessage" class="tactical-message" role="status"></p>`;
+    host.append(section);
+    [0,1].forEach(i=>$('tuningSlot'+i).onchange=e=>{tuningDraft[i]=e.target.value||null;drawTuningPanel(true);$('tuningSlot'+i).focus({preventScroll:true});});
+    $('applyTuning').onclick=()=>{if(applyTuning(tuningDraft)){drawShipyard();$('tuningMessage').textContent='Configuration fitted. Ammunition and repair charge unchanged.';}};
+    $('resetTuning').onclick=()=>{tuningDraft=[null,null];drawTuningPanel(true);};
+    $('tacticalAccent').onchange=e=>{if(applyTuning(saved.tactical.slots,e.target.value)){$('tuningMessage').textContent='Cosmetic accent fitted.';paintShipPreviews(performance.now(),true);}};
+    section.querySelectorAll('[data-save-preset]').forEach(b=>b.onclick=()=>{
+      if(!canTacticalRefit())return;const i=Number(b.dataset.savePreset),name=$('presetName'+i).value.trim().slice(0,28)||'Configuration '+(i+1);
+      saved.tactical.presets[i]={name,slots:[...saved.tactical.slots],finish:fittedFinish(),accent:saved.tactical.accent};persist();drawTuningPanel(true);$('tuningMessage').textContent='Saved fitted configuration: '+name;
+    });
+    section.querySelectorAll('[data-load-preset]').forEach(b=>b.onclick=()=>{
+      const p=saved.tactical.presets[Number(b.dataset.loadPreset)];if(!p||!canTacticalRefit())return;
+      if(!applyTuning(p.slots,p.accent)){$('tuningMessage').textContent='This configuration needs equipment or a reward you have not unlocked.';return;}
+      applyShipyardFinish(p.finish);drawShipyard();$('tuningMessage').textContent='Loaded '+p.name+'. No ammunition or resources granted.';
+    });
+  }
+  function drawCombatInstruments(){
+    combatFeedback.drawInstruments(ctx,clock,player,camera,p=>onscreen(p.x,p.y,60)&&(ambientLightAt(p.y)>.08||beamIntersects(p.x,p.y,20)||scene.predators.some(e=>e.revealUntil>clock&&distance(e,p)<35)));
+  }
+  function dryFire(kind){
+    if(clock-lastDryFire<.45)return;lastDryFire=clock;
+    window.AbyssAudio?.event('dryFire');
+    const id=kind==='railgun'?'mobileRail':kind==='torpedo'?'mobileTorpedo':'mobileMine',el=$(id);
+    el.classList.remove('dry-fire');void el.offsetWidth;el.classList.add('dry-fire');setTimeout(()=>el.classList.remove('dry-fire'),300);
+  }
+  function drawPresentationSettings(){
+    const s=TACTICAL.settings(),host=$('telemetryBody'),box=document.createElement('section');box.className='presentation-settings';
+    box.innerHTML=`<span class="shipyard-eyebrow">COMBAT PRESENTATION / THIS DEVICE</span><label class="setting-check"><input type="checkbox" id="combatNumbers" ${s.numbers?'checked':''}> Show damage numbers</label><label>CAMERA IMPULSE <strong id="shakeValue">${Math.round(s.shake*100)}%</strong><input id="combatShake" type="range" min="0" max="100" value="${Math.round(s.shake*100)}"></label><label>DECORATIVE EFFECTS<select id="effectsDensity"><option value="full">Full</option><option value="balanced">Balanced</option><option value="low">Low</option></select></label><p>Reduced decoration never hides enemies, pickups, trap warnings or sonar contacts. Camera impulse defaults off when reduced motion is requested.</p><span id="presentationStatus" role="status"></span>`;
+    host.append(box);$('effectsDensity').value=s.density;
+    const save=()=>{const okay=TACTICAL.setSettings({numbers:$('combatNumbers').checked,shake:Number($('combatShake').value)/100,density:$('effectsDensity').value});$('shakeValue').textContent=$('combatShake').value+'%';$('presentationStatus').textContent=okay?'Preferences saved on this device.':'Preferences apply now, but device storage is unavailable.';};
+    $('combatNumbers').onchange=save;$('combatShake').oninput=save;$('effectsDensity').onchange=save;
+  }
+  function drawTrialsDock(){
+    const records=saved.tactical.records;
+    $('dockPanel').innerHTML=`<section class="trials-board"><header class="tactical-heading"><div><span class="shipyard-eyebrow">NEREID / SIMULATION POOL</span><h3>THE PROVING GROUND</h3></div><span class="tactical-tag">CAMPAIGN SAFE</span></header><p class="tactical-copy">Three scored drills with identical loaned equipment for every captain. No currency, cargo, repair-charge or ammunition changes. Pause any time. Reloading ends a run without a score.</p>
+      <div class="trial-cards">${Object.entries(TACTICAL.courses).map(([id,c])=>{const r=records[id];return `<article class="trial-card ${id==='practice'?'practice-card':''}"><span>${c.tag}</span><h3>${c.name}</h3><p>${c.description}</p><div class="trial-best"><b>${r?r.medal.toUpperCase()+' / '+r.score:'NO RECORD'}</b><small>${id==='practice'?'Unscored / current equipment':c.reward+' accent at gold'}</small></div><button class="primary-btn" data-trial="${id}">${id==='practice'?'ENTER PRACTICE':'BEGIN DRILL'} <span>↗</span></button></article>`;}).join('')}</div>
+      <details class="trial-rules"><summary>Loaned ship and scoring</summary><p>Ranked drills: Hull IV, Thrusters III, Recycler IV, Battery IV, Sonar II, Railgun III, Torpedo III, Mine Warheads III, Rack III, Shield II and Disruptor I. No tuning. 24 rail rounds, 6 torpedoes, 6 mines, one repair. Oxygen stays full. Power and cooldowns behave normally.</p><p>Precision: 1,000 minus 7 points per elapsed second and 35 per collision. Weapons: 1,000 minus 4 points per second and 6 per round fired. Survival: 350 plus up to 400 for remaining hull, plus 20 per target destroyed, minus 60 if repaired. Bronze 250, silver 500, gold 750. Complete the objective before a score counts.</p><p>Free practice loans full magazines for your fitted weapons and keeps your current tuning. USE at the cyan pad restores this simulated vessel. Nothing can be taken back to the campaign.</p></details></section>`;
+    $('dockPanel').querySelectorAll('[data-trial]').forEach(b=>b.onclick=()=>startTrial(b.dataset.trial));
+  }
+  function trainingRock(x,y,w,h){return {x,y,radius:Math.hypot(w,h)/2,vertices:[{x:x-w/2,y:y-h/2},{x:x+w/2,y:y-h/2},{x:x+w/2,y:y+h/2},{x:x-w/2,y:y+h/2}],training:true};}
+  function startTrial(id){
+    if(!TACTICAL.courses[id]||!canTacticalRefit())return false;
+    if(!persist()){announce('SAVE FAILED · TRAINING NOT STARTED',3);return false;}
+    resetPilotInput();closeUpgradeDetails(false);
+    const backup={saved,scene,player,field,campaignLevels,signals,giants,livingState,giantSite,giantWallCache,clock,camera,MAX_WORLD_Y,loadedActive,dockVisitActive,sonarWaves,sonarTerrainEchoes,surfaceEffects,eventLines,pickupNotices,idCounter,boostVisual,environmentEnabled,surveyCells,surveyThreats,saveRequested};
+    const service={x:600,y:id==='precision'?800:2050};
+    trial={id,elapsed:0,shots:0,kills:0,repairs:0,collisions:0,hits:0,gates:0,wave:0,done:false,backup,service,bounds:{left:-350,right:1550,top:600,bottom:3000},nextRespawn:0};
+    saved=structuredClone(saved);field=structuredClone(field);campaignLevels={[LEVEL_ID]:field};signals=structuredClone(signals);giants=structuredClone(giants);livingState=structuredClone(livingState);
+    if(id!=='practice'){
+      saved.upgrades={...saved.upgrades,hull:4,engine:3,oxygen:4,battery:4,sonar:2,quiet:2,flashlight:3,railgun:3,torpedo:3,minePower:3,mineCapacity:3,shield:2,disruptor:1,magnet:0};saved.tactical.slots=[null,null];
+    }
+    player=structuredClone(player);scene=Object.fromEntries(Object.keys(scene).map(k=>[k,Array.isArray(scene[k])?[]:scene[k]]));
+    for(const k of ['items','predators','rocks','mines','blasts','projectiles','dust','vents','wrecks','schools','benthos','derelictMines','ventFields','landmarks','signals','giantObjects','rescueObjects','livingCreatures'])scene[k]=[];
+    giantSite=null;giantWallCache=[];environmentEnabled=false;MAX_WORLD_Y=3000;clock=0;idCounter=900000;sonarWaves=[];sonarTerrainEchoes=[];surfaceEffects=[];eventLines=[];pickupNotices=[];surveyCells=new Set();surveyThreats=[];loadedActive=null;saveRequested=false;boostVisual=0;
+    Object.assign(player,{x:service.x,y:service.y,previousX:service.x,previousY:service.y,vx:0,vy:0,facing:id==='precision'?Math.PI/2:-Math.PI/2,airborne:false,hull:maxHull(),oxygen:maxOxygen(),battery:maxBattery(),noise:0,lights:true,damageCooldown:0,scanCooldown:0,mineCooldown:0,weaponCooldown:{railgun:0,torpedo:0},damageFlashUntil:0,nextDamageFlash:0,repairReady:true,cargo:{scrap:0,crystal:0,recorders:[],plates:[]},trip:{deepest:0,hullDamage:0},kills:0});
+    for(const k of ['railgun','torpedo'])player.weaponAmmo[k]=saved.upgrades[k]?WEAPONS[k].capacity[saved.upgrades[k]]:0;
+    player.mineAmmo=saved.upgrades.minePower?mineCapacity():0;saved.weaponAmmo={...player.weaponAmmo};saved.mineAmmo=player.mineAmmo;resetBoost();resetShield();beamTexture=buildBeamTexture();combatFeedback.reset();lastDryFire=-100;
+    scene.rocks.push(trainingRock(600,585,1900,30));
+    if(id==='precision'){
+      trial.route=[{x:600,y:1020},{x:190,y:1220},{x:960,y:1440},{x:210,y:1690},{x:1020,y:1950},{x:390,y:2200},{x:1100,y:2450},{x:600,y:2760}];
+      scene.rocks.push(trainingRock(650,1220,470,35),trainingRock(240,1470,340,35),trainingRock(765,1710,450,35),trainingRock(140,1980,400,35),trainingRock(1020,2220,420,35));
+      const moving=trainingRock(600,2520,70,70);moving.sweep=true;scene.rocks.push(moving);
+    }else{
+      scene.rocks.push(trainingRock(235,1530,230,80),trainingRock(950,1270,80,240),trainingRock(590,2450,240,65));
+      if(id==='weapons'||id==='practice')spawnTrialTargets(false);else spawnTrialWave();
+    }
+    camera={x:player.x-viewport.w/2,y:player.y-viewport.h*.52};running=true;paused=false;showingDock=false;
+    $('modalOverlay').classList.add('hidden');$('pauseOverlay').classList.add('hidden');$('menuOverlay').classList.add('hidden');document.body.classList.add('trial-active');
+    $('trialBanner').classList.remove('hidden');$('interactionPrompt').classList.add('hidden');$('waypointHint').classList.add('hidden');
+    enterMobileCockpit();syncPauseButtons();updateUI();updateTrialBanner();announce(TACTICAL.courses[id].name.toUpperCase()+' · LOANED EQUIPMENT',2.5);canvas.focus({preventScroll:true});audioFrame();return true;
+  }
+  function makeTrialTarget(x,y,index,attack=false){
+    const tier=attack&&index%3===2?'apex':'common';
+    const e=createPredator({id:'training-'+idCounter++,x,y,vx:0,vy:0,previousX:x,previousY:y,homeX:x,homeY:y,tier,phase:index*.9,aggression:attack?1:0,lastHit:-100,alertUntil:0,forgetUntil:0,training:true,attack,index});
+    e.health=e.maxHealth=attack?(tier==='apex'?130:90):70;e.patrolX=x;e.patrolY=y;return e;
+  }
+  function spawnTrialTargets(replace=false){
+    if(replace)scene.predators=[];
+    for(let i=0;i<9;i++){const x=220+(i%3)*350,y=950+Math.floor(i/3)*285;scene.predators.push(makeTrialTarget(x,y,i));}
+  }
+  function spawnTrialWave(){
+    const w=trial.wave++;for(let i=0;i<3+w;i++){
+      const x=i%2?-180:1380,y=850+(i*370+w*170)%1700;
+      scene.predators.push(makeTrialTarget(x,y,i+w,true));
+    }
+    announce('SIMULATION WAVE '+trial.wave+' / 3',1.4);
+  }
+  function damageTrialTarget(enemy,amount,source){
+    if(!trial||trial.done)return;enemy.health=Math.max(0,enemy.health-amount);enemy.lastDamaged=clock;trial.hits++;
+    if(enemy.health===0&&!enemy.dead){enemy.dead=true;enemy.aggression=0;trial.kills++;scene.blasts.push({x:enemy.x,y:enemy.y,birth:clock,radius:34,weapon:'railgun'});}
+  }
+  function servicePractice(){
+    if(!trial||trial.id!=='practice'||paused)return;
+    player.hull=maxHull();player.battery=maxBattery();player.repairReady=true;resetShield();resetBoost();
+    for(const k of ['railgun','torpedo'])player.weaponAmmo[k]=saved.upgrades[k]?WEAPONS[k].capacity[saved.upgrades[k]]:0;
+    player.mineAmmo=saved.upgrades.minePower?mineCapacity():0;saved.weaponAmmo={...player.weaponAmmo};saved.mineAmmo=player.mineAmmo;
+    announce('SIMULATED SYSTEMS RESTORED · CAMPAIGN UNCHANGED',1.5);updateUI();
+  }
+  function updateTrialLabels(){
+    const label=(id,text)=>{const b=$(id)?.querySelector('.nav-label');if(b)b.textContent=text;};
+    label('pauseMenuBtn',trial?'Return to dock':'Main menu');
+    const b=$('quitBtn');if(b){const title=b.querySelector('.nav-label');if(title)title.textContent=trial?'End exercise':'Abandon dive';const small=b.parentElement.querySelector('small');if(small)small.textContent=trial?'Campaign untouched. Unfinished runs earn no record.':'Unbanked cargo stays in a recovery pod.';}
+  }
+  function updateTrialBanner(){
+    if(!trial)return;const c=TACTICAL.courses[trial.id],goal=trial.id==='precision'?trial.gates+' / 8 GATES':trial.id==='weapons'?trial.kills+' / 9 TARGETS':trial.id==='survival'?'WAVE '+trial.wave+' / 3':'USE AT PAD TO RESUPPLY';
+    $('trialBanner').textContent=c.name.toUpperCase()+' · '+enduranceText(trial.elapsed)+' · '+goal;
+    $('coordsText').textContent='PROVING GROUND / '+(trial.id==='practice'?'YOUR BUILD':'STANDARD LOAN');$('statusStat').textContent='CAMPAIGN SAFE';
+    $('targetInfo').textContent='SIMULATOR · '+goal;$('waypointHint').classList.add('hidden');
+  }
+  function updateTrial(dt){
+    if(!trial||trial.done)return;
+    trial.elapsed+=dt;
+    // Shared ship movement has already run. These exercise boundaries are solid.
+    if(player.y<650){player.y=650;player.vy=Math.max(0,player.vy);}player.airborne=false;
+    player.oxygen=maxOxygen();player.battery=Math.max(0,player.battery-dt*(ENERGY.idlePerSecond+ENERGY.thrustPerSecond+ (headlightsActive()?flashlightPowerRate():0)));
+    updateShield(dt);
+    if(trial.id==='precision'){
+      const moving=scene.rocks.find(r=>r.sweep);if(moving){const x=600+Math.sin(trial.elapsed*1.2)*360;const next=trainingRock(x,2520,70,70);Object.assign(moving,next,{sweep:true});if(resolveWorldCollision()>0)takeDamage(4,'Rock impact');}
+      const gate=trial.route[trial.gates];if(gate){const q=segmentClosest(gate.x,gate.y,{x:player.previousX,y:player.previousY},player);if(distance(q,gate)<55){trial.gates++;window.AbyssAudio?.event('trialGate');}}
+    }
+    if(trial.id==='survival'&&trial.wave<3&&trial.elapsed>=trial.wave*25)spawnTrialWave();
+    for(const e of scene.predators){
+      if(!predatorAlive(e))continue;e.previousX=e.x;e.previousY=e.y;
+      if((e.stunnedUntil||0)>clock){e.vx=e.vy=0;continue;}
+      let tx,ty,speed;
+      if(e.attack){tx=player.x;ty=player.y;speed=e.tier==='apex'?125:90;}
+      else{tx=e.homeX+Math.sin(trial.elapsed*.75+e.phase)*100;ty=e.homeY+Math.cos(trial.elapsed*.55+e.phase)*50;speed=75;}
+      const intent=navigatePredator(e,{x:tx,y:ty,speed}),d=Math.hypot(intent.x-e.x,intent.y-e.y)||1;
+      e.vx=lerp(e.vx,(intent.x-e.x)/d*speed,1-Math.exp(-dt*3));e.vy=lerp(e.vy,(intent.y-e.y)/d*speed,1-Math.exp(-dt*3));e.x+=e.vx*dt;e.y+=e.vy*dt;
+      e.x=clamp(e.x,trial.bounds.left+40,trial.bounds.right-40);e.y=clamp(e.y,660,MAX_WORLD_Y-40);resolvePredatorWreckCollision(e);
+    }
+    updateSonar();updateMines(dt);
+    if(railHeld||keys.has('z'))fireWeapon('railgun',true);updateProjectiles(dt);
+    for(const e of scene.predators)if(e.attack&&predatorAlive(e)&&(e.stunnedUntil||0)<=clock&&distance(e,player)<37&&clock-e.lastHit>1.8&&guidanceLineClear(e,player,0)){
+      e.lastHit=clock;takeDamage(e.tier==='apex'?18:12,'Training impact',false,e);if(trial.done)return;
+    }
+    if(trial.id==='precision'&&trial.gates>=8)finishTrial(true,'COURSE COMPLETE');
+    else if(trial.id==='weapons'&&trial.kills>=9)finishTrial(true,'ALL TARGETS CLEARED');
+    else if(trial.id==='survival'&&trial.elapsed>=90)finishTrial(true,'SURVIVAL COMPLETE');
+    else if(TACTICAL.courses[trial.id].limit&&trial.elapsed>=TACTICAL.courses[trial.id].limit)finishTrial(false,'TIME LIMIT REACHED');
+    if(trial.id==='practice'&&!scene.predators.some(predatorAlive)){if(!trial.nextRespawn)trial.nextRespawn=clock+3;if(clock>=trial.nextRespawn){spawnTrialTargets(true);trial.nextRespawn=0;}}
+    camera.x=lerp(camera.x,player.x-viewport.w/2,Math.min(1,dt*3.4));camera.y=lerp(camera.y,player.y-viewport.h*.52,Math.min(1,dt*3.4));
+    if(clock>toastUntil)$('notification').classList.add('hidden');uiTimer+=dt;if(uiTimer>.13){uiTimer=0;updateUI();}updateTrialBanner();
+  }
+  function finishTrial(complete,reason){
+    if(!trial||trial.done)return;trial.done=true;paused=true;resetPilotInput();
+    trial.result=TACTICAL.result(trial.id,{...trial,hull:player.hull,maxHull:maxHull(),complete});
+    const c=TACTICAL.courses[trial.id],r=trial.result;
+    openDialog('PROVING GROUND / SIMULATION COMPLETE',reason,`<div class="trial-result"><div class="trial-medal ${r.medal}">${r.medal==='unrated'?'PRACTICE':r.medal.toUpperCase()}</div><h3>${c.name}</h3><strong>${r.score}<small> / 1,000</small></strong><div class="trial-result-stats"><span>${enduranceText(trial.elapsed)}<small>ELAPSED</small></span><span>${trial.shots}<small>ROUNDS USED</small></span><span>${trial.collisions}<small>IMPACTS</small></span></div><p>${r.medal==='gold'?c.reward+' cosmetic accent earned. ':''}Return to the dock to save a completed result. Campaign cargo, ammunition and health are unchanged.</p></div>`, '<div class="dialog-actions"><button class="alt-btn" id="retryTrial">RETRY EXERCISE</button><button class="primary-btn" id="finishTrial">RETURN TO DOCK</button></div>');
+    dialogReturnPause=true;$('retryTrial').onclick=()=>{const id=trial.id;leaveTrial();startTrial(id);};$('finishTrial').onclick=()=>leaveTrial();window.AbyssAudio?.event('trialFinish',0,1,true);
+  }
+  function leaveTrial(){
+    if(!trial)return false;
+    const t=trial,b=t.backup;resetPilotInput();
+    saved=b.saved;scene=b.scene;player=b.player;field=b.field;campaignLevels=b.campaignLevels;signals=b.signals;giants=b.giants;livingState=b.livingState;giantSite=b.giantSite;giantWallCache=b.giantWallCache;clock=b.clock;camera=b.camera;MAX_WORLD_Y=b.MAX_WORLD_Y;loadedActive=b.loadedActive;dockVisitActive=b.dockVisitActive;sonarWaves=b.sonarWaves;sonarTerrainEchoes=b.sonarTerrainEchoes;surfaceEffects=b.surfaceEffects;eventLines=b.eventLines;pickupNotices=b.pickupNotices;idCounter=b.idCounter;boostVisual=b.boostVisual;environmentEnabled=b.environmentEnabled;surveyCells=b.surveyCells;surveyThreats=b.surveyThreats;saveRequested=b.saveRequested;
+    trial=null;running=true;paused=true;showingDock=true;beamTexture=buildBeamTexture();combatFeedback.reset();lastDryFire=-100;updateTrialLabels();
+    if(t.result?.complete&&t.id!=='practice'){
+      const old=saved.tactical.records[t.id],r=t.result;
+      saved.tactical.records[t.id]={...(old&&old.score>=r.score?old:{score:r.score,medal:r.medal,seconds:r.seconds,date:new Date().toISOString()}),attempts:(old?.attempts||0)+1};
+    }
+    $('trialBanner').classList.add('hidden');document.body.classList.remove('trial-active');$('pauseOverlay').classList.add('hidden');$('menuOverlay').classList.add('hidden');persist();showDock('trials');updateUI();render();return true;
+  }
+  function renderTrial(){
+    if(!player)return;const W=viewport.w,H=viewport.h;
+    ctx.clearRect(0,0,W,H);ctx.fillStyle='#061b29';ctx.fillRect(0,0,W,H);ctx.save();const impulse=paused?{x:0,y:0}:combatFeedback.offset(clock);ctx.translate(-camera.x+impulse.x,-camera.y+impulse.y);
+    ctx.strokeStyle='#17414b';ctx.lineWidth=.6;
+    for(let x=Math.floor(camera.x/100)*100;x<camera.x+W;x+=100){ctx.beginPath();ctx.moveTo(x,camera.y);ctx.lineTo(x,camera.y+H);ctx.stroke();}
+    for(let y=Math.floor(camera.y/100)*100;y<camera.y+H;y+=100){ctx.beginPath();ctx.moveTo(camera.x,y);ctx.lineTo(camera.x+W,y);ctx.stroke();}
+    ctx.strokeStyle='#4b949f';ctx.lineWidth=4;ctx.strokeRect(trial.bounds.left,600,1900,2400);
+    for(const r of scene.rocks){ctx.beginPath();r.vertices.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=r.sweep?'#513c35':'#153340';ctx.fill();ctx.strokeStyle=r.sweep?'#ffbd7a':'#6c8e9b';ctx.lineWidth=2;ctx.stroke();}
+    const pad=trial.service;ctx.save();ctx.translate(pad.x,pad.y);ctx.strokeStyle='#79dacd';ctx.lineWidth=1.5;ctx.setLineDash([6,6]);ctx.beginPath();ctx.arc(0,0,75,0,TAU);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#9edbd5';ctx.textAlign='center';ctx.font='10px monospace';ctx.fillText(trial.id==='practice'?'USE / SIMULATED SERVICE':'LAUNCH PAD',0,95);ctx.restore();
+    if(trial.route)trial.route.forEach((p,i)=>{
+      ctx.save();ctx.translate(p.x,p.y);ctx.strokeStyle=i<trial.gates?'#4c7e7a':i===trial.gates?'#9cffe2':'#486673';ctx.lineWidth=i===trial.gates?3:1;ctx.setLineDash(i===trial.gates?[]:[8,7]);ctx.beginPath();ctx.arc(0,0,55,0,TAU);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=i===trial.gates?'#c5ffee':'#71949c';ctx.font='bold 14px monospace';ctx.textAlign='center';ctx.fillText(String(i+1).padStart(2,'0'),0,5);ctx.restore();
+    });
+    for(const e of scene.predators)if(predatorAlive(e)&&onscreen(e.x,e.y,70)){
+      ctx.save();ctx.translate(e.x,e.y);ctx.rotate(e.attack?Math.atan2(e.vy,e.vx):clock*.15+e.phase);const hit=clock-(e.visualHitAt??-100);if(hit<.2)ctx.translate(Math.sin(hit*75)*3*(1-hit/.2),0);ctx.strokeStyle=e.attack?'#efb28f':'#88dcea';ctx.fillStyle=e.attack?'#54342e':'#184052';ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(22,0);ctx.lineTo(8,-16);ctx.lineTo(-18,-12);ctx.lineTo(-22,0);ctx.lineTo(-18,12);ctx.lineTo(8,16);ctx.closePath();ctx.fill();ctx.stroke();ctx.beginPath();ctx.arc(0,0,7,0,TAU);ctx.stroke();ctx.restore();drawPredatorHealth(e);
+    }
+    if(headlightsActive())drawLightBeam();for(const m of scene.mines)drawMine(m);drawProjectiles();for(const blast of scene.blasts)drawMineBlast(blast);for(const wave of sonarWaves)drawWave(wave);drawPlayer();combatFeedback.drawWorld(ctx,clock);ctx.restore();
+    if(player.damageFlashUntil>clock){ctx.save();ctx.translate(-camera.x,-camera.y);drawDamageFlash();ctx.restore();}
+    drawTargetIndicators();drawCombatInstruments();drawMouseTarget();
+    if(trial.route?.[trial.gates]){const p=trial.route[trial.gates],dx=p.x-player.x,dy=p.y-player.y,d=Math.hypot(dx,dy)||1;ctx.save();ctx.translate(player.x-camera.x,player.y-camera.y);ctx.rotate(Math.atan2(dy,dx));ctx.strokeStyle='#b3fbe1';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(65,-6);ctx.lineTo(75,0);ctx.lineTo(65,6);ctx.stroke();ctx.restore();}
+  }
+
   function audioFrame(){
     const audio=window.AbyssAudio;if(!audio)return;
     if(document.hidden){if(audio.status().state==='running')audio.suspend();return;}
@@ -4952,7 +5227,7 @@
     field:()=>field,levels:()=>campaignLevels,levelId:()=>LEVEL_ID,levelIndex:()=>LEVELS.findIndex(l=>l.id===LEVEL_ID),levelDefinitions:()=>LEVELS,
     player:()=>player,profile:()=>saved,signals:()=>signals,objects:()=>scene.rescueObjects||[],setObjects:o=>{scene.rescueObjects=o;},
     random:randGen,lane:laneAt,left:leftAt,right:rightAt,bottom:()=>MAX_WORLD_Y,harbour:()=>HARBOUR,inHarbour,depth:depthOf,
-    safeDepth,maxOxygen,normalSpeed:()=>normalSpeedAt(saved.upgrades.engine),clear:wildClear,line:guidanceLineClear,
+    safeDepth,maxOxygen,normalSpeed:()=>cruiseSpeed(),clear:wildClear,line:guidanceLineClear,
     route:(d,t)=>planPredatorRoute({...d,rescueDrone:true},t),
     exclusions:()=>[...scene.items,...scene.wrecks,...(scene.derelictMines||[]).filter(m=>!m.detonated),...(scene.ventFields||[]),...(signals.warden.site?[{...signals.warden.site,radius:WARDEN.radius+80}]:[])],
     landmarks:()=>[...(scene.landmarks||[]),...(scene.giantObjects||[]).filter(o=>o.kind==='panel')],
@@ -4983,6 +5258,12 @@
   // Tiny inspection hook for automated smoke tests.
   window.AbyssDiagnostics={state:()=>({repairReady:player.repairReady,viewZoom,pinching:Boolean(playPinch),pinchLocked,slot:window.AbyssSlots.active,campaignTitle,weaponAmmo:{...player.weaponAmmo},weaponCooldown:{...player.weaponCooldown},damageFlashing:player.damageFlashUntil>clock,projectiles:scene.projectiles?.length||0,airborne:Boolean(player.airborne),dockSafe:inHarbour(player),surfaceY:SURFACE.y,splashCount:surfaceEffects.length,version:BUILD.version,versionName:BUILD.name,buildId:BUILD.id,shield:player.shield,shieldCapacity:shieldCapacity(),shieldDelay:player.shieldDelay,magnetRange:magnetRange(),magnetPower:magnetPower(),disruptorMark:saved.upgrades.disruptor,scanPowerCost:scanPowerCost(),upgradeOpen:$('upgradeDialog').open,storageHealthy,campaignId,levelId:LEVEL_ID,levelName:currentLevel().name,crystals:saved.crystals,totalRecorders:totalRecorders(),achievements:ACHIEVEMENTS.filter(a=>saved.achievements[a.id]).length,recoveryPods:field.recoveries.length,levelComplete:levelComplete(LEVEL_ID),boostCapacity:boostCapacity(),boostUnlocked:boostUnlocked(),boostMultiplier:boostMultiplier(),boostSeconds:boostCapacity()/BOOST.drain,joystickVisible:$('mobileJoystick').classList.contains('engaged'),zoom:viewport.zoom,flashlightMark:saved.upgrades.flashlight,flashlightLength:flashlightSpec().length,flashlightAngle:flashlightSpec().halfAngle*360/Math.PI,flashlightPowerRate:flashlightPowerRate(),worldWidth:widthAt(player.y)*2,populationCycle:field.cycle,mineAmmo:player.mineAmmo,mineCapacity:mineCapacity(),minePower:saved.upgrades.minePower,mineCapacityMark:saved.upgrades.mineCapacity,mineDamage:mineDamage(),mineCooldown:player.mineCooldown,deployedMines:scene.mines.length,kills:player.kills,normalSpeed:normalSpeedAt(saved.upgrades.engine),maxNormalSpeed:normalSpeedAt(THRUST.maxMark),ambientLight:ambientLightAt(player.y),blackoutDepth:LIGHTING.blackoutDepth,lights:player.lights,headlightsActive:headlightsActive(),recorderDepths:[...RECORDER_DEPTHS],maxWorldDepth:depthOf(MAX_WORLD_Y),safeDepth:safeDepth(),inputMode:touchControls?'touch':'desktop',vesselLabel:vesselLabel(),boost:player.boost,boosting:player.boosting,boostLocked:player.boostLocked,boostNeedsRelease:player.boostNeedsRelease,boostRechargeDelay:player.boostRechargeDelay,boostPowerRate:boostPowerRate(),boostRechargeRate:boostRechargeRate(),scanCooldown:player.scanCooldown,sonarCost:sonarCost(),mouseHeld:mouseHelm.pointerId!==null,boostHeld,facing:player.facing,hullLevel:saved.upgrades.hull,maxHull:maxHull(),focusMode,running,hasSavedDive:Boolean(loadedActive),lastSaveWall,paused,menuOpen:!$('menuOverlay').classList.contains('hidden'),pauseOpen:!$('pauseOverlay').classList.contains('hidden'),depth:depthOf(player.y),x:player.x,y:player.y,vx:player.vx,vy:player.vy,hull:player.hull,battery:player.battery,oxygen:player.oxygen,credits:saved.credits,secured:saved.secured.length,items:scene.items.length,rocks:scene.rocks.length,predators:scene.predators.length,apexCount:scene.predators.filter(e=>e.tier==='apex').length,commonCount:scene.predators.filter(e=>e.tier==='common').length,reaperCount:scene.predators.filter(e=>e.tier==='reaper').length,pursuing:scene.predators.filter(e=>e.aggression>.13).length,nearestPredatorDistance:Math.min(Infinity,...scene.predators.map(e=>distance(player,e))),useHeld,joystickX:joystick.x,joystickY:joystick.y,noise:player.noise})};
   if(location.search.includes('testmode=1')||window.ABYSS_TEST_MODE===true){
+    window.AbyssDiagnostics.tactical=()=>({state:structuredClone(saved.tactical),modifiers:tuning(),values:tacticalValues(saved.tactical.slots),cruiseSpeed:cruiseSpeed(),settings:TACTICAL.settings(),feedback:combatFeedback.debug(),trial:trial?{id:trial.id,elapsed:trial.elapsed,shots:trial.shots,kills:trial.kills,collisions:trial.collisions,gates:trial.gates,route:trial.route,done:trial.done,result:trial.result}:null});
+    window.AbyssDiagnostics.fitTuning=slots=>applyTuning(slots);
+    window.AbyssDiagnostics.startTrial=startTrial;
+    window.AbyssDiagnostics.leaveTrial=leaveTrial;
+    window.AbyssDiagnostics.finishTrial=(complete=true)=>finishTrial(complete,'TEST COMPLETION');
+    window.AbyssDiagnostics.trialFixture=v=>{if(trial)for(const k of ['elapsed','shots','collisions','kills','repairs','gates'])if(Number.isFinite(v[k]))trial[k]=v[k];};
     window.AbyssDiagnostics.ecology=()=>({state:living.state(),sky:living.sky(),creatures:JSON.parse(JSON.stringify(living.creatures())),rules:living.rules()});
     window.AbyssDiagnostics.ecologyFixture=values=>{living.fixture(values);render();};
     window.AbyssDiagnostics.ecologyPulse=(seconds)=>{const was=paused;paused=false;for(let t=0;t<seconds;t+=.05)living.update(Math.min(.05,seconds-t));paused=was;render();};

@@ -2,7 +2,7 @@
    Start/resume only after user input. Settings persist independently of campaigns. */
 (() => {
   'use strict';
-  const KEY='abyss-audio-v1', BUILD='0.25.0-the-living-abyss-1';
+  const KEY='abyss-audio-v1', BUILD='0.26.0-tactical-depths-1';
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   let settings={effects:.5,ambience:.35,music:.3,muted:false};
   try { const v=JSON.parse(localStorage.getItem(KEY)||'null'); if(v){
@@ -150,6 +150,10 @@
       case 'wardenImpact':hiss(.75,.13,600);play(65,26,.9,.14,pan,'triangle');break;
       case 'wardenDefeated':play(84,22,2,.12,pan,'triangle');hiss(1.5,.11,300);break;
       case 'railgun':play(740,170,.16,.095,pan,'triangle');hiss(.09,.045,2400,'bandpass');break;
+      case 'dryFire':play(155,105,.065,.055,pan,'triangle');break;
+      case 'armourHit':play(780,280,.13,.08,pan,'triangle');hiss(.06,.025,2100,'bandpass');break;
+      case 'trialGate':play(540,740,.18,.06);break;
+      case 'trialFinish':[330,440,660].forEach((f,i)=>play(f,f,.4,.055,0,'sine',i*.12));break;
       case 'railHit':play(360,100,.12,.10,pan,'triangle');break;
       case 'torpedo':play(130,52,.35,.14,pan,'triangle');hiss(.3,.08,650);break;
       case 'torpedoHit':play(90,23,.75,.19,pan,'triangle');hiss(.65,.17,420);break;

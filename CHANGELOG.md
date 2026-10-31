@@ -1,3 +1,14 @@
+# v0.26.0 · Tactical Depths
+
+- Two dock-only passive tuning slots, five equipment-unlocked modifications and three named presets.
+- Real-stat comparisons and cosmetic equipment accents. No extra currency or upgrade cost.
+- Isolated precision, weapons and survival trials with fixed loan gear; unscored own-build practice.
+- Best scores, medals and three earned cosmetic accents without campaign-resource farming.
+- Visual recoil, launcher animation, trails, impact/armour feedback, directional bite arcs and dry-fire audio.
+- Optional damage numbers, adjustable camera impulse and decorative effects density.
+- Campaign saves never capture loaned inventory. Backups validate the new tuning/preset/record state.
+- Dock tab switches start at the top of their panels; refitting updates the displayed hull capacity immediately.
+
 # v0.25.0: The Living Abyss
 
 - Add `living-abyss.js`: campaign-local, seeded peaceful ecology, kept separate from enemies, rewards and resources.

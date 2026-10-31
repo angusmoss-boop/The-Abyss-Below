@@ -3,7 +3,7 @@
  */
 (() => {
   'use strict';
-  const buildId='0.25.0-the-living-abyss-1';
+  const buildId='0.26.0-tactical-depths-1';
   const TAU=Math.PI*2;
   const NAMES=['PIP','MICA','FERN','ECHO','NOVA'];
   const REWARDS=[180,260,340,420,500];
